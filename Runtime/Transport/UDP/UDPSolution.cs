@@ -30,13 +30,18 @@ namespace NetPackage.Runtime.Transport
         {
             if (_isServer) return;
             Debug.Log("Connecting...");
-            _peer.Connect(address, port, "Net Key");
+            _peer.Connect(address, port, "Net_Key");
         }
 
         public void Disconnect()
         {
             if(_isServer) _peer.DisconnectAll();
             _peer.Stop();
+        }
+
+        public void Listen()
+        {
+            _peer.PollEvents();
         }
 
         public void Send(byte[] data)
@@ -51,13 +56,20 @@ namespace NetPackage.Runtime.Transport
 
         public void OnPeerConnected(NetPeer peer)
         {
-            Debug.Log("Client connected");
+            if (_isServer)
+            {
+                Debug.Log("[SERVER] Client connected: "  + peer.Address + ":" + peer.Port);
+            }
+            else
+            {
+                Debug.Log($"[CLIENT] Connected to server: "+ peer.Address + ":" + peer.Port);
+            }
             OnClientConnected?.Invoke();
         }
 
         public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
-            Debug.Log("Client connected");
+            Debug.Log($"Client disconnected. Reason: {disconnectInfo.Reason}");
         }
 
         public void OnNetworkError(IPEndPoint endPoint, SocketError socketError)
@@ -82,7 +94,11 @@ namespace NetPackage.Runtime.Transport
 
         public void OnConnectionRequest(ConnectionRequest request)
         {
-            throw new NotImplementedException();
+            if (_isServer)
+            {
+                // Accept connection requests if the server
+                request.AcceptIfKey("Net_Key");
+            }
         }
     }
 }

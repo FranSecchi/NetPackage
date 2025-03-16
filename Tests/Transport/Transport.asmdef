@@ -1,10 +1,11 @@
 {
-    "name": "Transport",
-    "rootNamespace": "",
+    "name": "TransportTest",
+    "rootNamespace": "TransportTest",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "NetPackage"
+        "NetPackage",
+        "Transport"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

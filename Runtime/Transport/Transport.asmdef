@@ -1,14 +1,12 @@
 {
-    "name": "NetPackage",
-    "rootNamespace": "NetPackage",
+    "name": "Transport",
+    "rootNamespace": "Transport",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
-    "precompiledReferences": [
-        "LiteNetLib.dll"
-    ],
+    "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],

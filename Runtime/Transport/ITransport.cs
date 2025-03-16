@@ -8,6 +8,7 @@ namespace NetPackage.Runtime.Transport
         void Start();
         void Connect(string address, int port);
         void Disconnect();
+        void Listen();
         void Send(byte[] data);
         byte[] Receive();
     }

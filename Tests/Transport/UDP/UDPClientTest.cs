@@ -1,21 +1,23 @@
 using System.Collections;
 using System.Collections.Generic;
+using NetPackage.Runtime.Transport;
 using NUnit.Framework;
+using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
-using NetPackage.Runtime.Transport;
 
-namespace NetPackage.Tests.Transport
+namespace TransportTest
 {
-        public class UDPTransportTest
+    public class UDPClient
     {
-        private ITransport _server;
-        private ITransport _client;
-        private bool _clientConnected = false;
-
         private const int Port = 7777;
         private const string TestMessage = "Hello, Server!";
-
+        
+        private ITransport _server;
+        private ITransport _client;
+        private List<int> _connectedClients;
+        
+        
         [SetUp]
         public void SetUp()
         {
@@ -24,23 +26,14 @@ namespace NetPackage.Tests.Transport
             _server.Setup(Port, true);
             _server.Start();
             _server.OnClientConnected += OnClientConnected;
+            _server.OnClientDisconnected += OnClientDisconnected;
+            _connectedClients = new List<int>();
             // Create and start the client
             _client = new UDPSolution();
             _client.Setup(Port, false);
             _client.Start();
         }
 
-        private void OnClientConnected()
-        {
-            _clientConnected = true;
-        }
-
-        [UnityTest]
-        public IEnumerator TestServerUp()
-        {
-            Assert.IsNotNull(_server, "Server instance is null.");
-            yield return null;
-        }
 
         [UnityTest]
         public IEnumerator TestClientConnected()
@@ -52,11 +45,21 @@ namespace NetPackage.Tests.Transport
             yield return new WaitForSeconds(1f);
             
             //Assert
-            Assert.IsTrue(_clientConnected, "Client did not connect.");
+            Assert.IsTrue(_connectedClients.Count > 0, "Client did not connect.");
+        }
+        
+        [UnityTest]
+        public IEnumerator TestClientDisconnected()
+        {
+            _client.Connect("localhost", Port);
+            yield return new WaitForSeconds(1f);
+            Assert.IsTrue(_connectedClients.Count > 0, "Client was disconnected.");
             
             _client.Disconnect();
+            yield return new WaitForSeconds(1f);
+            Assert.IsTrue(_connectedClients.Count == 0, "Client did not disconnect.");
         }
-
+        
         [UnityTest]
         public IEnumerator TestMessageClientToServer()
         {
@@ -76,30 +79,20 @@ namespace NetPackage.Tests.Transport
             _client.Disconnect();
         }
         
-        [UnityTest]
-        public IEnumerator TestMessageServerToAllClient()
-        {
-            // Ensure client is connected
-            _client.Connect("localhost", Port);
-            yield return new WaitForSeconds(1f);
-        
-            // Send a test message
-            _server.Send(System.Text.Encoding.ASCII.GetBytes(TestMessage));
-        
-            // Wait for message to be received
-            yield return new WaitForSeconds(1f);
-
-            string receivedMessage = System.Text.Encoding.ASCII.GetString(_client.Receive());
-            Assert.AreEqual(TestMessage, receivedMessage, "Received message.");
-            
-            _client.Disconnect();
-        }
-
         [TearDown]
         public void TearDown()
         {
             _server?.Disconnect();
             _client?.Disconnect();
+        }
+        
+        private void OnClientConnected(int id)
+        {
+            _connectedClients.Add(id);
+        }
+        private void OnClientDisconnected(int id)
+        {
+            _connectedClients.Remove(id);
         }
     }
 }

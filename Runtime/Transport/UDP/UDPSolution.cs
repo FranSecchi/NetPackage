@@ -1,26 +1,29 @@
-using LiteNetLib;
 using System;
-using System.Collections;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using LiteNetLib;
 using LiteNetLib.Utils;
-using PlasticGui.Configuration.CloudEdition.Welcome;
+using NetPackage.Runtime.Transport;
 using UnityEngine;
 using NetManager = LiteNetLib.NetManager;
 
-namespace NetPackage.Runtime.Transport
+namespace Transport.NetPackage.Runtime.Transport.UDP
 {
     public class UDPSolution : ITransport, INetEventListener
     {
         private NetManager _peer;
-        private int _port;
-        private bool _isServer;
         private Coroutine _pollingCoroutine;
         private Thread _pollingThread;
+        private int _port;
+        private bool _isServer;
         private bool _isRunning;
         private byte[] _lastPacket;
-        public event Action OnClientConnected;
+        
+        public event Action<int> OnClientConnected;
+        public event Action<int> OnClientDisconnected;
+        public event Action OnDataReceived;
+
         public void Setup(int port, bool isServer)
         {
             _isServer = isServer;
@@ -69,6 +72,14 @@ namespace NetPackage.Runtime.Transport
             return _lastPacket;
         }
 
+        
+        
+        
+        
+        
+        
+        
+        
         public void OnPeerConnected(NetPeer peer)
         {
             if (_isServer)
@@ -79,12 +90,13 @@ namespace NetPackage.Runtime.Transport
             {
                 Debug.Log($"[CLIENT] Connected to server: "+ peer.Address + ":" + peer.Port);
             }
-            OnClientConnected?.Invoke();
+            OnClientConnected?.Invoke(peer.Id);
         }
 
         public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
             Debug.Log($"Client disconnected. Reason: {disconnectInfo.Reason}");
+            OnClientDisconnected?.Invoke(peer.Id);
         }
 
         public void OnNetworkError(IPEndPoint endPoint, SocketError socketError)
@@ -96,6 +108,7 @@ namespace NetPackage.Runtime.Transport
         {
             Debug.Log("Data received from client");
             _lastPacket = reader.GetRemainingBytes();
+            OnDataReceived?.Invoke();
             reader.Recycle();
         }
 

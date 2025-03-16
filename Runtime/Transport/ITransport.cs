@@ -3,7 +3,8 @@ namespace NetPackage.Runtime.Transport
 {
     public interface ITransport
     {
-        event Action OnClientConnected;
+        event Action<int> OnClientConnected;
+        event Action<int> OnClientDisconnected;
         void Setup(int port, bool isServer);
         void Start();
         void Connect(string address, int port);

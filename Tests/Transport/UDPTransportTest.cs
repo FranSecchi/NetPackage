@@ -9,36 +9,36 @@ namespace NetPackage.Tests.Transport
 {
         public class UDPTransportTest
     {
-        private ITransport server;
-        private ITransport client;
-        private bool clientConnected = false;
+        private ITransport _server;
+        private ITransport _client;
+        private bool _clientConnected = false;
 
         private const int Port = 7777;
+        private const string TestMessage = "Hello, Server!";
 
         [SetUp]
         public void SetUp()
         {
             // Create and start the server
-            server = new UDPSolution();
-            server.Setup(Port, true);
-            server.Start();
-            server.OnClientConnected += OnClientConnected;
-
+            _server = new UDPSolution();
+            _server.Setup(Port, true);
+            _server.Start();
+            _server.OnClientConnected += OnClientConnected;
             // Create and start the client
-            client = new UDPSolution();
-            client.Setup(Port, false);
-            client.Start();
+            _client = new UDPSolution();
+            _client.Setup(Port, false);
+            _client.Start();
         }
 
         private void OnClientConnected()
         {
-            clientConnected = true;
+            _clientConnected = true;
         }
 
         [UnityTest]
         public IEnumerator TestServerUp()
         {
-            Assert.IsNotNull(server, "Server instance is null.");
+            Assert.IsNotNull(_server, "Server instance is null.");
             yield return null;
         }
 
@@ -46,25 +46,60 @@ namespace NetPackage.Tests.Transport
         public IEnumerator TestClientConnected()
         {
             // Client connects to the server
-            client.Connect("localhost", Port);
+            _client.Connect("localhost", Port);
 
             // Wait a bit to allow connection
-            float time = 0f;
-            while (!clientConnected && time < 5f)
-            {
-                time += Time.deltaTime;
-                yield return null;
-            }
+            yield return new WaitForSeconds(1f);
             
             //Assert
-            Assert.IsTrue(clientConnected, "Client did not connect.");
+            Assert.IsTrue(_clientConnected, "Client did not connect.");
+            
+            _client.Disconnect();
+        }
+
+        [UnityTest]
+        public IEnumerator TestMessageClientToServer()
+        {
+            // Ensure client is connected
+            _client.Connect("localhost", Port);
+            yield return new WaitForSeconds(1f);
+        
+            // Send a test message
+            _client.Send(System.Text.Encoding.ASCII.GetBytes(TestMessage));
+        
+            // Wait for message to be received
+            yield return new WaitForSeconds(1f);
+
+            string receivedMessage = System.Text.Encoding.ASCII.GetString(_server.Receive());
+            Assert.AreEqual(TestMessage, receivedMessage, "Received message.");
+            
+            _client.Disconnect();
+        }
+        
+        [UnityTest]
+        public IEnumerator TestMessageServerToAllClient()
+        {
+            // Ensure client is connected
+            _client.Connect("localhost", Port);
+            yield return new WaitForSeconds(1f);
+        
+            // Send a test message
+            _server.Send(System.Text.Encoding.ASCII.GetBytes(TestMessage));
+        
+            // Wait for message to be received
+            yield return new WaitForSeconds(1f);
+
+            string receivedMessage = System.Text.Encoding.ASCII.GetString(_client.Receive());
+            Assert.AreEqual(TestMessage, receivedMessage, "Received message.");
+            
+            _client.Disconnect();
         }
 
         [TearDown]
         public void TearDown()
         {
-            server?.Disconnect();
-            client?.Disconnect();
+            _server?.Disconnect();
+            _client?.Disconnect();
         }
     }
 }

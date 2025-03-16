@@ -4,6 +4,8 @@ using System.Collections;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using LiteNetLib.Utils;
+using PlasticGui.Configuration.CloudEdition.Welcome;
 using UnityEngine;
 using NetManager = LiteNetLib.NetManager;
 
@@ -17,7 +19,7 @@ namespace NetPackage.Runtime.Transport
         private Coroutine _pollingCoroutine;
         private Thread _pollingThread;
         private bool _isRunning;
-        
+        private byte[] _lastPacket;
         public event Action OnClientConnected;
         public void Setup(int port, bool isServer)
         {
@@ -55,19 +57,16 @@ namespace NetPackage.Runtime.Transport
             _peer.Stop();
         }
 
-        public void Listen()
-        {
-            _peer.PollEvents();
-        }
-
         public void Send(byte[] data)
         {
-            throw new NotImplementedException();
+            NetDataWriter writer = new NetDataWriter();      
+            writer.Put(data);          
+            _peer.SendToAll(writer, DeliveryMethod.Sequenced);
         }
 
         public byte[] Receive()
         {
-            throw new NotImplementedException();
+            return _lastPacket;
         }
 
         public void OnPeerConnected(NetPeer peer)
@@ -95,17 +94,17 @@ namespace NetPackage.Runtime.Transport
 
         public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
         {
-            throw new NotImplementedException();
+            Debug.Log("Data received from client");
+            _lastPacket = reader.GetRemainingBytes();
+            reader.Recycle();
         }
 
         public void OnNetworkReceiveUnconnected(IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType)
         {
-            throw new NotImplementedException();
         }
 
         public void OnNetworkLatencyUpdate(NetPeer peer, int latency)
         {
-            throw new NotImplementedException();
         }
 
         public void OnConnectionRequest(ConnectionRequest request)

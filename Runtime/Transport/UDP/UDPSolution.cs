@@ -1,7 +1,9 @@
 using LiteNetLib;
 using System;
+using System.Collections;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using UnityEngine;
 using NetManager = LiteNetLib.NetManager;
 
@@ -12,7 +14,10 @@ namespace NetPackage.Runtime.Transport
         private NetManager _peer;
         private int _port;
         private bool _isServer;
-
+        private Coroutine _pollingCoroutine;
+        private Thread _pollingThread;
+        private bool _isRunning;
+        
         public event Action OnClientConnected;
         public void Setup(int port, bool isServer)
         {
@@ -24,6 +29,11 @@ namespace NetPackage.Runtime.Transport
         {
             if(_isServer) _peer.Start(_port);
             else _peer.Start();
+            
+            _isRunning = true;
+            _pollingThread = new Thread(PollNetwork);
+            _pollingThread.IsBackground = true; // Ensures it stops when Unity closes
+            _pollingThread.Start();
         }
 
         public void Connect(string address, int port)
@@ -35,7 +45,13 @@ namespace NetPackage.Runtime.Transport
 
         public void Disconnect()
         {
-            if(_isServer) _peer.DisconnectAll();
+            _isRunning = false;
+
+            if (_pollingThread != null && _pollingThread.IsAlive)
+            {
+                _pollingThread.Join();
+            }
+
             _peer.Stop();
         }
 
@@ -98,6 +114,15 @@ namespace NetPackage.Runtime.Transport
             {
                 // Accept connection requests if the server
                 request.AcceptIfKey("Net_Key");
+            }
+        }
+        
+        private void PollNetwork()
+        {
+            while (_isRunning)
+            {
+                _peer.PollEvents();
+                Thread.Sleep(15); // Prevents excessive CPU usage
             }
         }
     }

@@ -52,8 +52,6 @@ namespace NetPackage.Tests.Transport
             float time = 0f;
             while (!clientConnected && time < 5f)
             {
-                server.Listen();
-                client.Listen();
                 time += Time.deltaTime;
                 yield return null;
             }
@@ -61,7 +59,7 @@ namespace NetPackage.Tests.Transport
             //Assert
             Assert.IsTrue(clientConnected, "Client did not connect.");
         }
-        
+
         [TearDown]
         public void TearDown()
         {

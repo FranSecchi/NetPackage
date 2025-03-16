@@ -68,7 +68,7 @@ namespace TransportTest
             yield return new WaitForSeconds(1f);
         
             // Send a test message
-            _client.Send(System.Text.Encoding.ASCII.GetBytes(TestMessage));
+            _client.SendTo(_connectedClients[0], System.Text.Encoding.ASCII.GetBytes(TestMessage));
         
             // Wait for message to be received
             yield return new WaitForSeconds(1f);

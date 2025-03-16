@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -12,13 +13,14 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
 {
     public class UDPSolution : ITransport, INetEventListener
     {
-        private NetManager _peer;
-        private Coroutine _pollingCoroutine;
         private Thread _pollingThread;
-        private int _port;
+        private NetManager _peer;
         private bool _isServer;
         private bool _isRunning;
+        private int _port;
+        private int _serverAddress;
         private byte[] _lastPacket;
+        private Dictionary<int, NetPeer> _connectedClients;
         
         public event Action<int> OnClientConnected;
         public event Action<int> OnClientDisconnected;
@@ -28,6 +30,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         {
             _isServer = isServer;
             _peer = new NetManager(this);
+            _connectedClients = new Dictionary<int, NetPeer>();
             _port = port;
         }
         public void Start()
@@ -35,11 +38,9 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             if(_isServer) _peer.Start(_port);
             else _peer.Start();
             
-            _isRunning = true;
-            _pollingThread = new Thread(PollNetwork);
-            _pollingThread.IsBackground = true; // Ensures it stops when Unity closes
-            _pollingThread.Start();
+            StartThread();
         }
+
 
         public void Connect(string address, int port)
         {
@@ -62,29 +63,36 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
 
         public void Send(byte[] data)
         {
-            NetDataWriter writer = new NetDataWriter();      
-            writer.Put(data);          
-            _peer.SendToAll(writer, DeliveryMethod.Sequenced);
+            if (_isServer)
+            {
+                foreach (var peer in _connectedClients.Values)
+                {
+                    peer.Send(data, DeliveryMethod.Sequenced);
+                }
+                Debug.Log("[SERVER] Sent message to all clients");
+            }
+        }
+
+        public void SendTo(int clientId, byte[] data)
+        {
+            if (_connectedClients.TryGetValue(clientId, out NetPeer peer))
+            {
+                peer.Send(data, DeliveryMethod.Sequenced);
+                Debug.Log($"[SERVER] Sent message to client {clientId}");
+            }
         }
 
         public byte[] Receive()
         {
             return _lastPacket;
         }
-
-        
-        
-        
-        
-        
-        
-        
         
         public void OnPeerConnected(NetPeer peer)
         {
             if (_isServer)
             {
                 Debug.Log("[SERVER] Client connected: "  + peer.Address + ":" + peer.Port);
+                _connectedClients[peer.Id] = peer;
             }
             else
             {
@@ -96,6 +104,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
             Debug.Log($"Client disconnected. Reason: {disconnectInfo.Reason}");
+            if(_isServer) _connectedClients.Remove(peer.Id);
             OnClientDisconnected?.Invoke(peer.Id);
         }
 
@@ -129,8 +138,18 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             }
         }
         
+        
+        
+        
+        private void StartThread()
+        {
+            _pollingThread = new Thread(PollNetwork);
+            _pollingThread.IsBackground = true; // Ensures it stops when Unity closes
+            _pollingThread.Start();
+        }
         private void PollNetwork()
         {
+            _isRunning = true;
             while (_isRunning)
             {
                 _peer.PollEvents();

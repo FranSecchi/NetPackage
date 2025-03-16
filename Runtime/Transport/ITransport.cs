@@ -10,6 +10,7 @@ namespace NetPackage.Runtime.Transport
         void Connect(string address, int port);
         void Disconnect();
         void Send(byte[] data);
+        void SendTo(int id, byte[] data);
         byte[] Receive();
     }
 }

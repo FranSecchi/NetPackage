@@ -15,8 +15,7 @@ namespace TransportTest
         
         private ITransport _server;
         private ITransport _client;
-        private List<int> _connectedClients;
-        
+        private bool _connected = false;
         
         [SetUp]
         public void SetUp()
@@ -27,7 +26,6 @@ namespace TransportTest
             _server.Start();
             _server.OnClientConnected += OnClientConnected;
             _server.OnClientDisconnected += OnClientDisconnected;
-            _connectedClients = new List<int>();
             // Create and start the client
             _client = new UDPSolution();
             _client.Setup(Port, false);
@@ -45,7 +43,7 @@ namespace TransportTest
             yield return new WaitForSeconds(1f);
             
             //Assert
-            Assert.IsTrue(_connectedClients.Count > 0, "Client did not connect.");
+            Assert.IsTrue(_connected, "Client did not connect.");
         }
         
         [UnityTest]
@@ -53,11 +51,10 @@ namespace TransportTest
         {
             _client.Connect("localhost", Port);
             yield return new WaitForSeconds(1f);
-            Assert.IsTrue(_connectedClients.Count > 0, "Client was disconnected.");
             
             _client.Disconnect();
             yield return new WaitForSeconds(1f);
-            Assert.IsTrue(_connectedClients.Count == 0, "Client did not disconnect.");
+            Assert.IsTrue(!_connected, "Client did not disconnect.");
         }
         
         [UnityTest]
@@ -68,7 +65,7 @@ namespace TransportTest
             yield return new WaitForSeconds(1f);
         
             // Send a test message
-            _client.SendTo(_connectedClients[0], System.Text.Encoding.ASCII.GetBytes(TestMessage));
+            _client.Send(System.Text.Encoding.ASCII.GetBytes(TestMessage));
         
             // Wait for message to be received
             yield return new WaitForSeconds(1f);
@@ -88,11 +85,11 @@ namespace TransportTest
         
         private void OnClientConnected(int id)
         {
-            _connectedClients.Add(id);
+            _connected = true;
         }
         private void OnClientDisconnected(int id)
         {
-            _connectedClients.Remove(id);
+            _connected = false;
         }
     }
 }

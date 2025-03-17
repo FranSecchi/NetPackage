@@ -18,7 +18,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         private bool _isServer;
         private bool _isRunning;
         private int _port;
-        private int _serverAddress;
+        private NetPeer _server;
         private byte[] _lastPacket;
         private Dictionary<int, NetPeer> _connectedClients;
         
@@ -71,15 +71,18 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
                 }
                 Debug.Log("[SERVER] Sent message to all clients");
             }
+            else
+            {
+                _server.Send(data, DeliveryMethod.Sequenced);
+                Debug.Log("[CLIENT] Sent message to host");
+            }
         }
 
         public void SendTo(int clientId, byte[] data)
         {
-            if (_connectedClients.TryGetValue(clientId, out NetPeer peer))
-            {
-                peer.Send(data, DeliveryMethod.Sequenced);
-                Debug.Log($"[SERVER] Sent message to client {clientId}");
-            }
+            if (!_connectedClients.TryGetValue(clientId, out NetPeer peer)) return;
+            peer.Send(data, DeliveryMethod.Sequenced);
+            Debug.Log($"[SERVER] Sent message to client {clientId}");
         }
 
         public byte[] Receive()
@@ -96,6 +99,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             }
             else
             {
+                _server = peer;
                 Debug.Log($"[CLIENT] Connected to server: "+ peer.Address + ":" + peer.Port);
             }
             OnClientConnected?.Invoke(peer.Id);

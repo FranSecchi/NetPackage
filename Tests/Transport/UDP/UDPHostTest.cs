@@ -52,30 +52,32 @@ namespace TransportTest
             Assert.IsTrue(_connectedClients.Count == 5, "There should be 5 clients.");
         }
         
-        // [UnityTest]
-        // public IEnumerator TestMessageServerToClient()
-        // {
-        //     // Ensure client is connected
-        //     for (int i = 0; i < 5; i++)
-        //     {
-        //         ITransport client = new UDPSolution();
-        //         client.Setup(Port, false);
-        //         client.Start();
-        //         client.Connect("localhost", Port);
-        //     }
-        //     yield return new WaitForSeconds(1f);
-        //
-        //     // Send a test message
-        //     _server.SendTo(_connectedClients[2], System.Text.Encoding.ASCII.GetBytes(TestMessage));
-        //
-        //     // Wait for message to be received
-        //     yield return new WaitForSeconds(1f);
-        //
-        //     string receivedMessage = System.Text.Encoding.ASCII.GetString(_client.Receive());
-        //     Assert.AreEqual(TestMessage, receivedMessage, "Received message.");
-        //     
-        //     _client.Disconnect();
-        // }
+        [UnityTest]
+        public IEnumerator TestMessageServerToClient()
+        {
+            List<ITransport> clients = new List<ITransport>();
+            for (int i = 0; i < 5; i++)
+            {
+                ITransport client = new UDPClient();
+                client.Setup(Port);
+                client.Start();
+                client.Connect("localhost", Port);
+                clients.Add(client);
+                yield return new WaitForSeconds(0.5f);
+            }
+        
+            _server.SendTo(_connectedClients[2], System.Text.Encoding.ASCII.GetBytes(TestMessage));
+        
+            yield return new WaitForSeconds(1f);
+        
+            string receivedMessage = System.Text.Encoding.ASCII.GetString(clients[2].Receive());
+            Assert.AreEqual(TestMessage, receivedMessage, "Received message.");
+            
+            for (int i = 0; i < 5; i++)
+            {
+                clients[i].Disconnect();
+            }
+        }
         
         // [UnityTest]
         // public IEnumerator TestMessageServerToAllClient()

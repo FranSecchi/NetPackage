@@ -7,7 +7,7 @@ using UnityEngine.TestTools;
 
 namespace TransportTest.NetPackage.Tests.Transport.UDP
 {
-    public class UDPClient
+    public class UDPClientTest
     {
         private const int Port = 7777;
         private const string TestMessage = "Hello, Server!";

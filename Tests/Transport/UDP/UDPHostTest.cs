@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 
 namespace TransportTest
 {
-    public class UDPHost
+    public class UDPHostTest
     {
         private ITransport _server;
         private List<int> _connectedClients;

@@ -26,6 +26,7 @@ namespace TransportTest
             _server.Setup(Port);
             _server.Start();
             _server.OnClientConnected += OnClientConnected;
+            _server.OnClientDisconnected += OnClientDisconnected;
             _connectedClients = new List<int>();
             
         }
@@ -42,7 +43,7 @@ namespace TransportTest
         {
             for (int i = 0; i < 5; i++)
             {
-                ITransport client = new global::Transport.NetPackage.Runtime.Transport.UDP.UDPClient();
+                ITransport client = new UDPClient();
                 client.Setup(Port);
                 client.Start();
                 client.Connect("localhost", Port);
@@ -123,6 +124,10 @@ namespace TransportTest
         private void OnClientConnected(int id)
         {
             _connectedClients.Add(id);
+        }
+        private void OnClientDisconnected(int id)
+        {
+            _connectedClients.Remove(id);
         }
     }
 }

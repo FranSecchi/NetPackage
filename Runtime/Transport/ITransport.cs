@@ -5,7 +5,8 @@ namespace NetPackage.Runtime.Transport
     {
         event Action<int> OnClientConnected;
         event Action<int> OnClientDisconnected;
-        void Setup(int port, bool isServer);
+        event Action OnDataReceived;
+        void Setup(int port);
         void Start();
         void Connect(string address, int port);
         void Disconnect();

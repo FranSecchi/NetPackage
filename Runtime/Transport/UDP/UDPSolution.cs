@@ -11,45 +11,33 @@ using NetManager = LiteNetLib.NetManager;
 
 namespace Transport.NetPackage.Runtime.Transport.UDP
 {
-    public class UDPSolution : ITransport, INetEventListener
+    public abstract class UDPSolution : ITransport, INetEventListener
     {
-        private Thread _pollingThread;
-        private NetManager _peer;
-        private bool _isServer;
-        private bool _isRunning;
-        private int _port;
-        private NetPeer _server;
-        private byte[] _lastPacket;
-        private Dictionary<int, NetPeer> _connectedClients;
+        protected NetManager Peer;
+        protected byte[] LastPacket;
         
+        private Thread _pollingThread;
+        private bool _isRunning;
+
+
         public event Action<int> OnClientConnected;
         public event Action<int> OnClientDisconnected;
         public event Action OnDataReceived;
 
-        public void Setup(int port, bool isServer)
+        protected void InvokeClientConnected(int clientId) => OnClientConnected?.Invoke(clientId);
+        protected void InvokeClientDisconnected(int clientId) => OnClientDisconnected?.Invoke(clientId);
+        protected void InvokeDataReceived() => OnDataReceived?.Invoke();
+        
+        public virtual void Setup(int port)
         {
-            _isServer = isServer;
-            _peer = new NetManager(this);
-            _connectedClients = new Dictionary<int, NetPeer>();
-            _port = port;
+            Peer = new NetManager(this);
         }
-        public void Start()
-        {
-            if(_isServer) _peer.Start(_port);
-            else _peer.Start();
-            
-            StartThread();
-        }
-
-
-        public void Connect(string address, int port)
-        {
-            if (_isServer) return;
-            Debug.Log("Connecting...");
-            _peer.Connect(address, port, "Net_Key");
-        }
-
-        public void Disconnect()
+        public abstract void Start();
+        public abstract void Connect(string address, int port);
+        public abstract void Send(byte[] data);
+        public abstract void SendTo(int id, byte[] data);
+        public abstract byte[] Receive();
+        public virtual void Disconnect()
         {
             _isRunning = false;
 
@@ -58,72 +46,23 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
                 _pollingThread.Join();
             }
 
-            _peer.Stop();
-        }
-
-        public void Send(byte[] data)
-        {
-            if (_isServer)
-            {
-                foreach (var peer in _connectedClients.Values)
-                {
-                    peer.Send(data, DeliveryMethod.Sequenced);
-                }
-                Debug.Log("[SERVER] Sent message to all clients");
-            }
-            else
-            {
-                _server.Send(data, DeliveryMethod.Sequenced);
-                Debug.Log("[CLIENT] Sent message to host");
-            }
-        }
-
-        public void SendTo(int clientId, byte[] data)
-        {
-            if (!_connectedClients.TryGetValue(clientId, out NetPeer peer)) return;
-            peer.Send(data, DeliveryMethod.Sequenced);
-            Debug.Log($"[SERVER] Sent message to client {clientId}");
-        }
-
-        public byte[] Receive()
-        {
-            return _lastPacket;
+            Peer.Stop();
         }
         
-        public void OnPeerConnected(NetPeer peer)
+        public abstract void OnPeerConnected(NetPeer peer);
+        public abstract void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo);
+        public abstract void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod);
+        public void OnConnectionRequest(ConnectionRequest request)
         {
-            if (_isServer)
-            {
-                Debug.Log("[SERVER] Client connected: "  + peer.Address + ":" + peer.Port);
-                _connectedClients[peer.Id] = peer;
-            }
-            else
-            {
-                _server = peer;
-                Debug.Log($"[CLIENT] Connected to server: "+ peer.Address + ":" + peer.Port);
-            }
-            OnClientConnected?.Invoke(peer.Id);
+            request.AcceptIfKey("Net_Key");
         }
-
-        public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
-        {
-            Debug.Log($"Client disconnected. Reason: {disconnectInfo.Reason}");
-            if(_isServer) _connectedClients.Remove(peer.Id);
-            OnClientDisconnected?.Invoke(peer.Id);
-        }
-
+        
+        
+        
         public void OnNetworkError(IPEndPoint endPoint, SocketError socketError)
         {
-            throw new NotImplementedException();
         }
 
-        public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
-        {
-            Debug.Log("Data received from client");
-            _lastPacket = reader.GetRemainingBytes();
-            OnDataReceived?.Invoke();
-            reader.Recycle();
-        }
 
         public void OnNetworkReceiveUnconnected(IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType)
         {
@@ -132,20 +71,8 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         public void OnNetworkLatencyUpdate(NetPeer peer, int latency)
         {
         }
-
-        public void OnConnectionRequest(ConnectionRequest request)
-        {
-            if (_isServer)
-            {
-                // Accept connection requests if the server
-                request.AcceptIfKey("Net_Key");
-            }
-        }
         
-        
-        
-        
-        private void StartThread()
+        protected void StartThread()
         {
             _pollingThread = new Thread(PollNetwork);
             _pollingThread.IsBackground = true; // Ensures it stops when Unity closes
@@ -156,7 +83,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             _isRunning = true;
             while (_isRunning)
             {
-                _peer.PollEvents();
+                Peer.PollEvents();
                 Thread.Sleep(15); // Prevents excessive CPU usage
             }
         }

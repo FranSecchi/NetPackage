@@ -6,7 +6,7 @@ using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace TransportTest.NetPackage.Tests.Transport.UDP
+namespace TransportTest
 {
     public class UDPHost
     {
@@ -22,8 +22,8 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
             _connectedClients = new List<int>();
             
             // Create and start the server
-            _server = new UDPSolution();
-            _server.Setup(Port, true);
+            _server = new global::Transport.NetPackage.Runtime.Transport.UDP.UDPHost();
+            _server.Setup(Port);
             _server.Start();
             _server.OnClientConnected += OnClientConnected;
             _connectedClients = new List<int>();
@@ -42,8 +42,8 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
         {
             for (int i = 0; i < 5; i++)
             {
-                ITransport client = new UDPSolution();
-                client.Setup(Port, false);
+                ITransport client = new global::Transport.NetPackage.Runtime.Transport.UDP.UDPClient();
+                client.Setup(Port);
                 client.Start();
                 client.Connect("localhost", Port);
             }

@@ -1,12 +1,11 @@
 using System.Collections;
-using System.Collections.Generic;
 using NetPackage.Runtime.Transport;
 using NUnit.Framework;
 using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace TransportTest
+namespace TransportTest.NetPackage.Tests.Transport.UDP
 {
     public class UDPClient
     {
@@ -21,14 +20,14 @@ namespace TransportTest
         public void SetUp()
         {
             // Create and start the server
-            _server = new UDPSolution();
-            _server.Setup(Port, true);
+            _server = new global::Transport.NetPackage.Runtime.Transport.UDP.UDPHost();
+            _server.Setup(Port);
             _server.Start();
             _server.OnClientConnected += OnClientConnected;
             _server.OnClientDisconnected += OnClientDisconnected;
             // Create and start the client
-            _client = new UDPSolution();
-            _client.Setup(Port, false);
+            _client = new global::Transport.NetPackage.Runtime.Transport.UDP.UDPClient();
+            _client.Setup(Port);
             _client.Start();
         }
 

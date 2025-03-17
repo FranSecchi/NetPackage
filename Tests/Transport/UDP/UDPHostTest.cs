@@ -71,7 +71,7 @@ namespace TransportTest
             yield return new WaitForSeconds(1f);
         
             string receivedMessage = System.Text.Encoding.ASCII.GetString(clients[2].Receive());
-            Assert.AreEqual(TestMessage, receivedMessage, "Received message.");
+            Assert.AreEqual(TestMessage, receivedMessage, "Message did not match.");
             
             for (int i = 0; i < 5; i++)
             {
@@ -79,24 +79,39 @@ namespace TransportTest
             }
         }
         
-        // [UnityTest]
-        // public IEnumerator TestMessageServerToAllClient()
-        // {
-        //     // Ensure client is connected
-        //     _client.Connect("localhost", Port);
-        //     yield return new WaitForSeconds(1f);
-        //
-        //     // Send a test message
-        //     _server.Send(System.Text.Encoding.ASCII.GetBytes(TestMessage));
-        //
-        //     // Wait for message to be received
-        //     yield return new WaitForSeconds(1f);
-        //
-        //     string receivedMessage = System.Text.Encoding.ASCII.GetString(_client.Receive());
-        //     Assert.AreEqual(TestMessage, receivedMessage, "Received message.");
-        //     
-        //     _client.Disconnect();
-        // }
+        [UnityTest]
+        public IEnumerator TestMessageServerToAllClient()
+        {
+            List<ITransport> clients = new List<ITransport>();
+            for (int i = 0; i < 5; i++)
+            {
+                ITransport client = new UDPClient();
+                client.Setup(Port);
+                client.Start();
+                client.Connect("localhost", Port);
+                clients.Add(client);
+                yield return new WaitForSeconds(0.5f);
+            }
+            
+            // Send a test message
+            _server.Send(System.Text.Encoding.ASCII.GetBytes(TestMessage));
+        
+            // Wait for message to be received
+            yield return new WaitForSeconds(1f);
+
+            int count = 0;
+            for (int i = 0; i < 5; i++)
+            {
+                count += System.Text.Encoding.ASCII.GetString(clients[i].Receive()) != "" ? 1 : 0;
+            }
+            
+            Assert.AreEqual(count, 5, "Messages dropped: "+(5-count)+".");
+            
+            for (int i = 0; i < 5; i++)
+            {
+                clients[i].Disconnect();
+            }
+        }
         
         
         [TearDown]

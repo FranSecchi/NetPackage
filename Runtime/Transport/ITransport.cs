@@ -1,12 +1,17 @@
 using System;
-namespace NetPackage.Runtime.Transport
+
+namespace Transport.NetPackage.Runtime.Transport
 {
+    public enum TransportType
+    {
+        UDP = 0,
+    }
     public interface ITransport
     {
         event Action<int> OnClientConnected;
         event Action<int> OnClientDisconnected;
         event Action OnDataReceived;
-        void Setup(int port);
+        void Setup(int port, bool isServer);
         void Start();
         void Connect(string address, int port);
         void Disconnect();

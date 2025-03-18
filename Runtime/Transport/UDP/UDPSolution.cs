@@ -5,39 +5,56 @@ using System.Net.Sockets;
 using System.Threading;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using NetPackage.Runtime.Transport;
 using UnityEngine;
 using NetManager = LiteNetLib.NetManager;
 
 namespace Transport.NetPackage.Runtime.Transport.UDP
 {
-    public abstract class UDPSolution : ITransport, INetEventListener
+    public class UDPSolution : ITransport, INetEventListener
     {
-        protected NetManager Peer;
-        protected byte[] LastPacket;
+        private NetManager Peer;
+        private byte[] LastPacket;
         
+        private NetPeer _server;
         private Thread _pollingThread;
         private bool _isRunning;
-
+        private bool _isServer;
+        private int _port;
+        private Dictionary<int, NetPeer> _connectedClients;
 
         public event Action<int> OnClientConnected;
         public event Action<int> OnClientDisconnected;
         public event Action OnDataReceived;
 
-        protected void InvokeClientConnected(int clientId) => OnClientConnected?.Invoke(clientId);
-        protected void InvokeClientDisconnected(int clientId) => OnClientDisconnected?.Invoke(clientId);
-        protected void InvokeDataReceived() => OnDataReceived?.Invoke();
         
-        public virtual void Setup(int port)
+        public void Setup(int port, bool isServer)
         {
             Peer = new NetManager(this);
+            _connectedClients = new Dictionary<int, NetPeer>();
+            _port = port;
+            _isServer = isServer;
         }
-        public abstract void Start();
-        public abstract void Connect(string address, int port);
-        public abstract void Send(byte[] data);
-        public abstract void SendTo(int id, byte[] data);
-        public abstract byte[] Receive();
-        public virtual void Disconnect()
+
+        public void Start()
+        {
+            if(_isServer)
+                Peer.Start(_port);
+            else Peer.Start();
+            StartThread();
+        }
+
+        public void Connect(string address, int port)
+        {
+            if(_isServer)
+            {
+                Debug.Log("[SERVER] Cannot connect to a client as a server.");
+                return;
+            }
+            Debug.Log($"Connecting to: {address}:{port}");
+            Peer.Connect(address, port, "Net_Key");
+        }
+
+        public void Disconnect()
         {
             _isRunning = false;
 
@@ -48,31 +65,90 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
 
             Peer.Stop();
         }
-        
-        public abstract void OnPeerConnected(NetPeer peer);
-        public abstract void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo);
-        public abstract void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod);
+
+        public void Send(byte[] data)
+        {
+            if (_isServer)
+            {
+                foreach (var peer in _connectedClients.Values)
+                {
+                    peer.Send(data, DeliveryMethod.Sequenced);
+                }
+                Debug.Log("[SERVER] Sent message to all clients");
+            }
+            else
+            {
+                _server.Send(data, DeliveryMethod.Sequenced);
+                Debug.Log("[CLIENT] Sent message to host");
+            }
+        }
+
+        public void SendTo(int id, byte[] data)
+        {
+            if (!_connectedClients.TryGetValue(id, out NetPeer peer)) return;
+            peer.Send(data, DeliveryMethod.Sequenced);
+            Debug.Log($"[SERVER] Sent message to client {id}");
+        }
+
+        public byte[] Receive()
+        {
+            return LastPacket;
+        }
+
         public void OnConnectionRequest(ConnectionRequest request)
         {
             request.AcceptIfKey("Net_Key");
         }
-        
-        
+
+
+        public void OnPeerConnected(NetPeer peer)
+        {
+            if(_isServer)
+            {
+                Debug.Log("[SERVER] Client connected: " + peer.Address + ":" + peer.Port);
+                _connectedClients[peer.Id] = peer;
+                OnClientConnected?.Invoke(peer.Id);
+            }
+            else
+            {
+                _server = peer;
+                Debug.Log($"[CLIENT] Connected to server: "+ peer.Address + ":" + peer.Port);
+            }
+        }
+
+        public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
+        {
+            if (_isServer)
+            {
+                Debug.Log($"Client disconnected. Reason: {disconnectInfo.Reason}");
+                _connectedClients.Remove(peer.Id);
+                OnClientDisconnected?.Invoke(peer.Id);
+            }
+            else
+            {
+                Debug.Log($"Disconnected from server. Reason: {disconnectInfo.Reason}");
+            }
+        }
+
+        public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
+        {
+            Debug.Log("Data received");
+            LastPacket = reader.GetRemainingBytes();
+            OnDataReceived?.Invoke();
+            reader.Recycle();
+        }
         
         public void OnNetworkError(IPEndPoint endPoint, SocketError socketError)
         {
         }
-
-
         public void OnNetworkReceiveUnconnected(IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType)
         {
         }
-
         public void OnNetworkLatencyUpdate(NetPeer peer, int latency)
         {
         }
         
-        protected void StartThread()
+        private void StartThread()
         {
             _pollingThread = new Thread(PollNetwork);
             _pollingThread.IsBackground = true; // Ensures it stops when Unity closes

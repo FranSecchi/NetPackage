@@ -46,7 +46,7 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
                 ITransport client = new UDPSolution();
                 client.Setup(Port, false);
                 client.Start();
-                client.Connect("localhost", Port);
+                client.Connect("localhost");
             }
             yield return new WaitForSeconds(1f);
             
@@ -62,7 +62,7 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
                 ITransport client = new UDPSolution();
                 client.Setup(Port, false);
                 client.Start();
-                client.Connect("localhost", Port);
+                client.Connect("localhost");
                 clients.Add(client);
                 yield return new WaitForSeconds(0.5f);
             }
@@ -89,7 +89,7 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
                 ITransport client = new UDPSolution();
                 client.Setup(Port, false);
                 client.Start();
-                client.Connect("localhost", Port);
+                client.Connect("localhost");
                 clients.Add(client);
                 yield return new WaitForSeconds(0.5f);
             }

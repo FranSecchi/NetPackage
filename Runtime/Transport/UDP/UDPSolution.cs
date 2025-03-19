@@ -43,15 +43,15 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             StartThread();
         }
 
-        public void Connect(string address, int port)
+        public void Connect(string address)
         {
             if(_isServer)
             {
                 Debug.Log("[SERVER] Cannot connect to a client as a server.");
                 return;
             }
-            Debug.Log($"Connecting to: {address}:{port}");
-            Peer.Connect(address, port, "Net_Key");
+            Debug.Log($"Connecting to: {address}:{_port}");
+            Peer.Connect(address, _port, "Net_Key");
         }
 
         public void Disconnect()
@@ -150,8 +150,10 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         
         private void StartThread()
         {
-            _pollingThread = new Thread(PollNetwork);
-            _pollingThread.IsBackground = true; // Ensures it stops when Unity closes
+            _pollingThread = new Thread(PollNetwork)
+            {
+                IsBackground = true // Ensures it stops when Unity closes
+            };
             _pollingThread.Start();
         }
         private void PollNetwork()

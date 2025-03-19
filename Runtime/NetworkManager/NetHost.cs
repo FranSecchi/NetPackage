@@ -15,5 +15,11 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
         {
             Clients[id] = new NetConn(id);
         }
+
+        public static void Stop()
+        {
+            NetManager.Transport.Disconnect();
+            Clients.Clear();
+        }
     }
 }

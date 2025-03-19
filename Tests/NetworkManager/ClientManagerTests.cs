@@ -35,7 +35,24 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
             
             Assert.IsTrue(NetClient.Connection != null, "Client did not start correctly");
         }
+        
+        [UnityTest]
+        public IEnumerator TestStopClient()
+        {
+            ITransport host = new UDPSolution();
+            host.Setup(_port, true);
+            host.Start();
+            yield return new WaitForSeconds(0.5f);
 
+            _manager.StartClient();
+            yield return new WaitForSeconds(0.5f);
+
+            _manager.StopClient();
+            yield return new WaitForSeconds(0.5f);
+            
+            Assert.IsFalse(NetClient.Connection != null, "Client did not stop correctly");
+        }
+        
         [TearDown]
         public void TearDown()
         {

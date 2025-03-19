@@ -38,6 +38,23 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
             
             Assert.IsTrue(result, "Server did not start correctly");
         }
+
+        [UnityTest]
+        public IEnumerator TestStopServer()
+        {
+            _manager.StartHost();
+            yield return new WaitForSeconds(0.5f);
+            ITransport client = new UDPClient();
+            client.Setup(_port, false);
+            client.Start();
+            client.Connect("localhost");
+            yield return new WaitForSeconds(0.5f);
+
+            _manager.StopHosting();
+            yield return new WaitForSeconds(0.5f);
+            
+            Assert.IsEmpty(NetHost.Clients, "Server did not stop correctly");
+        }
         [TearDown]
         public void TearDown()
         {

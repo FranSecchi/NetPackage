@@ -35,5 +35,15 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
             Transport.Setup(Port, false);
             NetClient.Connect(address);
         }
+
+        public void StopClient()
+        {
+            NetClient.Disconnect();
+        }
+
+        public void StopHosting()
+        {
+            NetHost.Stop();
+        }
     }
 }

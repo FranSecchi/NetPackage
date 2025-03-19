@@ -15,6 +15,7 @@ namespace Transport.NetPackage.Runtime.Transport
         void Start();
         void Connect(string address);
         void Disconnect();
+        void Kick(int id);
         void Send(byte[] data);
         void SendTo(int id, byte[] data);
         byte[] Receive();

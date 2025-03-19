@@ -2,17 +2,17 @@
     "name": "TransportTest",
     "rootNamespace": "TransportTest",
     "references": [
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
-        "Transport"
+        "Transport",
+        "Tests",
+        "UnityEngine.TestRunner"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "nunit.framework.dll",
-        "LiteNetLib.dll"
+        "LiteNetLib.dll",
+        "nunit.framework.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [

@@ -1,8 +1,9 @@
 {
-    "name": "Transport",
-    "rootNamespace": "Transport",
+    "name": "NetworkManager",
+    "rootNamespace": "NetworkManager",
     "references": [
-        "GUID:2624d5b30ae68cb458c788b775d3ff95"
+        "GUID:2624d5b30ae68cb458c788b775d3ff95",
+        "GUID:c86c06357137b3644913980a4df0ec93"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

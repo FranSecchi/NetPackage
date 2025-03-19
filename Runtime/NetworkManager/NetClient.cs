@@ -7,7 +7,6 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
         public static NetConn Connection;
         public static void Connect(string address)
         {
-            Debug.Log("NetClient subscribed");
             NetManager.Transport.OnClientConnected += OnConnected;
             NetManager.Transport.OnClientDisconnected += OnDisconnected;
             NetManager.Transport.Start();
@@ -21,7 +20,6 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
 
         private static void OnConnected(int id)
         {
-            Debug.Log("NetClient created: " + id);
             Connection = new NetConn(id);
         }
     }

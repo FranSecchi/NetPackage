@@ -8,15 +8,15 @@ using UnityEngine.TestTools;
 
 namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
 {
-    public class ClientManagerTests : MonoBehaviour
+    public class ClientManagerTests
     {
         private NetManager _manager;
     
         [SetUp]
-        private void Setup()
+        public void SetUp()
         {
             _manager = new GameObject().AddComponent<NetManager>();
-            _manager.SetTransport(new UDPSolution());
+            NetManager.SetTransport(new UDPSolution());
             _manager.address = "localhost";
             
         }
@@ -24,15 +24,19 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         public IEnumerator TestStartClient()
         {
             ITransport host = new UDPHost();
-            // host.Setup(9050);
+            host.Setup(9050, true);
             host.Start();
-            host.Connect("localhost", 9050);
             yield return new WaitForSeconds(0.5f);
 
             _manager.StartClient();
             yield return new WaitForSeconds(0.5f);
             
-            Assert.IsTrue(_manager.GetClientsCount() == 1, "Client did not start correctly");
+            Assert.IsTrue(NetClient.Connection != null, "Client did not start correctly");
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
         }
     }
 }

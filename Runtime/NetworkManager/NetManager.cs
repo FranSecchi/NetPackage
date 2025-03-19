@@ -7,29 +7,33 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
 {
     public class NetManager : MonoBehaviour
     {
+        private static NetManager _manager;
+        public static ITransport Transport;
+        
         public string address = "localhost";
-        private ITransport _transport;
         private int Port { get; set; } = 9050;
 
-        public void SetTransport(ITransport transport)
+        public static void SetTransport(ITransport transport)
         {
-            _transport = transport;
+            Transport = transport;
         }
 
-
+        private void Awake()
+        {
+            if (_manager != null)
+                Destroy(this);
+            else _manager = this;
+            DontDestroyOnLoad(this);
+        }
         public void StartHost()
         {
-            _transport.Setup(Port, true);
-            _transport.Start();
+            Transport.Setup(Port, true);
+            NetHost.StartHost();
         }
         public void StartClient()
         {
-            _transport.Setup(Port, false);
-            _transport.Start();
-        }
-        public int GetClientsCount()
-        {
-            throw new System.NotImplementedException();
+            Transport.Setup(Port, false);
+            NetClient.Connect(address);
         }
     }
 }

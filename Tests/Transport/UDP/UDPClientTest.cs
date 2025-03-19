@@ -36,7 +36,7 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
         public IEnumerator TestClientConnected()
         {
             // Client connects to the server
-            _client.Connect("localhost", Port);
+            _client.Connect("localhost");
 
             // Wait a bit to allow connection
             yield return new WaitForSeconds(1f);
@@ -48,7 +48,7 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
         [UnityTest]
         public IEnumerator TestClientDisconnected()
         {
-            _client.Connect("localhost", Port);
+            _client.Connect("localhost");
             yield return new WaitForSeconds(1f);
             
             _client.Disconnect();
@@ -60,7 +60,7 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
         public IEnumerator TestMessageClientToServer()
         {
             // Ensure client is connected
-            _client.Connect("localhost", Port);
+            _client.Connect("localhost");
             yield return new WaitForSeconds(1f);
         
             // Send a test message

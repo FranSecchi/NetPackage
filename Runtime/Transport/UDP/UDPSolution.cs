@@ -43,15 +43,15 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             StartThread();
         }
 
-        public void Connect(string address, int port)
+        public void Connect(string address)
         {
             if(_isServer)
             {
                 Debug.Log("[SERVER] Cannot connect to a client as a server.");
                 return;
             }
-            Debug.Log($"Connecting to: {address}:{port}");
-            Peer.Connect(address, port, "Net_Key");
+            Debug.Log($"Connecting to: {address}:{_port}");
+            Peer.Connect(address, _port, "Net_Key");
         }
 
         public void Disconnect()

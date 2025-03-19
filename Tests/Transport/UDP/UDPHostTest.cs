@@ -113,7 +113,25 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
                 clients[i].Disconnect();
             }
         }
-        
+
+        [UnityTest]
+        public IEnumerator TestKickClient()
+        {  
+            List<ITransport> clients = new List<ITransport>();
+            for (int i = 0; i < 5; i++)
+            {
+                ITransport client = new UDPSolution();
+                client.Setup(Port, false);
+                client.Start();
+                client.Connect("localhost");
+                clients.Add(client);
+                yield return new WaitForSeconds(0.5f);
+            }
+            _transport.Kick(2);
+            yield return new WaitForSeconds(0.5f);
+            
+            Assert.IsTrue(_connectedClients.Count == 4, "There should be 4 clients.");
+        }
         
         [TearDown]
         public void TearDown()

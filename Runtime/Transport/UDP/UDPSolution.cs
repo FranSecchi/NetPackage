@@ -66,6 +66,15 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             Peer.Stop();
         }
 
+        public void Kick(int id)
+        {
+            if (!_isServer) return;
+            if (_connectedClients.TryGetValue(id, out NetPeer peer))
+            {
+                peer.Disconnect();
+                Debug.Log($"[SERVER] Client {id} kicked.");
+            }
+        }
         public void Send(byte[] data)
         {
             if (_isServer)

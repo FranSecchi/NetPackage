@@ -150,8 +150,10 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         
         private void StartThread()
         {
-            _pollingThread = new Thread(PollNetwork);
-            _pollingThread.IsBackground = true; // Ensures it stops when Unity closes
+            _pollingThread = new Thread(PollNetwork)
+            {
+                IsBackground = true // Ensures it stops when Unity closes
+            };
             _pollingThread.Start();
         }
         private void PollNetwork()

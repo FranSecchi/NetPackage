@@ -23,6 +23,7 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
             if (_manager != null)
                 Destroy(this);
             else _manager = this;
+            Transport ??= new UDPSolution();
             DontDestroyOnLoad(this);
         }
         public void StartHost()
@@ -30,20 +31,18 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
             Transport.Setup(Port, true);
             NetHost.StartHost();
         }
+        public void StopHosting()
+        {
+            NetHost.Stop();
+        }
         public void StartClient()
         {
             Transport.Setup(Port, false);
             NetClient.Connect(address);
         }
-
         public void StopClient()
         {
             NetClient.Disconnect();
-        }
-
-        public void StopHosting()
-        {
-            NetHost.Stop();
         }
     }
 }

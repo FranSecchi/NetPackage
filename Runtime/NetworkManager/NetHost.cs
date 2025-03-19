@@ -18,8 +18,21 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
 
         public static void Stop()
         {
+            foreach (KeyValuePair<int, NetConn> client in Clients)
+            {
+                client.Value.Disconnect();
+            }
             NetManager.Transport.Disconnect();
             Clients.Clear();
+        }
+
+        public static void Kick(int id)
+        {
+            if (Clients.TryGetValue(id, out NetConn client))
+            {
+                client.Disconnect();
+                Clients.Remove(id);
+            }
         }
     }
 }

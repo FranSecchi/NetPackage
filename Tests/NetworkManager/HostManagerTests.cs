@@ -17,7 +17,6 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         public void SetUp()
         {
             _manager = new GameObject().AddComponent<NetManager>();
-            NetManager.SetTransport(new UDPSolution());
             _manager.address = "localhost";
             _port = 7777;
             NetManager.Port = _port;
@@ -38,7 +37,6 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
             
             Assert.IsTrue(result, "Server did not start correctly");
         }
-
         [UnityTest]
         public IEnumerator TestStopServer()
         {
@@ -51,6 +49,22 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
             yield return new WaitForSeconds(0.5f);
 
             _manager.StopHosting();
+            yield return new WaitForSeconds(0.5f);
+            
+            Assert.IsEmpty(NetHost.Clients, "Server did not stop correctly");
+        }
+        [UnityTest]
+        public IEnumerator TestKickPlayer()
+        {
+            _manager.StartHost();
+            yield return new WaitForSeconds(0.5f);
+            ITransport client = new UDPClient();
+            client.Setup(_port, false);
+            client.Start();
+            client.Connect("localhost");
+            yield return new WaitForSeconds(0.5f);
+
+            NetHost.Kick(NetHost.Clients.Keys.Count-1);
             yield return new WaitForSeconds(0.5f);
             
             Assert.IsEmpty(NetHost.Clients, "Server did not stop correctly");

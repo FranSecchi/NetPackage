@@ -7,10 +7,10 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
         public static NetConn Connection;
         public static void Connect(string address)
         {
-            NetManager.Transport.Start();
             Debug.Log("NetClient subscribed");
             NetManager.Transport.OnClientConnected += OnConnected;
             NetManager.Transport.OnClientDisconnected += OnDisconnected;
+            NetManager.Transport.Start();
             NetManager.Transport.Connect(address);
         }
 

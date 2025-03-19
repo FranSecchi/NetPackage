@@ -11,6 +11,7 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
     public class HostManagerTests
     {
         private NetManager _manager;
+        private int _port;
     
         [SetUp]
         public void SetUp()
@@ -18,6 +19,8 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
             _manager = new GameObject().AddComponent<NetManager>();
             NetManager.SetTransport(new UDPSolution());
             _manager.address = "localhost";
+            _port = 7777;
+            NetManager.Port = _port;
         }
         [UnityTest]
         public IEnumerator TestStartServer()
@@ -26,7 +29,7 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
             yield return new WaitForSeconds(0.5f);
         
             ITransport client = new UDPClient();
-            client.Setup(9050, false);
+            client.Setup(_port, false);
             client.Start();
             client.Connect("localhost");
             bool result = false;

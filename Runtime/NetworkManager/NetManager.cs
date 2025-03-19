@@ -9,9 +9,9 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
     {
         private static NetManager _manager;
         public static ITransport Transport;
+        public static int Port = 9050;
         
         public string address = "localhost";
-        private int Port { get; set; } = 9050;
 
         public static void SetTransport(ITransport transport)
         {

@@ -107,13 +107,13 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             {
                 Debug.Log("[SERVER] Client connected: " + peer.Address + ":" + peer.Port);
                 _connectedClients[peer.Id] = peer;
-                OnClientConnected?.Invoke(peer.Id);
             }
             else
             {
                 _server = peer;
                 Debug.Log($"[CLIENT] Connected to server: "+ peer.Address + ":" + peer.Port);
             }
+            OnClientConnected?.Invoke(peer.Id);
         }
 
         public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
@@ -122,12 +122,12 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             {
                 Debug.Log($"Client disconnected. Reason: {disconnectInfo.Reason}");
                 _connectedClients.Remove(peer.Id);
-                OnClientDisconnected?.Invoke(peer.Id);
             }
             else
             {
                 Debug.Log($"Disconnected from server. Reason: {disconnectInfo.Reason}");
             }
+            OnClientDisconnected?.Invoke(peer.Id);
         }
 
         public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)

@@ -5,9 +5,9 @@ using UnityEngine;
 
 namespace Transport.NetPackage.Runtime.Transport.UDP
 {
-    public class UDPHost : UDPPeer
+    public class AHost : APeer
     {
-        public UDPHost(int port) : base(port)
+        public AHost(int port) : base(port)
         {
         }
 

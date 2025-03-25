@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using UnityEngine;
 
@@ -5,22 +7,47 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
 {
     public class UDPSolution : ITransport
     {
-        private UDPPeer _udpPeer;
+        private APeer _aPeer;
         private Thread _pollingThread;
         private bool _isRunning;
         
         public bool IsHost;
 
-        
-        public void Setup(int port, bool isServer)
+        private LANDiscovery _lanDiscovery;
+        private LANBroadcast _lanBroadcaster;
+        private List<IPEndPoint> _lanServers;
+        public void Setup(int port, bool isServer, bool isBroadcast = false)
         {
-            _udpPeer = isServer ? new UDPHost(port) : new UDPClient(port);
+            _aPeer = isServer ? new AHost(port) : new AClient(port);
             IsHost = isServer;
+
+            if (isBroadcast) Discover();
+        }
+
+        private void Discover()
+        {
+            if (IsHost)
+            {
+                _lanBroadcaster = new LANBroadcast();
+                _lanBroadcaster.StartBroadcast();
+            }
+            else
+            {
+                _lanServers = new List<IPEndPoint>();
+                _lanDiscovery = new LANDiscovery();
+                _lanDiscovery.OnServerFound += address =>
+                {
+                    Debug.Log($"Found server at {address}");
+                    if(!_lanServers.Contains(address))
+                        _lanServers.Add(address);
+                };
+                _lanDiscovery.StartDiscovery();
+            }
         }
 
         public void Start()
         {
-            _udpPeer.Start();
+            _aPeer.Start();
             StartThread();
         }
 
@@ -32,7 +59,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
                 return;
             }
 
-            _udpPeer.Connect(address);
+            _aPeer.Connect(address);
         }
 
         public void Disconnect()
@@ -43,8 +70,10 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             {
                 _pollingThread.Join();
             }
-
-            _udpPeer.Stop();
+            _aPeer.Stop();
+            
+            _lanDiscovery?.StopDiscovery();
+            _lanBroadcaster?.StopBroadcast();
         }
 
         public void Kick(int id)
@@ -55,11 +84,11 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
                 return;
             }
 
-            _udpPeer.Kick(id);
+            _aPeer.Kick(id);
         }
         public void Send(byte[] data)
         {
-            _udpPeer.Send(data);
+            _aPeer.Send(data);
         }
 
         public void SendTo(int id, byte[] data)
@@ -69,14 +98,19 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
                 Debug.Log("[Client] Client cannot send data to other clients. Use ITransport.Sent instead.");
                 return;
             }
-            _udpPeer.SendTo(id, data);
+            _aPeer.SendTo(id, data);
         }
 
         public byte[] Receive()
         {
-            return _udpPeer.Receive();
+            return _aPeer.Receive();
         }
-        
+
+        public List<IPEndPoint> GetDiscoveredServers()
+        {
+            return new List<IPEndPoint>(_lanServers);
+        }
+
         private void StartThread()
         {
             _pollingThread = new Thread(PollNetwork)
@@ -90,7 +124,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             _isRunning = true;
             while (_isRunning)
             {
-                _udpPeer.Poll();
+                _aPeer.Poll();
                 Thread.Sleep(15); // Prevents excessive CPU usage
             }
         }

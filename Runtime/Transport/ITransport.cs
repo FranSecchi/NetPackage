@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Net;
 using JetBrains.Annotations;
 
 namespace Transport.NetPackage.Runtime.Transport
@@ -12,7 +14,7 @@ namespace Transport.NetPackage.Runtime.Transport
         [CanBeNull] static event Action<int> OnClientConnected;
         [CanBeNull] static event Action<int> OnClientDisconnected;
         [CanBeNull] static event Action OnDataReceived;
-        void Setup(int port, bool isServer);
+        void Setup(int port, bool isServer, bool isBroadcast = false);
         void Start();
         void Connect(string address);
         void Disconnect();
@@ -20,6 +22,7 @@ namespace Transport.NetPackage.Runtime.Transport
         void Send(byte[] data);
         void SendTo(int id, byte[] data);
         byte[] Receive();
+        List<IPEndPoint> GetDiscoveredServers();
 
         static void TriggerOnClientConnected(int id)
         {

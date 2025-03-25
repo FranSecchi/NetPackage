@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace Transport.NetPackage.Runtime.Transport.UDP
 {
-    public class UDPClient : UDPPeer
+    public class AClient : APeer
     {
-        public UDPClient(int port) : base(port)
+        public AClient(int port) : base(port)
         {
         }
 

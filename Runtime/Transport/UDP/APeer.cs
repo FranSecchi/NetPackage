@@ -7,14 +7,14 @@ using static Transport.NetPackage.Runtime.Transport.ITransport;
 
 namespace Transport.NetPackage.Runtime.Transport.UDP
 {
-    public abstract class UDPPeer : INetEventListener
+    public abstract class APeer : INetEventListener
     {
         protected readonly NetManager Peer;
         protected readonly int Port;
         private byte[] _lastPacket;
 
 
-        protected UDPPeer(int port)
+        protected APeer(int port)
         {
             Peer = new NetManager(this);
             Port = port;

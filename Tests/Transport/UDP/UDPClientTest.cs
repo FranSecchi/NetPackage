@@ -23,8 +23,8 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
             _server = new UDPSolution();
             _server.Setup(Port, true);
             _server.Start();
-            _server.OnClientConnected += OnClientConnected;
-            _server.OnClientDisconnected += OnClientDisconnected;
+            ITransport.OnClientConnected += OnClientConnected;
+            ITransport.OnClientDisconnected += OnClientDisconnected;
             // Create and start the client
             _client = new UDPSolution();
             _client.Setup(Port, false);

@@ -1,4 +1,5 @@
 using System;
+using JetBrains.Annotations;
 
 namespace Transport.NetPackage.Runtime.Transport
 {
@@ -8,9 +9,9 @@ namespace Transport.NetPackage.Runtime.Transport
     }
     public interface ITransport
     {
-        event Action<int> OnClientConnected;
-        event Action<int> OnClientDisconnected;
-        event Action OnDataReceived;
+        [CanBeNull] static event Action<int> OnClientConnected;
+        [CanBeNull] static event Action<int> OnClientDisconnected;
+        [CanBeNull] static event Action OnDataReceived;
         void Setup(int port, bool isServer);
         void Start();
         void Connect(string address);
@@ -19,5 +20,20 @@ namespace Transport.NetPackage.Runtime.Transport
         void Send(byte[] data);
         void SendTo(int id, byte[] data);
         byte[] Receive();
+
+        static void TriggerOnClientConnected(int id)
+        {
+            OnClientConnected?.Invoke(id);
+        }
+
+        static void TriggerOnClientDisconnected(int id)
+        {
+            OnClientDisconnected?.Invoke(id);
+        }
+
+        static void TriggerOnDataReceived()
+        {
+            OnDataReceived?.Invoke();
+        }
     }
 }

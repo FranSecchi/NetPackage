@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Transport.NetPackage.Runtime.Transport;
 using Transport.NetPackage.Runtime.Transport.UDP;
@@ -25,8 +26,8 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
             _transport = new UDPSolution();
             _transport.Setup(Port, true);
             _transport.Start();
-            _transport.OnClientConnected += OnClientConnected;
-            _transport.OnClientDisconnected += OnClientDisconnected;
+            ITransport.OnClientConnected += OnClientConnected;
+            ITransport.OnClientDisconnected += OnClientDisconnected;
             _connectedClients = new List<int>();
             
         }
@@ -66,14 +67,13 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
                 clients.Add(client);
                 yield return new WaitForSeconds(0.5f);
             }
-        
-            _transport.SendTo(_connectedClients[2], System.Text.Encoding.ASCII.GetBytes(TestMessage));
-        
-            yield return new WaitForSeconds(1f);
-        
-            string receivedMessage = System.Text.Encoding.ASCII.GetString(clients[2].Receive());
-            Assert.AreEqual(TestMessage, receivedMessage, "Message did not match.");
-            
+            for (int i = 0; i < 5; i++)
+            {
+                _transport.SendTo(_connectedClients[i], System.Text.Encoding.ASCII.GetBytes(TestMessage));
+                yield return new WaitForSeconds(1f);
+                string receivedMessage = System.Text.Encoding.ASCII.GetString(clients[i].Receive());
+                Assert.AreEqual(TestMessage, receivedMessage, "Message did not match.");
+            }
             for (int i = 0; i < 5; i++)
             {
                 clients[i].Disconnect();
@@ -141,11 +141,20 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
         
         private void OnClientConnected(int id)
         {
+            if (_connectedClients.Contains(id))
+            {
+                return;
+            }
             _connectedClients.Add(id);
         }
         private void OnClientDisconnected(int id)
         {
+            if (!_connectedClients.Contains(id))
+            {
+                return;
+            }
             _connectedClients.Remove(id);
+            Debug.Log(id + " disconnected." + _connectedClients.Count);
         }
     }
 }

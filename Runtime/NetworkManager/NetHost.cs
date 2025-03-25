@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Transport.NetPackage.Runtime.Transport;
 
 namespace NetworkManager.NetPackage.Runtime.NetworkManager
 {
@@ -8,7 +9,7 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
         public static void StartHost()
         {
             NetManager.Transport.Start();
-            NetManager.Transport.OnClientConnected += OnClientConnected;
+            ITransport.OnClientConnected += OnClientConnected;
         }
 
         private static void OnClientConnected(int id)

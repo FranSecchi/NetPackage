@@ -27,12 +27,12 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
             _manager.StartHost();
             yield return new WaitForSeconds(0.5f);
         
-            ITransport client = new UDPClient();
+            ITransport client = new UDPSolution();
             client.Setup(_port, false);
             client.Start();
             client.Connect("localhost");
             bool result = false;
-            client.OnClientConnected += i => result = true; 
+            ITransport.OnClientConnected += i => result = true; 
             yield return new WaitForSeconds(0.5f);
             
             Assert.IsTrue(result, "Server did not start correctly");
@@ -42,7 +42,7 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         {
             _manager.StartHost();
             yield return new WaitForSeconds(0.5f);
-            ITransport client = new UDPClient();
+            ITransport client = new UDPSolution();
             client.Setup(_port, false);
             client.Start();
             client.Connect("localhost");
@@ -58,7 +58,7 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         {
             _manager.StartHost();
             yield return new WaitForSeconds(0.5f);
-            ITransport client = new UDPClient();
+            ITransport client = new UDPSolution();
             client.Setup(_port, false);
             client.Start();
             client.Connect("localhost");

@@ -8,14 +8,14 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         private UDPPeer _udpPeer;
         private Thread _pollingThread;
         private bool _isRunning;
-        
-        public bool IsHost;
+
+        private bool _isHost;
 
         
         public void Setup(int port, bool isServer)
         {
             _udpPeer = isServer ? new UDPHost(port) : new UDPClient(port);
-            IsHost = isServer;
+            _isHost = isServer;
         }
 
         public void Start()
@@ -26,7 +26,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
 
         public void Connect(string address)
         {
-            if(IsHost)
+            if(_isHost)
             {
                 Debug.Log("[SERVER] Cannot connect to a client as a server.");
                 return;
@@ -49,7 +49,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
 
         public void Kick(int id)
         {
-            if (!IsHost) 
+            if (!_isHost) 
             {
                 Debug.Log("[Client] Client cannot kick other clients.");
                 return;
@@ -64,7 +64,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
 
         public void SendTo(int id, byte[] data)
         {
-            if (!IsHost) 
+            if (!_isHost) 
             {
                 Debug.Log("[Client] Client cannot send data to other clients. Use ITransport.Sent instead.");
                 return;

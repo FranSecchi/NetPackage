@@ -14,7 +14,6 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
 
         public void Disconnect()
         {
-            Debug.Log(_transport != null);
             _transport?.Kick(Id);
         }
     }

@@ -11,7 +11,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         private Thread _pollingThread;
         private bool _isRunning;
 
-        private bool _isHost;
+        public bool IsHost;
 
         private LANDiscovery _lanDiscovery;
         private LANBroadcast _lanBroadcaster;
@@ -53,7 +53,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
 
         public void Connect(string address)
         {
-            if(_isHost)
+            if(IsHost)
             {
                 Debug.Log("[SERVER] Cannot connect to a client as a server.");
                 return;
@@ -78,7 +78,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
 
         public void Kick(int id)
         {
-            if (!_isHost) 
+            if (!IsHost) 
             {
                 Debug.Log("[Client] Client cannot kick other clients.");
                 return;
@@ -93,7 +93,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
 
         public void SendTo(int id, byte[] data)
         {
-            if (!_isHost) 
+            if (!IsHost) 
             {
                 Debug.Log("[Client] Client cannot send data to other clients. Use ITransport.Sent instead.");
                 return;

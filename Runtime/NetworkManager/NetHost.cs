@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using Transport.NetPackage.Runtime.Transport;
+using UnityEngine;
 
 namespace NetworkManager.NetPackage.Runtime.NetworkManager
 {
-    public class NetHost
+    public static class NetHost
     {
-        public static readonly Dictionary<int, NetConn> Clients = new Dictionary<int, NetConn>();
+        public static Dictionary<int, NetConn> Clients = new Dictionary<int, NetConn>();
         public static void StartHost()
         {
             NetManager.Transport.Start();
@@ -14,7 +15,10 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
 
         private static void OnClientConnected(int id)
         {
-            Clients[id] = new NetConn(id);
+            if(!Clients.ContainsKey(id))
+            {
+                Clients.Add(id, new NetConn(id, true));
+            }
         }
 
         public static void Stop()
@@ -24,6 +28,7 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
                 client.Value.Disconnect();
             }
             NetManager.Transport.Disconnect();
+            ITransport.OnClientConnected -= OnClientConnected;
             Clients.Clear();
         }
 

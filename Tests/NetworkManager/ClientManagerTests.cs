@@ -12,6 +12,7 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
     {
         private NetManager _manager;
         private int _port;
+        private ITransport host;
         [SetUp]
         public void SetUp()
         {
@@ -20,13 +21,13 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
             _manager.address = "localhost";
             _port = 7777;
             NetManager.Port = _port;
+            host = new UDPSolution();
+            host.Setup(_port, true);
             
         }
         [UnityTest]
         public IEnumerator TestStartClient()
         {
-            ITransport host = new UDPSolution();
-            host.Setup(_port, true);
             host.Start();
             yield return new WaitForSeconds(0.5f);
 
@@ -39,8 +40,6 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         [UnityTest]
         public IEnumerator TestStopClient()
         {
-            ITransport host = new UDPSolution();
-            host.Setup(_port, true);
             host.Start();
             yield return new WaitForSeconds(0.5f);
 
@@ -56,6 +55,8 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         [TearDown]
         public void TearDown()
         {
+            _manager.StopClient();
+            host.Disconnect();
         }
     }
 }

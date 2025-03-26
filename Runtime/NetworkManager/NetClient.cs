@@ -3,11 +3,12 @@ using UnityEngine;
 
 namespace NetworkManager.NetPackage.Runtime.NetworkManager
 {
-    public class NetClient
+    public static class NetClient
     {
         public static NetConn Connection;
         public static void Connect(string address)
         {
+            if (Connection != null) return;
             ITransport.OnClientConnected += OnConnected;
             NetManager.Transport.Start();
             NetManager.Transport.Connect(address);
@@ -15,12 +16,13 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
         public static void Disconnect()
         {
             NetManager.Transport.Disconnect();
+            ITransport.OnClientConnected -= OnConnected;
             Connection = null;
         }
 
         private static void OnConnected(int id)
         {
-            Connection = new NetConn(id);
+            Connection = new NetConn(id, false);
         }
 
     }

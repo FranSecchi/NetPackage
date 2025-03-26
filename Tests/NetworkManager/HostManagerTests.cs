@@ -12,6 +12,7 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
     {
         private NetManager _manager;
         private int _port;
+        private ITransport client;
     
         [SetUp]
         public void SetUp()
@@ -20,20 +21,21 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
             _manager.address = "localhost";
             _port = 7777;
             NetManager.Port = _port;
+            
+            client = new UDPSolution();
+            client.Setup(_port, false);
+            client.Start();
         }
         [UnityTest]
         public IEnumerator TestStartServer()
         {
             _manager.StartHost();
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(1f);
         
-            ITransport client = new UDPSolution();
-            client.Setup(_port, false);
-            client.Start();
             client.Connect("localhost");
             bool result = false;
             ITransport.OnClientConnected += i => result = true; 
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(1f);
             
             Assert.IsTrue(result, "Server did not start correctly");
         }
@@ -41,15 +43,13 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         public IEnumerator TestStopServer()
         {
             _manager.StartHost();
-            yield return new WaitForSeconds(0.5f);
-            ITransport client = new UDPSolution();
-            client.Setup(_port, false);
-            client.Start();
+            yield return new WaitForSeconds(1f);
+            
             client.Connect("localhost");
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(1f);
 
             _manager.StopHosting();
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(1f);
             
             Assert.IsEmpty(NetHost.Clients, "Server did not stop correctly");
         }
@@ -57,21 +57,23 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         public IEnumerator TestKickPlayer()
         {
             _manager.StartHost();
-            yield return new WaitForSeconds(0.5f);
-            ITransport client = new UDPSolution();
-            client.Setup(_port, false);
-            client.Start();
-            client.Connect("localhost");
-            yield return new WaitForSeconds(0.5f);
-
-            NetHost.Kick(NetHost.Clients.Keys.Count-1);
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(1f);
             
-            Assert.IsEmpty(NetHost.Clients, "Server did not stop correctly");
+            Assert.IsTrue(NetHost.Clients.Keys.Count == 0, "Host did not start correctly: " + NetHost.Clients.Keys);
+            client.Connect("localhost");
+            yield return new WaitForSeconds(1f);
+            Assert.IsTrue(NetHost.Clients.Count == 1, "Host did not save connection correctly: " + NetHost.Clients.Count);
+            
+            NetHost.Kick(NetHost.Clients[0].Id);
+            yield return new WaitForSeconds(1f);
+            
+            Assert.IsEmpty(NetHost.Clients, "Host did not kick correctly");
         }
         [TearDown]
         public void TearDown()
         {
+            _manager.StopHosting();
+            client.Disconnect();
         }
     }
 }

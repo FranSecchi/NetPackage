@@ -5,11 +5,13 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
 {
     public class NetConn
     {
-        public readonly int Id;
+        public int Id { get; private set; }
+        public bool IsHost { get; private set; }
         private ITransport _transport = NetManager.Transport;
-        public NetConn(int id)
+        public NetConn(int id, bool isHost)
         {
             Id = id;
+            IsHost = isHost;
         }
 
         public void Disconnect()

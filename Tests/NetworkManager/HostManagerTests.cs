@@ -13,7 +13,7 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         private NetManager _manager;
         private int _port;
         private ITransport client;
-    
+        private System.Action<int> onClientConnectedHandler;
         [SetUp]
         public void SetUp()
         {
@@ -34,7 +34,10 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         
             client.Connect("localhost");
             bool result = false;
-            ITransport.OnClientConnected += i => result = true; 
+            onClientConnectedHandler = i => result = true; 
+
+            // Subscribe to the event
+            ITransport.OnClientConnected += onClientConnectedHandler;
             yield return new WaitForSeconds(1f);
             
             Assert.IsTrue(result, "Server did not start correctly");
@@ -72,8 +75,10 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         [TearDown]
         public void TearDown()
         {
+            ITransport.OnClientConnected -= onClientConnectedHandler;
             _manager.StopHosting();
             client.Disconnect();
         }
+        
     }
 }

@@ -18,6 +18,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         private List<IPEndPoint> _lanServers;
         public void Setup(int port, bool isServer, bool isBroadcast = false)
         {
+            if(_isRunning) Disconnect();
             _aPeer = isServer ? new AHost(port) : new AClient(port);
             IsHost = isServer;
 

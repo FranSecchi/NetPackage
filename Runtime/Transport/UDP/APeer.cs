@@ -72,6 +72,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
 
         public void Stop()
         {
+            Peer.DisconnectAll();
             Peer.Stop();
         }
 

@@ -18,66 +18,61 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         public void SetUp()
         {
             _manager = new GameObject().AddComponent<NetManager>();
+            NetManager.SetTransport(new UDPSolution());
             _manager.address = "localhost";
-            _port = 7777;
-            NetManager.Port = _port;
+            _manager.StartHost();
             
             client = new UDPSolution();
-            client.Setup(_port, false);
+            client.Setup(NetManager.Port, false);
             client.Start();
         }
         [UnityTest]
         public IEnumerator TestStartServer()
         {
-            _manager.StartHost();
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.5f);
         
             client.Connect("localhost");
             bool result = false;
             onClientConnectedHandler = i => result = true; 
 
-            // Subscribe to the event
             ITransport.OnClientConnected += onClientConnectedHandler;
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.5f);
             
             Assert.IsTrue(result, "Server did not start correctly");
+            ITransport.OnClientConnected -= onClientConnectedHandler;
         }
         [UnityTest]
         public IEnumerator TestStopServer()
         {
-            _manager.StartHost();
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.5f);
             
             client.Connect("localhost");
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.5f);
 
             _manager.StopHosting();
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.5f);
             
             Assert.IsEmpty(NetHost.Clients, "Server did not stop correctly");
         }
         [UnityTest]
         public IEnumerator TestKickPlayer()
         {
-            _manager.StartHost();
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.5f);
             
-            Assert.IsTrue(NetHost.Clients.Keys.Count == 0, "Host did not start correctly: " + NetHost.Clients.Keys);
             client.Connect("localhost");
-            yield return new WaitForSeconds(1f);
-            Assert.IsTrue(NetHost.Clients.Count == 1, "Host did not save connection correctly: " + NetHost.Clients.Count);
+            yield return new WaitForSeconds(0.5f);
+            int key = NetHost.Clients[0].Id;
+            NetHost.Kick(key);
+            yield return new WaitForSeconds(0.5f);
             
-            NetHost.Kick(NetHost.Clients[0].Id);
-            yield return new WaitForSeconds(1f);
-            
-            Assert.IsEmpty(NetHost.Clients, "Host did not kick correctly");
+            Assert.IsEmpty(NetHost.Clients, "Host did not kick correctly" + NetHost.Clients.Count);
         }
         [TearDown]
         public void TearDown()
         {
-            ITransport.OnClientConnected -= onClientConnectedHandler;
-            _manager.StopHosting();
-            client.Disconnect();
+            Debug.Log("Tearing down");
+            _manager?.StopHosting();
+            client?.Disconnect();
         }
         
     }

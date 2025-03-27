@@ -7,6 +7,7 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
     public static class NetHost
     {
         public static Dictionary<int, NetConn> Clients = new Dictionary<int, NetConn>();
+        private static readonly object Lock = new object();
         public static void StartHost()
         {
             NetManager.Transport.Start();
@@ -15,9 +16,16 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
 
         private static void OnClientConnected(int id)
         {
-            if(!Clients.ContainsKey(id))
+            lock (Lock) // Ensure thread safety
             {
-                Clients.Add(id, new NetConn(id, true));
+                if (Clients.TryAdd(id, new NetConn(id, true))) // Thread-safe add
+                {
+                    Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
+                }
+                else
+                {
+                    Debug.LogWarning($"Duplicate connection detected for ID {id}.");
+                }
             }
         }
 

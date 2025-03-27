@@ -12,7 +12,7 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
         public static int Port = 9050;
         
         public string address = "localhost";
-
+        
         public static void SetTransport(ITransport transport)
         {
             Transport = transport;

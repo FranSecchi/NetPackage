@@ -28,6 +28,7 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         [UnityTest]
         public IEnumerator TestStartClient()
         {
+            yield return new WaitForSeconds(0.5f);
             host.Start();
             yield return new WaitForSeconds(0.5f);
 
@@ -40,6 +41,7 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         [UnityTest]
         public IEnumerator TestStopClient()
         {
+            yield return new WaitForSeconds(0.5f);
             host.Start();
             yield return new WaitForSeconds(0.5f);
 
@@ -55,8 +57,8 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         [TearDown]
         public void TearDown()
         {
-            _manager.StopClient();
-            host.Disconnect();
+            _manager?.StopClient();
+            host?.Disconnect();
         }
     }
 }

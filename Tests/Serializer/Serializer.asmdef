@@ -11,8 +11,16 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
+        "nunit.framework.dll",
         "MessagePack.dll",
-        "nunit.framework.dll"
+        "MessagePack.Analyzers.CodeFixes.dll",
+        "MessagePack.Annotations.dll",
+        "Microsoft.Bcl.AsyncInterfaces.dll",
+        "MessagePack.SourceGenerator.dll",
+        "Microsoft.NET.StringTools.dll",
+        "System.Runtime.CompilerServices.Unsafe.dll",
+        "System.Collections.Immutable.dll",
+        "ReportGeneratorMerged.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [],

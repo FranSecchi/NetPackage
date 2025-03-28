@@ -1,3 +1,4 @@
+
 using MessagePack;
 
 namespace Serializer.NetPackage.Runtime.Serializer

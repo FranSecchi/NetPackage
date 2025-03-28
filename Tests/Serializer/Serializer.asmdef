@@ -1,0 +1,21 @@
+{
+    "name": "SerializerTest",
+    "rootNamespace": "SerializerTest",
+    "references": [
+        "Tests",
+        "UnityEngine.TestRunner",
+        "Serializer"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "MessagePack.dll",
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

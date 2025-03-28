@@ -13,7 +13,7 @@ namespace SerializerTest.NetPackage.Tests.Serializer
         [SetUp]
         public void Setup()
         {
-            
+            NetSerializer._Serializer = new MPSerializer();
         }
 
         [Test]

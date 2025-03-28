@@ -13,14 +13,8 @@
     "precompiledReferences": [
         "nunit.framework.dll",
         "MessagePack.dll",
-        "MessagePack.Analyzers.CodeFixes.dll",
-        "MessagePack.Annotations.dll",
         "Microsoft.Bcl.AsyncInterfaces.dll",
-        "MessagePack.SourceGenerator.dll",
-        "Microsoft.NET.StringTools.dll",
-        "System.Runtime.CompilerServices.Unsafe.dll",
-        "System.Collections.Immutable.dll",
-        "ReportGeneratorMerged.dll"
+        "MessagePack.Annotations.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [],

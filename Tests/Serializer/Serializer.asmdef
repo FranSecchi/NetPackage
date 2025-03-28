@@ -4,7 +4,9 @@
     "references": [
         "Tests",
         "UnityEngine.TestRunner",
-        "Serializer"
+        "Serializer",
+        "NetworkManager",
+        "Transport"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

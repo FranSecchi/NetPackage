@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using MessagePack;
 using NetworkManager.NetPackage.Runtime.NetworkManager;
 using NUnit.Framework;
@@ -15,13 +16,150 @@ namespace SerializerTest.NetPackage.Tests.Serializer
     {
         private NetManager _manager;
         private List<ITransport> _clients;
+        private TestMsg received;
         [SetUp]
         public void Setup()
         {
             _manager = new GameObject().AddComponent<NetManager>();
             NetManager.SetTransport(new UDPSolution());
             _manager.address = "localhost";
-            _manager.StartHost();
+            received = null;
+        }
+
+
+
+        [UnityTest]
+        public IEnumerator Server_SendMsg()
+        {
+            yield return new WaitForSeconds(0.5f);
+            StartHost();
+            yield return new WaitForSeconds(0.5f);
+            yield return ConnectClients();
+            
+            TestMsg testMsg = new TestMsg(null, 34, "Hello World");
+            
+            Messager.RegisterHandler<TestMsg>(OnReceived);
+            NetManager.Send(testMsg);
+            yield return new WaitForSeconds(0.5f);
+            
+            foreach (ITransport client in _clients)
+            {
+                byte[] data = client.Receive();
+                Assert.IsNotNull(data);
+                Messager.HandleMessage(data);
+            }
+            
+            Assert.IsNotNull(received, "Received message is null");
+            Assert.IsTrue(testMsg.ObjectID == received.ObjectID, "Object ID is incorrect");
+            Assert.IsTrue(testMsg.msg.Equals(received.msg), "Object ID is incorrect");
+        }
+        [UnityTest]
+        public IEnumerator Server_ReceiveMsg()
+        {
+            yield return new WaitForSeconds(0.5f);
+            StartHost();
+            yield return new WaitForSeconds(0.5f);
+            
+            Messager.RegisterHandler<TestMsg>(OnReceived);
+            yield return ConnectClients();
+            yield return new WaitForSeconds(0.5f);
+            
+            TestMsg testMsg = new TestMsg(null, 34, "Hello World");
+            byte[] data = NetSerializer.Serialize((NetMessage) testMsg);
+            foreach (ITransport client in _clients)
+            {
+                client.Send(data);
+            }
+            yield return new WaitForSeconds(0.5f);
+            
+            Assert.IsNotNull(received, "Received message is null");
+            Assert.IsTrue(testMsg.ObjectID == received.ObjectID, "Object ID is incorrect");
+            Assert.IsTrue(testMsg.msg.Equals(received.msg), "Object ID is incorrect");
+        }
+        [UnityTest]
+        public IEnumerator Client_SendMsg()
+        {
+            yield return new WaitForSeconds(0.5f);
+            StartClient();
+            yield return new WaitForSeconds(0.5f);
+            
+            TestMsg testMsg = new TestMsg(null, 34, "Hello World");
+            
+            Messager.RegisterHandler<TestMsg>(OnReceived);
+            NetManager.Send(testMsg);
+            yield return new WaitForSeconds(0.5f);
+            
+            foreach (ITransport client in _clients)
+            {
+                byte[] data = client.Receive();
+                Assert.IsNotNull(data);
+                Messager.HandleMessage(data);
+            }
+            
+            Assert.IsNotNull(received, "Received message is null");
+            Assert.IsTrue(testMsg.ObjectID == received.ObjectID, "Object ID is incorrect");
+            Assert.IsTrue(testMsg.msg.Equals(received.msg), "Object ID is incorrect");
+        }
+        [UnityTest]
+        public IEnumerator Client_ReceiveMsg()
+        {
+            yield return new WaitForSeconds(0.5f);
+            StartClient();
+            yield return new WaitForSeconds(0.5f);
+            
+            Messager.RegisterHandler<TestMsg>(OnReceived);
+            
+            TestMsg testMsg = new TestMsg(null, 34, "Hello World");
+            byte[] data = NetSerializer.Serialize((NetMessage) testMsg);
+            foreach (ITransport client in _clients)
+            {
+                client.Send(data);
+            }
+            yield return new WaitForSeconds(0.5f);
+            
+            Assert.IsNotNull(received, "Received message is null");
+            Assert.IsTrue(testMsg.ObjectID == received.ObjectID, "Object ID is incorrect");
+            Assert.IsTrue(testMsg.msg.Equals(received.msg), "Object ID is incorrect");
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            NetManager.StopHosting();
+            NetManager.StopClient();
+    
+            if (_clients != null)
+            {
+                foreach (ITransport client in _clients)
+                {
+                    client.Disconnect(); 
+                }
+                _clients.Clear(); 
+            }
+
+    
+            _clients = new List<ITransport>();
+            received = null;
+
+        }
+        private void OnReceived(TestMsg obj)
+        {
+            received = obj;
+        }
+
+        private void StartClient()
+        {
+            _clients = new List<ITransport>();
+            ITransport server = new UDPSolution();
+            server.Setup(NetManager.Port, true);
+            server.Start();
+            _clients.Add(server);
+            NetManager.StartClient();
+        }
+
+        private void StartHost()
+        {
+            NetManager.StartHost();
             _clients = new List<ITransport>();
             for (int i = 0; i < 5; i++)
             {
@@ -30,37 +168,25 @@ namespace SerializerTest.NetPackage.Tests.Serializer
                 client.Start();
                 _clients.Add(client);
             }
-
-        }
-
-
-        [UnityTest]
-        public IEnumerator SendNetworkMessageTest()
-        {
-            ConnectClients();
-            NetMessage netMessage = new TestMessage(20, "Hello World");
-            yield break;
         }
         private IEnumerator ConnectClients()
         {
+            yield return new WaitForSeconds(0.5f);
             foreach (ITransport client in _clients)
             {
                 client.Connect(_manager.address);
-                yield return new WaitForSeconds(0.2f);
+                yield return new WaitForSeconds(0.5f);
             }
         }
     }
-    
-    public class TestMessage : NetMessage
+
+    public class TestMsg : NetMessage
     {
-        [Key(0)] public int health;
-        [Key(1)] public string msg;
+        [Key(2)] public string msg;
 
-        public TestMessage() { }
-
-        public TestMessage(int health, string msg)
+        public TestMsg(){}
+        public TestMsg(List<int> s, int i, string msg) : base(i, s)
         {
-            this.health = health;
             this.msg = msg;
         }
     }

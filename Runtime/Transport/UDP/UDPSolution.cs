@@ -96,7 +96,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         {
             if (!IsHost) 
             {
-                Debug.Log("[Client] Client cannot send data to other clients. Use ITransport.Sent instead.");
+                Debug.Log("[Client] Client cannot send data to other clients. Use ITransport.Send instead.");
                 return;
             }
             _aPeer.SendTo(id, data);

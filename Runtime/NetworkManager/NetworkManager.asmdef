@@ -3,7 +3,8 @@
     "rootNamespace": "NetworkManager",
     "references": [
         "GUID:2624d5b30ae68cb458c788b775d3ff95",
-        "GUID:c86c06357137b3644913980a4df0ec93"
+        "GUID:c86c06357137b3644913980a4df0ec93",
+        "GUID:87f04dc89cdba054e856636de9e4b87f"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

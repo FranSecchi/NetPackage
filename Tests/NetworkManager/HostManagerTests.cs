@@ -10,17 +10,16 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
 {
     public class HostManagerTests
     {
-        private NetManager _manager;
         private int _port;
         private ITransport client;
         private System.Action<int> onClientConnectedHandler;
         [SetUp]
         public void SetUp()
         {
-            _manager = new GameObject().AddComponent<NetManager>();
+            NetManager _manager = new GameObject().AddComponent<NetManager>();
             NetManager.SetTransport(new UDPSolution());
             _manager.address = "localhost";
-            _manager.StartHost();
+            NetManager.StartHost();
             
             client = new UDPSolution();
             client.Setup(NetManager.Port, false);
@@ -49,7 +48,7 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
             client.Connect("localhost");
             yield return new WaitForSeconds(0.5f);
 
-            _manager.StopHosting();
+            NetManager.StopHosting();
             yield return new WaitForSeconds(0.5f);
             
             Assert.IsEmpty(NetHost.Clients, "Server did not stop correctly");
@@ -71,7 +70,7 @@ namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
         public void TearDown()
         {
             Debug.Log("Tearing down");
-            _manager?.StopHosting();
+            NetManager.StopHosting();
             client?.Disconnect();
         }
         

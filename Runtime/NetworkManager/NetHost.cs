@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using Serializer.NetPackage.Runtime.Serializer;
 using Transport.NetPackage.Runtime.Transport;
 using UnityEngine;
 
@@ -14,6 +17,7 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
             ITransport.OnClientConnected += OnClientConnected;
         }
 
+
         private static void OnClientConnected(int id)
         {
             lock (Lock) // Ensure thread safety
@@ -21,10 +25,6 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
                 if (Clients.TryAdd(id, new NetConn(id, true))) // Thread-safe add
                 {
                     Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
-                }
-                else
-                {
-                    Debug.LogWarning($"Duplicate connection detected for ID {id}.");
                 }
             }
         }
@@ -46,6 +46,25 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
             {
                 client.Disconnect();
                 Clients.Remove(id);
+            }
+        }
+
+        public static void Send(NetMessage netMessage)
+        {
+            if (netMessage.target == null)
+            {
+                foreach (int client in Clients.Keys)
+                {
+                    Clients[client].Send(netMessage);
+                }
+            }
+            else
+            {
+                foreach (KeyValuePair<int, NetConn> client in Clients)
+                {
+                    if(netMessage.target.Contains(client.Key))
+                        client.Value.Send(netMessage);
+                }
             }
         }
     }

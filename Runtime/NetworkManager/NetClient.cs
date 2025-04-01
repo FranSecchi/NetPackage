@@ -1,3 +1,4 @@
+using Serializer.NetPackage.Runtime.Serializer;
 using Transport.NetPackage.Runtime.Transport;
 using UnityEngine;
 
@@ -25,5 +26,9 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
             Connection = new NetConn(id, false);
         }
 
+        public static void Send(NetMessage netMessage)
+        {
+            NetManager.Transport.Send(NetSerializer.Serialize(netMessage));
+        }
     }
 }

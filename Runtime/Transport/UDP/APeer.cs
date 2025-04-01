@@ -47,7 +47,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         {
             Debug.Log("Data received from peer " + peer.Address + "|" + peer.Port + ":" + peer.Id);
             _lastPacket = reader.GetRemainingBytes();
-            TriggerOnDataReceived();
+            TriggerOnDataReceived(peer.Id);
             reader.Recycle();
         }
 

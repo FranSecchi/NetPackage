@@ -13,7 +13,7 @@ namespace Transport.NetPackage.Runtime.Transport
     {
         [CanBeNull] static event Action<int> OnClientConnected;
         [CanBeNull] static event Action<int> OnClientDisconnected;
-        [CanBeNull] static event Action OnDataReceived;
+        [CanBeNull] static event Action<int> OnDataReceived;
         void Setup(int port, bool isServer, bool isBroadcast = false);
         void Start();
         void Connect(string address);
@@ -34,9 +34,9 @@ namespace Transport.NetPackage.Runtime.Transport
             OnClientDisconnected?.Invoke(id);
         }
 
-        static void TriggerOnDataReceived()
+        static void TriggerOnDataReceived(int id)
         {
-            OnDataReceived?.Invoke();
+            OnDataReceived?.Invoke(id);
         }
     }
 }

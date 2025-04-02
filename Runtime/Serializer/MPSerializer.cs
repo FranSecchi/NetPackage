@@ -1,0 +1,35 @@
+using System;
+using MessagePack;
+using UnityEngine;
+
+namespace Serializer.NetPackage.Runtime.Serializer
+{
+    public class MPSerializer : ISerialize
+    {
+        private MessagePackSerializerOptions options;
+
+        public MPSerializer()
+        {
+            options = MessagePackSerializerOptions.Standard.WithResolver(
+                MessagePack.Resolvers.CompositeResolver.Create(
+                    MessagePack.Resolvers.StandardResolver.Instance, 
+                    MessagePack.Resolvers.TypelessObjectResolver.Instance // Enables `object` serialization
+                )
+            );
+        }
+        public byte[] Serialize<T>(T data)
+        {
+            return MessagePackSerializer.Serialize(data, options);
+        }
+
+        // Generic method to deserialize any object
+        public T Deserialize<T>(byte[] data)
+        {
+            if (data == null || data.Length == 0)
+            {
+                throw new ArgumentException("Cannot deserialize: input data is null or empty.");
+            }
+            return MessagePackSerializer.Deserialize<T>(data, options);
+        }
+    }
+}

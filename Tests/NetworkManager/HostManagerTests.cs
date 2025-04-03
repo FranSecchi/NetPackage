@@ -11,7 +11,6 @@ namespace NetworkManagerTest
     public class HostManagerTests
     {
         private int _port;
-        private ITransport client;
         private System.Action<int> onClientConnectedHandler;
         [SetUp]
         public void SetUp()
@@ -21,16 +20,15 @@ namespace NetworkManagerTest
             _manager.address = "localhost";
             NetManager.StartHost();
             
-            client = new UDPSolution();
-            client.Setup(NetManager.Port, false);
-            client.Start();
+            NetManagerTest _client = new GameObject().AddComponent<NetManagerTest>();
+            NetManagerTest.SetTransport(new UDPSolution());
+            _client.address = "localhost";
         }
         [UnityTest]
         public IEnumerator TestStartServer()
         {
             yield return new WaitForSeconds(0.5f);
-        
-            client.Connect("localhost");
+            NetManagerTest.StartClient();
             bool result = false;
             onClientConnectedHandler = i => result = true; 
 
@@ -38,6 +36,7 @@ namespace NetworkManagerTest
             yield return new WaitForSeconds(0.5f);
             
             Assert.IsTrue(result, "Server did not start correctly");
+            Assert.IsTrue(NetManager.allPlayers.Count == 2, "Server did not add one player");
             ITransport.OnClientConnected -= onClientConnectedHandler;
         }
         [UnityTest]
@@ -45,33 +44,53 @@ namespace NetworkManagerTest
         {
             yield return new WaitForSeconds(0.5f);
             
-            client.Connect("localhost");
+            NetManagerTest.StartClient();
             yield return new WaitForSeconds(0.5f);
 
             NetManager.StopHosting();
             yield return new WaitForSeconds(0.5f);
             
-            Assert.IsEmpty(NetHost.Clients, "Server did not stop correctly");
+            Assert.IsTrue(NetManager.allPlayers.Count == 0, "Server did not stop correctly");
         }
         [UnityTest]
         public IEnumerator TestKickPlayer()
         {
             yield return new WaitForSeconds(0.5f);
             
-            client.Connect("localhost");
+            NetManagerTest.StartClient();
             yield return new WaitForSeconds(0.5f);
-            int key = NetHost.Clients[0].Id;
+            int key = NetManager.allPlayers[1];
             NetHost.Kick(key);
             yield return new WaitForSeconds(0.5f);
             
-            Assert.IsEmpty(NetHost.Clients, "Host did not kick correctly" + NetHost.Clients.Count);
+            Assert.IsTrue(NetManager.allPlayers.Count == 1, "Server did not kick correctly " + NetManager.allPlayers.Count);
+        }
+        [UnityTest]
+        public IEnumerator TestMultipleClients()
+        {
+            yield return new WaitForSeconds(0.2f);
+            NetManagerTest.StartClient();
+            for (int i = 0; i < 3; i++)
+            {
+                yield return new WaitForSeconds(0.2f);
+                ITransport client = new UDPSolution();
+                client.Setup(NetManager.Port, false);
+                client.Start();
+                yield return new WaitForSeconds(0.2f);
+                client.Connect("localhost");
+            }
+            yield return new WaitForSeconds(0.2f);
+            
+            
+            Assert.IsTrue(NetManager.allPlayers.Count == 5, "Server did not add 5 players");
+            Assert.IsTrue(NetManager.allPlayers.Contains(3), "Server did not add correctly");
         }
         [TearDown]
         public void TearDown()
         {
             Debug.Log("Tearing down");
             NetManager.StopHosting();
-            client?.Disconnect();
+            NetManagerTest.StopClient();
         }
         
     }

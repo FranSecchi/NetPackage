@@ -6,14 +6,14 @@ namespace Serializer.NetPackage.Runtime.Serializer
     [MessagePackObject]
     public class SyncMessage : NetMessage
     {
-        [Key(2)] public int ComponentId;
-        [Key(3)] public Dictionary<string, object> changedValues; // Changed variables
+        [Key(1)]public int ObjectID;
+        [Key(2)] public Dictionary<string, object> changedValues; // Changed variables
 
         public SyncMessage(){}
-        public SyncMessage(int objectID, int componentId, Dictionary<string, object> changes, List<int> target = null) : base(objectID, target)
+        public SyncMessage(List<int> target, int objectID, Dictionary<string, object> changes) : base(target)
         {
-            changedValues = changes;
-            ComponentId = componentId;
+            this.ObjectID = objectID;
+            this.changedValues = changes;
         }
     }
 }

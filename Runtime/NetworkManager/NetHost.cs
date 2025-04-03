@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
 using NetworkManager.NetPackage.Runtime.NetworkManager;
+using Serializer;
 using Serializer.NetPackage.Runtime.Serializer;
 using Synchronization.NetPackage.Runtime.Synchronization;
 using Transport.NetPackage.Runtime.Transport;
@@ -14,11 +16,23 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
         public static void StartHost()
         {
             NetManager.Transport.Start();
-            ITransport.OnClientConnected += OnClientConnected;
-            Messager.RegisterHandler<SyncMessage>(OnSyncMessage);
+            NetManager.allPlayers.Add(-1);
+            ITransport.OnClientConnected += OnClientConnected;;
+            ITransport.OnClientDisconnected += OnClientDisconnected;
         }
 
-        
+        private static void OnClientDisconnected(int id)
+        {
+            Debug.Log($"Client d");
+            lock (Lock) // Ensure thread safety
+            {
+                Debug.Log($"Client d1");
+                Clients.Remove(id);
+                Debug.Log($"Client {id} disconnected. Clients count: {Clients.Count}");
+                NetManager.allPlayers.Remove(id);
+                UpdatePlayers(id);
+            }
+        }
 
 
         private static void OnClientConnected(int id)
@@ -28,8 +42,16 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
                 if (Clients.TryAdd(id, new NetConn(id, true))) // Thread-safe add
                 {
                     Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
+                    NetManager.allPlayers.Add(id);
+                    UpdatePlayers(id);
                 }
             }
+        }
+
+        private static void UpdatePlayers(int id)
+        {
+            NetMessage msg = new ConnMessage(null, id, NetManager.allPlayers);
+            Send(msg);
         }
 
         public static void Stop()
@@ -40,6 +62,7 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             }
             NetManager.Transport.Disconnect();
             ITransport.OnClientConnected -= OnClientConnected;
+            ITransport.OnClientDisconnected -= OnClientDisconnected;
             Clients.Clear();
         }
 

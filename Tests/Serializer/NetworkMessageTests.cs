@@ -183,11 +183,13 @@ namespace SerializerTest
 
     public class TestMsg : NetMessage
     {
+        [Key(1)] public int ObjectID;
         [Key(2)] public string msg;
 
         public TestMsg(){}
-        public TestMsg(List<int> s, int i, string msg) : base(i, s)
+        public TestMsg(List<int> s, int i, string msg) : base(s)
         {
+            ObjectID = i;
             this.msg = msg;
         }
     }

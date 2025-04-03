@@ -53,10 +53,10 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
         [TearDown]
         public void TearDown()
         {
-            _client.Disconnect();
+            _client.Stop();
             foreach (var server in _servers)
             {
-                server.Disconnect();
+                server.Stop();
             }
         }
     }

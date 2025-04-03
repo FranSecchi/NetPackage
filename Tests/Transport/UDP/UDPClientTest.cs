@@ -79,8 +79,8 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
         [TearDown]
         public void TearDown()
         {
-            _server?.Disconnect();
-            _client?.Disconnect();
+            _server?.Stop();
+            _client?.Stop();
         }
         
         private void OnClientConnected(int id)

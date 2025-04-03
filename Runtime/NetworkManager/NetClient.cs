@@ -19,7 +19,7 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
         }
         public static void Disconnect()
         {
-            NetManager.Transport.Disconnect();
+            NetManager.Transport.Stop();
             Connection = null;
         }
 

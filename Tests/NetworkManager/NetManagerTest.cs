@@ -94,7 +94,7 @@ namespace NetworkManagerTest
         }
         public static void Disconnect()
         {
-            NetManagerTest.Transport.Disconnect();
+            NetManagerTest.Transport.Stop();
             Connection = null;
         }
 
@@ -156,7 +156,7 @@ namespace NetworkManagerTest
             {
                 client.Value.Disconnect();
             }
-            NetManagerTest.Transport.Disconnect();
+            NetManagerTest.Transport.Stop();
             ITransport.OnClientConnected -= OnClientConnected;
             ITransport.OnClientDisconnected -= OnClientDisconnected;
             Clients.Clear();

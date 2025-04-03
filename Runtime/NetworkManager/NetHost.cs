@@ -59,7 +59,7 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             {
                 client.Value.Disconnect();
             }
-            NetManager.Transport.Disconnect();
+            NetManager.Transport.Stop();
             ITransport.OnClientConnected -= OnClientConnected;
             ITransport.OnClientDisconnected -= OnClientDisconnected;
             Clients.Clear();

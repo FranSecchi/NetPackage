@@ -7,7 +7,7 @@ using Transport.NetPackage.Runtime.Transport;
 using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
-namespace TransportTest.NetPackage.Tests.Transport.UDP
+namespace TransportTest
 {
     public class UDPLanTest
     {

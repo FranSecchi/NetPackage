@@ -4,13 +4,14 @@ using System.Reflection;
 using MessagePack;
 using NetworkManager.NetPackage.Runtime.NetworkManager;
 using NUnit.Framework;
+using Runtime.NetPackage.Runtime.NetworkManager;
 using Serializer.NetPackage.Runtime.Serializer;
 using Transport.NetPackage.Runtime.Transport;
 using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace SerializerTest.NetPackage.Tests.Serializer
+namespace SerializerTest
 {
     public class NetworkMessageTests
     {

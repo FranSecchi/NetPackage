@@ -1,11 +1,10 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
+using NetworkManager.NetPackage.Runtime.NetworkManager;
 using Serializer.NetPackage.Runtime.Serializer;
 using Transport.NetPackage.Runtime.Transport;
 using UnityEngine;
 
-namespace NetworkManager.NetPackage.Runtime.NetworkManager
+namespace Runtime.NetPackage.Runtime.NetworkManager
 {
     public static class NetHost
     {
@@ -16,8 +15,8 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
             NetManager.Transport.Start();
             ITransport.OnClientConnected += OnClientConnected;
         }
-
-
+        
+        
         private static void OnClientConnected(int id)
         {
             lock (Lock) // Ensure thread safety

@@ -27,6 +27,11 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         public abstract void OnPeerConnected(NetPeer peer);
         public abstract void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo);
         public abstract void Send(byte[] data);
+        public void Disconnect()
+        {
+            Debug.Log($"All Peers disconnected");
+            Peer.DisconnectAll();
+        }
         public void SendTo(int id, byte[] data)
         {
             if (!Peer.TryGetPeerById(id, out NetPeer peer)) return;

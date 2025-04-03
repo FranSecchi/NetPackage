@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using NetworkManager.NetPackage.Runtime.NetworkManager;
 using Serializer.NetPackage.Runtime.Serializer;
+using Synchronization.NetPackage.Runtime.Synchronization;
 using Transport.NetPackage.Runtime.Transport;
 using UnityEngine;
 
@@ -14,9 +15,12 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
         {
             NetManager.Transport.Start();
             ITransport.OnClientConnected += OnClientConnected;
+            Messager.RegisterHandler<SyncMessage>(OnSyncMessage);
         }
+
         
-        
+
+
         private static void OnClientConnected(int id)
         {
             lock (Lock) // Ensure thread safety
@@ -65,6 +69,10 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
                         client.Value.Send(netMessage);
                 }
             }
+        }
+        private static void OnSyncMessage(SyncMessage obj)
+        {
+            StateManager.SetSync(obj);
         }
     }
 }

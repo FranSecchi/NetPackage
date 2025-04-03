@@ -136,7 +136,7 @@ namespace TransportTest
         [TearDown]
         public void TearDown()
         {
-            _transport?.Disconnect();
+            _transport?.Stop();
         }
         
         private void OnClientConnected(int id)

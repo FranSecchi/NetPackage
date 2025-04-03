@@ -52,6 +52,20 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             StartThread();
         }
 
+        public void Stop()
+        {
+            _isRunning = false;
+
+            if (_pollingThread != null && _pollingThread.IsAlive)
+            {
+                _pollingThread.Join();
+            }
+            _aPeer.Stop();
+            
+            _lanDiscovery?.StopDiscovery();
+            _lanBroadcaster?.StopBroadcast();
+        }
+
         public void Connect(string address)
         {
             if(IsHost)
@@ -65,16 +79,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
 
         public void Disconnect()
         {
-            _isRunning = false;
-
-            if (_pollingThread != null && _pollingThread.IsAlive)
-            {
-                _pollingThread.Join();
-            }
-            _aPeer.Stop();
-            
-            _lanDiscovery?.StopDiscovery();
-            _lanBroadcaster?.StopBroadcast();
+            _aPeer.Disconnect();
         }
 
         public void Kick(int id)

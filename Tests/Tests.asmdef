@@ -2,14 +2,21 @@
     "name": "Tests",
     "rootNamespace": "Tests",
     "references": [
-        "GUID:2624d5b30ae68cb458c788b775d3ff95"
+        "GUID:2624d5b30ae68cb458c788b775d3ff95",
+        "GUID:87f04dc89cdba054e856636de9e4b87f",
+        "GUID:c86c06357137b3644913980a4df0ec93",
+        "GUID:27619889b8ba8c24980f49ee34dbb44a"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
+    "overrideReferences": true,
     "precompiledReferences": [
-        "nunit.framework.dll"
+        "nunit.framework.dll",
+        "LiteNetLib.dll",
+        "MessagePack.dll",
+        "Microsoft.Bcl.AsyncInterfaces.dll",
+        "MessagePack.Annotations.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [],

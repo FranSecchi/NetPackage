@@ -1,12 +1,13 @@
 using System.Collections;
 using NetworkManager.NetPackage.Runtime.NetworkManager;
 using NUnit.Framework;
+using Runtime.NetPackage.Runtime.NetworkManager;
 using Transport.NetPackage.Runtime.Transport;
 using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace NetworkManagerTest.NetPackage.Tests.NetworkManager
+namespace NetworkManagerTest
 {
     public class ClientManagerTests
     {

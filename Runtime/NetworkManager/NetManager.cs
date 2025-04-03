@@ -1,11 +1,10 @@
-using System;
+using NetworkManager.NetPackage.Runtime.NetworkManager;
 using Serializer.NetPackage.Runtime.Serializer;
-using UnityEngine;
 using Transport.NetPackage.Runtime.Transport;
 using Transport.NetPackage.Runtime.Transport.UDP;
-using UnityEngine.UIElements;
+using UnityEngine;
 
-namespace NetworkManager.NetPackage.Runtime.NetworkManager
+namespace Runtime.NetPackage.Runtime.NetworkManager
 {
     public class NetManager : MonoBehaviour
     {
@@ -19,7 +18,6 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
         public static void SetTransport(ITransport transport)
         {
             Transport = transport;
-            ITransport.OnDataReceived += Receive;
         }
 
         private void Awake()
@@ -28,6 +26,7 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
                 Destroy(this);
             else _manager = this;
             Transport ??= new UDPSolution();
+            ITransport.OnDataReceived += Receive;
             DontDestroyOnLoad(this);
         }
         public static void StartHost()

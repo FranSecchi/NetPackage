@@ -5,7 +5,7 @@ using Serializer.NetPackage.Runtime.Serializer;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace SerializerTest.NetPackage.Tests.Serializer
+namespace SerializerTest
 {
     public class SerializerTests
     {

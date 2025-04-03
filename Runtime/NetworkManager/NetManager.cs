@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using NetworkManager.NetPackage.Runtime.NetworkManager;
+using Serializer;
 using Serializer.NetPackage.Runtime.Serializer;
 using Transport.NetPackage.Runtime.Transport;
 using Transport.NetPackage.Runtime.Transport.UDP;
@@ -11,9 +13,10 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
         private static NetManager _manager;
         public static ITransport Transport;
         public static int Port = 9050;
+        public static List<int> allPlayers;
+        private static bool IsHost = false;
         
         public string address = "localhost";
-        private bool _isHost = false;
         
         public static void SetTransport(ITransport transport)
         {
@@ -26,33 +29,44 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
                 Destroy(this);
             else _manager = this;
             Transport ??= new UDPSolution();
+            allPlayers = new List<int>();
             ITransport.OnDataReceived += Receive;
             DontDestroyOnLoad(this);
         }
         public static void StartHost()
         {
             Transport.Setup(Port, true);
-            _manager._isHost = true;
+            IsHost = true;
             NetHost.StartHost();
         }
         public static void StopHosting()
         {
-            if(_manager._isHost) NetHost.Stop();
+            if(IsHost)
+            {
+                NetHost.Stop();
+                allPlayers.Clear();
+                Messager.ClearHandlers();
+            }
         }
         public static void StartClient()
         {
             Transport.Setup(Port, false);
-            _manager._isHost = false;
+            IsHost = false;
             NetClient.Connect(_manager.address);
         }
         public static void StopClient()
         {
-            if(!_manager._isHost) NetClient.Disconnect();
+            if(!IsHost)
+            {
+                NetClient.Disconnect();
+                allPlayers.Clear();
+                Messager.ClearHandlers();
+            }
         }
 
         public static void Send(NetMessage netMessage)
         {
-            if(_manager._isHost)
+            if(IsHost)
                 NetHost.Send(netMessage);
             else NetClient.Send(netMessage);
         }

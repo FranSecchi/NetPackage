@@ -1,6 +1,8 @@
 using Runtime.NetPackage.Runtime.NetworkManager;
+using Serializer;
 using Serializer.NetPackage.Runtime.Serializer;
 using Transport.NetPackage.Runtime.Transport;
+using UnityEditor.MemoryProfiler;
 using UnityEngine;
 
 namespace NetworkManager.NetPackage.Runtime.NetworkManager
@@ -11,20 +13,20 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
         public static void Connect(string address)
         {
             if (Connection != null) return;
-            ITransport.OnClientConnected += OnConnected;
+            Messager.RegisterHandler<ConnMessage>(OnConnected);
             NetManager.Transport.Start();
             NetManager.Transport.Connect(address);
         }
         public static void Disconnect()
         {
             NetManager.Transport.Disconnect();
-            ITransport.OnClientConnected -= OnConnected;
             Connection = null;
         }
 
-        private static void OnConnected(int id)
+        private static void OnConnected(ConnMessage connection)
         {
-            Connection = new NetConn(id, false);
+            if(Connection != null) Connection = new NetConn(connection.CurrentConnected, false);
+            NetManager.allPlayers = connection.AllConnected;
         }
 
         public static void Send(NetMessage netMessage)

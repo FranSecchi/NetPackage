@@ -30,40 +30,46 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             else _manager = this;
             Transport ??= new UDPSolution();
             allPlayers = new List<int>();
-            ITransport.OnDataReceived += Receive;
             DontDestroyOnLoad(this);
         }
         public static void StartHost()
         {
+            ITransport.OnDataReceived += Receive;
             Transport.Setup(Port, true);
             IsHost = true;
             NetHost.StartHost();
         }
         public static void StopHosting()
         {
-            if(IsHost)
-            {
-                NetHost.Stop();
-                allPlayers.Clear();
-                Messager.ClearHandlers();
-            }
+            if (!IsHost) return;
+            NetHost.Stop();
+            StopNet();
         }
         public static void StartClient()
         {
+            ITransport.OnDataReceived += Receive;
             Transport.Setup(Port, false);
             IsHost = false;
             NetClient.Connect(_manager.address);
         }
         public static void StopClient()
         {
-            if(!IsHost)
-            {
-                NetClient.Disconnect();
-                allPlayers.Clear();
-                Messager.ClearHandlers();
-            }
+            if (IsHost) return;
+            NetClient.Disconnect();
+            StopNet();
         }
 
+        private static void StopNet()
+        {
+            allPlayers.Clear();
+            Messager.ClearHandlers();
+            ITransport.OnDataReceived -= Receive;
+        }
+        public int ConnectionId()
+        {
+            if (!IsHost) return NetClient.Connection.Id;
+            return 0;
+        }
         public static void Send(NetMessage netMessage)
         {
             if(IsHost)

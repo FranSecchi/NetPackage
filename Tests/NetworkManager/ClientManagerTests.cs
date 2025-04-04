@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using NetworkManager.NetPackage.Runtime.NetworkManager;
 using NUnit.Framework;
 using Runtime.NetPackage.Runtime.NetworkManager;
@@ -57,11 +58,13 @@ namespace NetworkManagerTest
             NetManager.StartClient();
             yield return new WaitForSeconds(0.5f);
             
+            List<ITransport> clients = new List<ITransport>();
             for (int i = 0; i < 3; i++)
             {
                 ITransport client = new UDPSolution();
                 client.Setup(NetManager.Port, false);
                 client.Start();
+                clients.Add(client);
                 yield return new WaitForSeconds(0.2f);
                 client.Connect("localhost");
                 yield return new WaitForSeconds(0.2f);
@@ -70,13 +73,19 @@ namespace NetworkManagerTest
             Debug.Log(NetManager.allPlayers.Count);
             Assert.IsTrue(NetManager.allPlayers.Count == 5, "Client did not add 5 players");
             Assert.IsTrue(NetManager.allPlayers.Contains(3), "Client did not add correctly");
+            foreach (ITransport client in clients)
+            {
+                client.Stop();
+            }
         }
         
         [TearDown]
         public void TearDown()
         {
-            NetManager.StopClient();
+            NetManagerTest.StopClient();
             NetManagerTest.StopHosting();
+            NetManager.StopHosting();
+            NetManager.StopClient();
         }
     }
 }

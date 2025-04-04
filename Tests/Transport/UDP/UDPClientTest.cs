@@ -71,8 +71,6 @@ namespace TransportTest
 
             string receivedMessage = System.Text.Encoding.ASCII.GetString(_server.Receive());
             Assert.AreEqual(TestMessage, receivedMessage, "Received message.");
-            
-            _client.Disconnect();
         }
         
         
@@ -81,6 +79,8 @@ namespace TransportTest
         {
             _server?.Stop();
             _client?.Stop();
+            ITransport.OnClientConnected -= OnClientConnected;
+            ITransport.OnClientDisconnected -= OnClientDisconnected;
         }
         
         private void OnClientConnected(int id)

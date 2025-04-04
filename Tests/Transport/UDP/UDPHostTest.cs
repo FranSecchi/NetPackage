@@ -42,16 +42,23 @@ namespace TransportTest
         [UnityTest]
         public IEnumerator TestMultipleClients()
         {
+            List<ITransport> clients = new List<ITransport>();
             for (int i = 0; i < 5; i++)
             {
                 ITransport client = new UDPSolution();
                 client.Setup(Port, false);
                 client.Start();
                 client.Connect("localhost");
+                clients.Add(client);
             }
             yield return new WaitForSeconds(1f);
             
             Assert.IsTrue(_connectedClients.Count == 5, "There should be 5 clients.");
+            
+            foreach (var client in clients)
+            {
+                client.Stop();
+            }
         }
         
         [UnityTest]
@@ -74,9 +81,10 @@ namespace TransportTest
                 string receivedMessage = System.Text.Encoding.ASCII.GetString(clients[i].Receive());
                 Assert.AreEqual(TestMessage, receivedMessage, "Message did not match.");
             }
-            for (int i = 0; i < 5; i++)
+            
+            foreach (var client in clients)
             {
-                clients[i].Disconnect();
+                client.Stop();
             }
         }
         
@@ -108,9 +116,9 @@ namespace TransportTest
             
             Assert.AreEqual(count, 5, "Messages dropped: "+(5-count)+".");
             
-            for (int i = 0; i < 5; i++)
+            foreach (var client in clients)
             {
-                clients[i].Disconnect();
+                client.Stop();
             }
         }
 
@@ -131,12 +139,18 @@ namespace TransportTest
             yield return new WaitForSeconds(0.5f);
             
             Assert.IsTrue(_connectedClients.Count == 4, "There should be 4 clients.");
+            foreach (var client in clients)
+            {
+                client.Stop();
+            }
         }
         
         [TearDown]
         public void TearDown()
         {
             _transport?.Stop();
+            ITransport.OnClientConnected -= OnClientConnected;
+            ITransport.OnClientDisconnected -= OnClientDisconnected;
         }
         
         private void OnClientConnected(int id)

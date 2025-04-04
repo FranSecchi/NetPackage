@@ -82,8 +82,8 @@ namespace NetworkManagerTest
         [TearDown]
         public void TearDown()
         {
-            NetManagerTest.StopClient();
             NetManagerTest.StopHosting();
+            NetManagerTest.StopClient();
             NetManager.StopHosting();
             NetManager.StopClient();
         }

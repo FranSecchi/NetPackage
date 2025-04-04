@@ -1,6 +1,8 @@
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using Runtime.NetPackage.Runtime.NetworkManager;
+using Serializer.NetPackage.Runtime.Serializer;
 using Transport.NetPackage.Runtime.Transport;
 using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;
@@ -70,10 +72,12 @@ namespace NetworkManagerTest
         {
             yield return new WaitForSeconds(0.2f);
             NetManagerTest.StartClient();
+            List<ITransport> clients = new List<ITransport>();
             for (int i = 0; i < 3; i++)
             {
                 yield return new WaitForSeconds(0.2f);
                 ITransport client = new UDPSolution();
+                clients.Add(client);
                 client.Setup(NetManager.Port, false);
                 client.Start();
                 yield return new WaitForSeconds(0.2f);
@@ -84,13 +88,19 @@ namespace NetworkManagerTest
             
             Assert.IsTrue(NetManager.allPlayers.Count == 5, "Server did not add 5 players");
             Assert.IsTrue(NetManager.allPlayers.Contains(3), "Server did not add correctly");
+
+            foreach (ITransport client in clients)
+            {
+                client.Stop();
+            }
         }
         [TearDown]
         public void TearDown()
         {
-            Debug.Log("Tearing down");
-            NetManager.StopHosting();
             NetManagerTest.StopClient();
+            NetManagerTest.StopHosting();
+            NetManager.StopHosting();
+            NetManager.StopClient();
         }
         
     }

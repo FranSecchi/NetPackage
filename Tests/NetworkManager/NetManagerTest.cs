@@ -32,40 +32,41 @@ namespace NetworkManagerTest
             else _manager = this;
             Transport ??= new UDPSolution();
             allPlayers = new List<int>();
-            ITransport.OnDataReceived += Receive;
             DontDestroyOnLoad(this);
         }
         public static void StartHost()
         {
+            ITransport.OnDataReceived += Receive;
             Transport.Setup(Port, true);
             IsHost = true;
             NetHostTest.StartHost();
         }
         public static void StopHosting()
         {
-            if(IsHost)
-            {
-                NetHostTest.Stop();
-                allPlayers.Clear();
-                Messager.ClearHandlers();
-            }
+            if (!IsHost) return;
+            NetHostTest.Stop();
+            StopNet();
         }
         public static void StartClient()
         {
+            ITransport.OnDataReceived += Receive;
             Transport.Setup(Port, false);
             IsHost = false;
             NetClientTest.Connect(_manager.address);
         }
         public static void StopClient()
         {
-            if(!IsHost)
-            {
-                NetClientTest.Disconnect();
-                allPlayers.Clear();
-                Messager.ClearHandlers();
-            }
+            if (IsHost) return;
+            NetClientTest.Disconnect();
+            StopNet();
         }
 
+        private static void StopNet()
+        {
+            allPlayers.Clear();
+            Messager.ClearHandlers();
+            ITransport.OnDataReceived -= Receive;
+        }
         public static void Send(NetMessage netMessage)
         {
             if(IsHost)

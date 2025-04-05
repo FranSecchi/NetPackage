@@ -14,7 +14,7 @@ namespace Serializer
         
         public ConnMessage(){}
 
-        public ConnMessage(List<int> target, int currentConnected, List<int> allConnected) : base(target)
+        public ConnMessage(int currentConnected, List<int> allConnected, List<int> target = null) : base(target)
         {
             this.CurrentConnected = currentConnected;
             this.AllConnected = allConnected;

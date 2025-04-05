@@ -148,45 +148,56 @@ namespace NetworkManagerTest
         }
         private static void UpdatePlayers(int id)
         {
-            NetMessage msg = new ConnMessage(null, id, NetManagerTest.allPlayers);
+            NetMessage msg = new ConnMessage(id, NetManagerTest.allPlayers);
             Send(msg);
         }
         public static void Stop()
         {
-            foreach (KeyValuePair<int, NetConnTest> client in Clients)
+            lock (Lock) // Ensure thread safety
             {
-                client.Value.Disconnect();
+                foreach (KeyValuePair<int, NetConnTest> client in Clients)
+                {
+                    client.Value.Disconnect();
+                }
+
+                NetManagerTest.Transport.Stop();
+                ITransport.OnClientConnected -= OnClientConnected;
+                ITransport.OnClientDisconnected -= OnClientDisconnected;
+                Clients.Clear();
             }
-            NetManagerTest.Transport.Stop();
-            ITransport.OnClientConnected -= OnClientConnected;
-            ITransport.OnClientDisconnected -= OnClientDisconnected;
-            Clients.Clear();
         }
 
         public static void Kick(int id)
         {
-            if (Clients.TryGetValue(id, out NetConnTest client))
+            lock (Lock) // Ensure thread safety
             {
-                client.Disconnect();
-                Clients.Remove(id);
+                if (Clients.TryGetValue(id, out NetConnTest client))
+                {
+                    client.Disconnect();
+                    Clients.Remove(id);
+                }
             }
         }
 
         public static void Send(NetMessage netMessage)
         {
-            if (netMessage.target == null)
+
+            lock (Lock) // Ensure thread safety
             {
-                foreach (int client in Clients.Keys)
+                if (netMessage.target == null)
                 {
-                    Clients[client].Send(netMessage);
+                    foreach (int client in Clients.Keys)
+                    {
+                        Clients[client].Send(netMessage);
+                    }
                 }
-            }
-            else
-            {
-                foreach (KeyValuePair<int, NetConnTest> client in Clients)
+                else
                 {
-                    if(netMessage.target.Contains(client.Key))
-                        client.Value.Send(netMessage);
+                    foreach (KeyValuePair<int, NetConnTest> client in Clients)
+                    {
+                        if (netMessage.target.Contains(client.Key))
+                            client.Value.Send(netMessage);
+                    }
                 }
             }
         }

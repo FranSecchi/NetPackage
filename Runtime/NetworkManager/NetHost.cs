@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using NetworkManager.NetPackage.Runtime.NetworkManager;
@@ -11,7 +12,7 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
 {
     public static class NetHost
     {
-        public static Dictionary<int, NetConn> Clients = new Dictionary<int, NetConn>();
+        public static ConcurrentDictionary<int, NetConn> Clients = new();
         private static readonly object Lock = new object();
         public static void StartHost()
         {
@@ -19,47 +20,41 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             NetManager.allPlayers.Add(-1);
             ITransport.OnClientConnected += OnClientConnected;;
             ITransport.OnClientDisconnected += OnClientDisconnected;
+            Messager.RegisterHandler<SyncMessage>(OnSyncMessage);
         }
 
         private static void OnClientDisconnected(int id)
         {
-            Debug.Log($"Client d");
-            lock (Lock) // Ensure thread safety
-            {
-                Debug.Log($"Client d1");
-                Clients.Remove(id);
-                Debug.Log($"Client {id} disconnected. Clients count: {Clients.Count}");
-                NetManager.allPlayers.Remove(id);
-                UpdatePlayers(id);
-            }
+            Clients.TryRemove(id, out _);
+            Debug.Log($"Client {id} disconnected. Clients count: {Clients.Count}");
+            NetManager.allPlayers.Remove(id);
+            UpdatePlayers(id);
         }
 
 
         private static void OnClientConnected(int id)
         {
-            lock (Lock) // Ensure thread safety
+            if (Clients.TryAdd(id, new NetConn(id, true))) // Thread-safe add
             {
-                if (Clients.TryAdd(id, new NetConn(id, true))) // Thread-safe add
-                {
-                    Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
-                    NetManager.allPlayers.Add(id);
-                    UpdatePlayers(id);
-                }
+                Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
+                NetManager.allPlayers.Add(id);
+                UpdatePlayers(id);
             }
         }
 
         private static void UpdatePlayers(int id)
         {
-            NetMessage msg = new ConnMessage(null, id, NetManager.allPlayers);
+            NetMessage msg = new ConnMessage(id, NetManager.allPlayers);
             Send(msg);
         }
 
         public static void Stop()
         {
-            foreach (KeyValuePair<int, NetConn> client in Clients)
+            foreach (var client in Clients.Values)
             {
-                client.Value.Disconnect();
+                client.Disconnect();
             }
+
             NetManager.Transport.Stop();
             ITransport.OnClientConnected -= OnClientConnected;
             ITransport.OnClientDisconnected -= OnClientDisconnected;
@@ -68,10 +63,9 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
 
         public static void Kick(int id)
         {
-            if (Clients.TryGetValue(id, out NetConn client))
+            if (Clients.TryRemove(id, out NetConn client))
             {
                 client.Disconnect();
-                Clients.Remove(id);
             }
         }
 
@@ -79,17 +73,19 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
         {
             if (netMessage.target == null)
             {
-                foreach (int client in Clients.Keys)
+                foreach (var client in Clients.Values)
                 {
-                    Clients[client].Send(netMessage);
+                    client.Send(netMessage);
                 }
             }
             else
             {
-                foreach (KeyValuePair<int, NetConn> client in Clients)
+                foreach (int targetId in netMessage.target)
                 {
-                    if(netMessage.target.Contains(client.Key))
-                        client.Value.Send(netMessage);
+                    if (Clients.TryGetValue(targetId, out NetConn client))
+                    {
+                        client.Send(netMessage);
+                    }
                 }
             }
         }

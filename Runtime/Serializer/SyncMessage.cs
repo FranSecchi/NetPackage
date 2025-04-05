@@ -7,13 +7,15 @@ namespace Serializer.NetPackage.Runtime.Serializer
     public class SyncMessage : NetMessage
     {
         [Key(1)]public int ObjectID;
-        [Key(2)] public Dictionary<string, object> changedValues; // Changed variables
+        [Key(2)]public int ComponentId;
+        [Key(3)] public Dictionary<string, object> changedValues; // Changed variables
 
         public SyncMessage(){}
-        public SyncMessage(List<int> target, int objectID, Dictionary<string, object> changes) : base(target)
+        public SyncMessage(int objectID, int componentID, Dictionary<string, object> changes, List<int> target = null) : base(target)
         {
             this.ObjectID = objectID;
             this.changedValues = changes;
+            ComponentId = componentID;
         }
     }
 }

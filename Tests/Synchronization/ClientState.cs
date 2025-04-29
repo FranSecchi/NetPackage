@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Runtime.NetPackage.Runtime.NetworkManager;
+using Runtime.NetPackage.Runtime.Synchronization;
 using Serializer.NetPackage.Runtime.Serializer;
 using Synchronization.NetPackage.Runtime.Synchronization;
 using Transport.NetPackage.Runtime.Transport;
@@ -35,6 +36,12 @@ namespace SynchronizationTest
             netObject = new NetObject( ids++, testObj);
         }
 
+        [UnityTest]
+        public IEnumerator SpawnRPC()
+        {
+            yield return new WaitForSeconds(0.2f);
+        }
+        
         [UnityTest]
         public IEnumerator Client_SendUpdates()
         {

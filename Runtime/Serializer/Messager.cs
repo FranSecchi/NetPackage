@@ -20,11 +20,10 @@ namespace Serializer.NetPackage.Runtime.Serializer
             messageHandlers[typeof(T)] = wrapper;
         }
 
-        public static void HandleMessage(byte[] rawData)
+        public static void HandleMessage(NetMessage msg)
         {
             try
             {
-                NetMessage msg = NetSerializer.Deserialize<NetMessage>(rawData);
                 if (messageHandlers.TryGetValue(msg.GetType(), out var handler))
                 {
                     handler.Invoke(msg);

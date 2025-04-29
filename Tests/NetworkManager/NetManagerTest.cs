@@ -79,7 +79,8 @@ namespace NetworkManagerTest
             
             if (data != null && data.Length != 0)
             {
-                Messager.HandleMessage(data);
+                NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
+                Messager.HandleMessage(msg);
             }
         }
     }

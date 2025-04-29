@@ -31,7 +31,8 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
 
         public static void Send(NetMessage netMessage)
         {
-            NetManager.Transport.Send(NetSerializer.Serialize(netMessage));
+            Connection?.Send(netMessage);
         }
+        
     }
 }

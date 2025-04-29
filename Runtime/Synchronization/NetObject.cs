@@ -1,24 +1,55 @@
-using System;
 using System.Collections.Generic;
+using Runtime.NetPackage.Runtime.NetworkManager;
+using Synchronization.NetPackage.Runtime.Synchronization;
 using UnityEngine;
 
-namespace Synchronization.NetPackage.Runtime.Synchronization
+namespace Runtime.NetPackage.Runtime.Synchronization
 {
     public class NetObject
     {
-        public readonly int ObjectId;
-        private ObjectState _state;
+        public readonly int NetId;
+        private int _ownerId;
+        private List<object> _behaviours;
+        private static int nextId = 0;
+        public int OwnerId => _ownerId;
 
-        public NetObject(int objectId, object obj)
+        public NetObject(object behaviour, int ownerId = -1)
         {
-            ObjectId = objectId;
-            _state = new ObjectState();
-            Register(obj);
-            StateManager.Register(this, _state);
+            _ownerId = ownerId;
+            Register(behaviour);
+            NetScene.Register(this);
         }
+
+        public NetObject(int netId, object behaviour, int ownerId = -1)
+        {
+            NetId = netId;
+            _ownerId = ownerId;
+            Register(behaviour);
+            NetScene.Register(this);
+        }
+
+        public void GiveOwner(int ownerId)
+        {
+            _ownerId = ownerId;
+        }
+
         public void Register(object obj)
         {
-            _state.Register(obj);
+            _behaviours.Add(obj);
+        }
+
+        public void Unregister(object obj)
+        {
+            _behaviours.Remove(obj);
+        }
+
+        public void Spawn()
+        {
+            foreach (var behaviour in _behaviours)
+            {
+                if(behaviour is NetBehaviour netBehaviour)
+                    netBehaviour.OnSpawn();
+            }
         }
     }
 }

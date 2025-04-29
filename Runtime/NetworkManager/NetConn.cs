@@ -1,14 +1,16 @@
-using Runtime.NetPackage.Runtime.NetworkManager;
+using System.Collections.Generic;
+using Runtime.NetPackage.Runtime.Synchronization;
 using Serializer.NetPackage.Runtime.Serializer;
+using Synchronization.NetPackage.Runtime.Synchronization;
 using Transport.NetPackage.Runtime.Transport;
-using UnityEngine;
 
-namespace NetworkManager.NetPackage.Runtime.NetworkManager
+namespace Runtime.NetPackage.Runtime.NetworkManager
 {
     public class NetConn
     {
         public int Id { get; private set; }
         public bool IsHost { get; private set; }
+        public List<int> Objects;
         private readonly ITransport _transport;
         public NetConn(int id, bool isHost)
         {
@@ -23,7 +25,19 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
         }
         public void Send(NetMessage netMessage)
         {
-            _transport.SendTo(Id,NetSerializer.Serialize(netMessage));
+            byte[] data = NetSerializer.Serialize(netMessage);
+            if(IsHost)
+                _transport.SendTo(Id, data);
+            else _transport.Send(data);
+        }
+        public void Own(NetObject netObject)
+        {
+            Objects.Add(netObject.NetId);
+            netObject.GiveOwner(Id);
+        }
+        public void Disown(NetObject netObject)
+        {
+            Objects.Remove(netObject.NetId);
         }
     }
 }

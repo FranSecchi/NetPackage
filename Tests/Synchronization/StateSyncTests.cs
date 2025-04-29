@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using Runtime.NetPackage.Runtime.Synchronization;
 using Serializer.NetPackage.Runtime.Serializer;
 using Synchronization.NetPackage.Runtime.Synchronization;
 using UnityEngine;
@@ -24,7 +25,7 @@ namespace SynchronizationTest
         [Test]
         public void RegisterObject()
         {
-            Assert.IsTrue(StateManager.GetState(netObject.ObjectId).TrackedSyncVars.Count != 0, "Snapshot is empty");
+            Assert.IsTrue(StateManager.GetState(netObject.NetId).TrackedSyncVars.Count != 0, "Snapshot is empty");
         }
 
         [Test]
@@ -36,7 +37,7 @@ namespace SynchronizationTest
             
             Assert.IsTrue(changes.Count != 0, "No changes");
         }
-
+        
         [TearDown]
         public void TearDown()
         {

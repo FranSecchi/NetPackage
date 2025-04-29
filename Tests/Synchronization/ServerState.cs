@@ -1,6 +1,7 @@
 using System.Collections;
 using NUnit.Framework;
 using Runtime.NetPackage.Runtime.NetworkManager;
+using Runtime.NetPackage.Runtime.Synchronization;
 using Serializer.NetPackage.Runtime.Serializer;
 using Synchronization.NetPackage.Runtime.Synchronization;
 using Transport.NetPackage.Runtime.Transport;
@@ -32,13 +33,13 @@ namespace SynchronizationTest
             netObject = new NetObject( ids++, testObj);
         }
 
-        // [UnityTest]
-        // public IEnumerator Server_Spawn()
-        // {
-        //     yield return WaitConnection();
-        //     
-        //     client.Send(NetSerializer.Serialize(new RPCMessage()));
-        // }
+        [UnityTest]
+        public IEnumerator Server_Spawn()
+        {
+            yield return WaitConnection();
+            
+            client.Send(NetSerializer.Serialize(new SpawnMessage()));
+        }
         
         [UnityTest]
         public IEnumerator Server_SendUpdates()
@@ -47,15 +48,16 @@ namespace SynchronizationTest
             Messager.RegisterHandler<SyncMessage>(OnReceived);
             
             testObj.health -= 100;
-            ObjectState state = StateManager.GetState(netObject.ObjectId).Clone();
+            ObjectState state = StateManager.GetState(netObject.NetId).Clone();
             
             StateManager.SendUpdateStates();
             yield return new WaitForSeconds(0.5f);
             
-            Messager.HandleMessage(client.Receive());
+            NetMessage msg = NetSerializer.Deserialize<NetMessage>(client.Receive());
+            Messager.HandleMessage(msg);
             
             Assert.IsNotNull(received, "Received is null");
-            Assert.IsTrue(received.ObjectID == netObject.ObjectId, "Received object id is incorrect");
+            Assert.IsTrue(received.ObjectID == netObject.NetId, "Received object id is incorrect");
             Assert.IsTrue(state.ObjectIds.ContainsKey(received.ComponentId), "Received component id is incorrect: "+received.ComponentId);
         }
 
@@ -73,7 +75,7 @@ namespace SynchronizationTest
             var changes = state.Update();
             foreach (var change in changes)
             {
-                NetMessage msg = new SyncMessage(netObject.ObjectId, change.Key, change.Value);
+                NetMessage msg = new SyncMessage(netObject.NetId, change.Key, change.Value);
                 client.Send(NetSerializer.Serialize(msg));
             }
             yield return new WaitForSeconds(0.5f);

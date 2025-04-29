@@ -52,7 +52,8 @@ namespace SerializerTest
             {
                 byte[] data = client.Receive();
                 Assert.IsNotNull(data);
-                Messager.HandleMessage(data);
+                NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
+                Messager.HandleMessage(msg);
             }
             
             Assert.IsNotNull(received, "Received message is null");
@@ -100,7 +101,8 @@ namespace SerializerTest
             {
                 byte[] data = client.Receive();
                 Assert.IsNotNull(data);
-                Messager.HandleMessage(data);
+                NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
+                Messager.HandleMessage(msg);
             }
             
             Assert.IsNotNull(received, "Received message is null");

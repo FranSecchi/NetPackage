@@ -121,5 +121,25 @@ namespace Synchronization.NetPackage.Runtime.Synchronization
             clone._objectIds = clonedIds;
             return clone;
         }
+
+        public void Unregister(object o)
+        {
+            _trackedSyncVars.Remove(o);
+
+            int? keyToRemove = null;
+            foreach (var pair in _objectIds)
+            {
+                if (ReferenceEquals(pair.Value, o))
+                {
+                    keyToRemove = pair.Key;
+                    break;
+                }
+            }
+
+            if (keyToRemove.HasValue)
+            {
+                _objectIds.Remove(keyToRemove.Value);
+            }
+        }
     }
 }

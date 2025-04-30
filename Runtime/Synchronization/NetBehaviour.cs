@@ -7,7 +7,7 @@ namespace Runtime.NetPackage.Runtime.Synchronization
     public abstract class NetBehaviour : MonoBehaviour
     {
         public NetObject NetObject;
-        public bool ServerOwned = true;
+        public bool isOwned = true;
         protected bool spawned;
         
         // Start is called before the first frame update

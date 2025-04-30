@@ -24,15 +24,15 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
         {
             Transport = transport;
         }
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void InitializeNetBehaviours()
-        {
-            if (!IsHost) return;
-            foreach (var netBehaviour in FindObjectsByType<NetBehaviour>(FindObjectsSortMode.None))
-            {
-                netBehaviour.PreAwakeInitialize();
-            }
-        }
+        // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        // private static void InitializeNetBehaviours()
+        // {
+        //     if (!IsHost) return;
+        //     foreach (var netBehaviour in FindObjectsByType<NetBehaviour>(FindObjectsSortMode.None))
+        //     {
+        //         netBehaviour.PreAwakeInitialize();
+        //     }
+        // }
         private void Awake()
         {
             if (_manager != null)

@@ -1,9 +1,6 @@
 using Runtime.NetPackage.Runtime.NetworkManager;
 using Serializer;
 using Serializer.NetPackage.Runtime.Serializer;
-using Transport.NetPackage.Runtime.Transport;
-using UnityEditor.MemoryProfiler;
-using UnityEngine;
 
 namespace NetworkManager.NetPackage.Runtime.NetworkManager
 {
@@ -25,7 +22,7 @@ namespace NetworkManager.NetPackage.Runtime.NetworkManager
 
         private static void OnConnected(ConnMessage connection)
         {
-            if(Connection != null) Connection = new NetConn(connection.CurrentConnected, false);
+            Connection = new NetConn(connection.CurrentConnected, false);
             NetManager.allPlayers = connection.AllConnected;
         }
 

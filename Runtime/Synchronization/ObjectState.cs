@@ -10,7 +10,7 @@ namespace Synchronization.NetPackage.Runtime.Synchronization
     public class Sync : Attribute { }
     public class ObjectState
     {
-        //Type_instance - (Var_info - Var_value)
+        //Component_instance - (Var_info - Var_value)
         private Dictionary<object, Dictionary<FieldInfo, object>> _trackedSyncVars;
         private Dictionary<int, object> _objectIds;
         private int _nextId;

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
@@ -100,7 +101,7 @@ namespace SerializerTest
             foreach (ITransport client in _clients)
             {
                 byte[] data = client.Receive();
-                Assert.IsNotNull(data);
+                Assert.IsNotNull(data, "Server - Received message is null");
                 NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
                 Messager.HandleMessage(msg);
             }
@@ -134,7 +135,7 @@ namespace SerializerTest
         [TearDown]
         public void TearDown()
         {
-        
+            ITransport.OnClientConnected -= id => TransportOnOnClientConnected(id, new UDPSolution());
             if (_clients != null)
             {
                 foreach (ITransport client in _clients)
@@ -161,10 +162,17 @@ namespace SerializerTest
             ITransport server = new UDPSolution();
             server.Setup(NetManager.Port, true);
             server.Start();
+            ITransport.OnClientConnected += id => TransportOnOnClientConnected(id, server);
             _clients.Add(server);
             NetManager.StartClient();
         }
-        
+
+        private void TransportOnOnClientConnected(int id, ITransport server)
+        {
+            NetMessage msg = new ConnMessage(id, NetManager.allPlayers);
+            server.Send(NetSerializer.Serialize(msg));
+        }
+
         private void OnConnMsg(ConnMessage obj)
         {
             

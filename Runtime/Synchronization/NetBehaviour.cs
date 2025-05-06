@@ -1,5 +1,6 @@
 using System;
 using Runtime.NetPackage.Runtime.NetworkManager;
+using Synchronization.NetPackage.Runtime.Synchronization;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -12,32 +13,45 @@ namespace Runtime.NetPackage.Runtime.Synchronization
         public NetObject NetObject;
         public bool isOwned = true;
         protected bool spawned;
+        public bool registered = false;
         
-        // Start is called before the first frame update
         private void Awake()
         {
-            if (!Application.isPlaying && NetObject == null)
+            RegisterAsSceneObject();
+        }
+
+        private void OnEnable()
+        {
+            StateManager.Register(NetObject.NetId, this);
+        }
+
+        private void Start()
+        {
+            // Register in play mode if not already registered
+            if (!registered && NetObject == null)
             {
-                Debug.Log("app");
-                NetScene.Instance.RegisterSceneObject(this);
+                RegisterAsSceneObject();
             }
         }
 
-
+        private void RegisterAsSceneObject()
+        {
+            if (registered) return;
+            registered = true;
+            if (gameObject.TryGetComponent<NetBehaviour>(out var obj) && obj.NetObject != null)
+            {
+                NetObject = obj.NetObject;
+                NetObject.Register(this);
+                return;
+            }
+            if(gameObject.activeSelf) gameObject.SetActive(false);
+            NetScene.Instance?.RegisterSceneObject(this);
+        }
         public void SetNetObject(NetObject obj)
         {
+            if (obj == null) return;
             NetObject = obj;
-            //OnNetObjectInitialized(); 
-        }
-        private void RegisterBehaviour()
-        {
-            if(NetObject != null)
-                return;
-            if (TryGetComponent(out NetBehaviour netBehaviour) && netBehaviour.NetObject != null)
-            {
-                NetObject.Register(this);
-            }
-            else NetScene.Instance.RegisterSceneObject(this);
+            registered = true;
         }
     }
 }

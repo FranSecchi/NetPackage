@@ -211,5 +211,10 @@ namespace SerializerTest
             ObjectID = i;
             this.msg = msg;
         }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} ObjectID:{ObjectID}, Message:\"{msg}\"";
+        }
     }
 }

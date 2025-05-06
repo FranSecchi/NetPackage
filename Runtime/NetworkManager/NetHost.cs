@@ -39,13 +39,14 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             if (Clients.TryAdd(id, new NetConn(id, true))) // Thread-safe add
             {
                 Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
-                NetManager.allPlayers.Add(id);
                 UpdatePlayers(id);
+                NetScene.Instance.SendObjects(id);
             }
         }
 
         private static void UpdatePlayers(int id)
         {
+            NetManager.allPlayers.Add(id);
             NetMessage msg = new ConnMessage(id, NetManager.allPlayers);
             Send(msg);
         }
@@ -99,11 +100,7 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
         private static void OnSpawnMessage(SpawnMessage msg)
         {
             //Validate
-            if(msg.target == null) msg.target = new List<int>();
-            msg.target.Add(msg.requesterId);
-            int id = NetScene.Instance.Spawn(msg);
-            msg.netObjectId = id;
-            Send(msg);
+            NetScene.Instance.Spawn(msg);
         }
     }
 }

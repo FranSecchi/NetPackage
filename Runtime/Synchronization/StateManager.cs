@@ -20,7 +20,13 @@ namespace Synchronization.NetPackage.Runtime.Synchronization
             }
             snapshot[netId] = state;
         }
-
+        public static void Register(int netId, object obj)
+        {
+            if (snapshot.TryGetValue(netId, out ObjectState state))
+            {
+                state.Register(obj);
+            }
+        }
         public static void Unregister(int netId)
         {
             snapshot[netId] = null;

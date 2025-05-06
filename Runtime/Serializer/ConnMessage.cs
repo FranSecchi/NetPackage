@@ -16,5 +16,11 @@ namespace Serializer.NetPackage.Runtime.Serializer
             this.CurrentConnected = currentConnected;
             this.AllConnected = allConnected;
         }
+
+        public override string ToString()
+        {
+            string allConnStr = AllConnected != null ? string.Join(",", AllConnected) : "none";
+            return $"{base.ToString()} Current:{CurrentConnected}, AllConnected:[{allConnStr}]";
+        }
     }
 }

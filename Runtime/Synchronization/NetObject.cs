@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Runtime.NetPackage.Runtime.NetworkManager;
+using Serializer.NetPackage.Runtime.Serializer;
 using Synchronization.NetPackage.Runtime.Synchronization;
 using UnityEngine;
 
@@ -10,30 +11,71 @@ namespace Runtime.NetPackage.Runtime.Synchronization
     {
         public readonly int NetId;
         private int _ownerId;
-        private List<NetBehaviour> _behaviours;
-        private int OwnerId => _ownerId;
-        public bool Owned => _ownerId != NetManager.ConnectionId();
+        public List<NetBehaviour> _behaviours;
+        public int OwnerId => _ownerId;
+        
+        // Changed logic: object is owned if the current connection is the owner
+        public bool Owned => _ownerId == NetManager.ConnectionId();
 
         public NetObject(int netId, NetBehaviour behaviour, int ownerId = -1)
         {
             NetId = netId;
-            _ownerId = ownerId;
+            _ownerId = ownerId == -1 ? NetManager.ConnectionId() : ownerId;
             _behaviours = behaviour.GetComponents<NetBehaviour>().ToList();
 
             foreach (var b in _behaviours)
             {
                 Register(b);
             }
+            
+            // Update NetBehaviour ownership state
+            UpdateBehaviourOwnership();
         }
 
         public void GiveOwner(int ownerId)
         {
+            if (_ownerId == ownerId) return;
+            if (!NetManager.allPlayers.Contains(ownerId)) return;
             _ownerId = ownerId;
+            UpdateBehaviourOwnership();
+            
+            if (NetManager.IsHost)
+            {
+                NetMessage msg = new OwnershipMessage(NetId, ownerId);
+                Debug.Log("Sent ownership message");
+                NetManager.Send(msg);
+            }
+        }
+
+        private void UpdateBehaviourOwnership()
+        {
+            foreach (var behaviour in _behaviours)
+            {
+                behaviour.isOwned = Owned;
+            }
         }
 
         public void Register(NetBehaviour obj)
         {
+            if (!_behaviours.Contains(obj))
+            {
+                _behaviours.Add(obj);
+            }
             obj.SetNetObject(this);
+            obj.isOwned = Owned;
+        }
+
+        public void Destroy()
+        {
+            foreach (var obj in _behaviours)
+            {
+                GameObject.Destroy(obj.gameObject);
+            }
+        }
+
+        public void Enable()
+        {
+            if(!_behaviours[0].gameObject.activeSelf) _behaviours[0].gameObject.SetActive(true);
         }
     }
 }

@@ -14,5 +14,11 @@ namespace Serializer.NetPackage.Runtime.Serializer
         {
             this.target = target;
         }
+
+        public override string ToString()
+        {
+            string targetStr = target != null ? string.Join(",", target) : "all";
+            return $"{GetType().Name}[Target:{targetStr}]";
+        }
     }
 }

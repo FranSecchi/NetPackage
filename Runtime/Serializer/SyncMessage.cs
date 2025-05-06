@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using MessagePack;
+using System.Linq;
 
 namespace Serializer.NetPackage.Runtime.Serializer
 {
@@ -16,6 +17,12 @@ namespace Serializer.NetPackage.Runtime.Serializer
             this.ObjectID = objectID;
             this.changedValues = changes;
             ComponentId = componentID;
+        }
+
+        public override string ToString()
+        {
+            string changes = changedValues != null ? string.Join(", ", changedValues.Select(kv => $"{kv.Key}={kv.Value}")) : "none";
+            return $"{base.ToString()} ObjectID:{ObjectID}, ComponentID:{ComponentId}, Changes:{changes}";
         }
     }
 }

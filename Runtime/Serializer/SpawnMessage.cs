@@ -23,5 +23,10 @@ namespace Serializer.NetPackage.Runtime.Serializer
             this.sceneId = sceneId;
             netObjectId = -1;
         }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} Prefab:{prefabName}, Pos:{position}, ID:{netObjectId}, SceneID:{sceneId}, Requester:{requesterId}, Own:{own}";
+        }
     }
 }

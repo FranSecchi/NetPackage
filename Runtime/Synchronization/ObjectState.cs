@@ -28,19 +28,32 @@ namespace Synchronization.NetPackage.Runtime.Synchronization
         {
             Type type = obj.GetType();
             FieldInfo[] fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-
+            bool hasSyncFields = false;
 
             foreach (FieldInfo field in fields)
             {
                 if (Attribute.IsDefined(field, typeof(Sync)))
                 {
-                    if (!_trackedSyncVars.ContainsKey(obj))
-                    {
-                        _trackedSyncVars[obj] = new Dictionary<FieldInfo, object>();
-                        _objectIds[_nextId++] = obj;
-                    }
+                    hasSyncFields = true;
+                    break;
+                }
+            }
 
-                    _trackedSyncVars[obj][field] = field.GetValue(obj);
+            if (hasSyncFields)
+            {
+                if (!_trackedSyncVars.ContainsKey(obj))
+                {
+                    _trackedSyncVars[obj] = new Dictionary<FieldInfo, object>();
+                    int id = _nextId++;
+                    _objectIds[id] = obj;
+                    // Debug.Log($"Registered component {obj.GetType().Name} with ID {id}");
+                }
+                foreach (FieldInfo field in fields)
+                {
+                    if (Attribute.IsDefined(field, typeof(Sync)))
+                    {
+                        _trackedSyncVars[obj][field] = field.GetValue(obj);
+                    }
                 }
             }
         }

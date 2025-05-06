@@ -35,7 +35,6 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             Transport ??= new UDPSolution();
             allPlayers = new List<int>();
             if (m_scene == null) m_scene = new NetScene();
-            if(NetScene.Instance == null) NetScene.Instance = m_scene;
             if(NetPrefabs != null) NetScene.Instance.RegisterPrefabs(NetPrefabs.prefabs);
             DontDestroyOnLoad(this);
         }
@@ -96,7 +95,7 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
         public static int ConnectionId()
         {
             if (!IsHost) return NetClient.Connection.Id;
-            return 0;
+            return -1;
         }
         public static void Send(NetMessage netMessage)
         {
@@ -111,8 +110,7 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             spm.requesterId = ConnectionId();
             if (IsHost)
             {
-                spm.netObjectId = NetScene.Instance.Spawn(spm);
-                NetHost.Send(spm);
+                NetScene.Instance.Spawn(spm);
             }
             else
             {

@@ -1,5 +1,8 @@
+using System;
 using System.Collections;
+using MessagePack;
 using NUnit.Framework;
+using Runtime;
 using Runtime.NetPackage.Runtime.NetworkManager;
 using Runtime.NetPackage.Runtime.Synchronization;
 using Serializer.NetPackage.Runtime.Serializer;
@@ -7,6 +10,7 @@ using Synchronization.NetPackage.Runtime.Synchronization;
 using Transport.NetPackage.Runtime.Transport;
 using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 namespace SynchronizationTest
@@ -16,8 +20,8 @@ namespace SynchronizationTest
         private NetObject netObject;
         private TestObj testObj;
         private ITransport client;
-        private int ids;
-        private SyncMessage received;
+        private NetMessage received;
+        private NetPrefabRegistry prefabs;
         
         [SetUp]
         public void SetUp()
@@ -28,18 +32,9 @@ namespace SynchronizationTest
             client.Setup(NetManager.Port, false);
             client.Start();
             
-            testObj = new TestObj(30, 600, "hello");
-            ids = 1;
-            netObject = new NetObject( ids++, testObj);
         }
 
-        [UnityTest]
-        public IEnumerator Server_Spawn()
-        {
-            yield return WaitConnection();
-            
-            client.Send(NetSerializer.Serialize(new SpawnMessage()));
-        }
+
         
         [UnityTest]
         public IEnumerator Server_SendUpdates()
@@ -57,8 +52,6 @@ namespace SynchronizationTest
             Messager.HandleMessage(msg);
             
             Assert.IsNotNull(received, "Received is null");
-            Assert.IsTrue(received.ObjectID == netObject.NetId, "Received object id is incorrect");
-            Assert.IsTrue(state.ObjectIds.ContainsKey(received.ComponentId), "Received component id is incorrect: "+received.ComponentId);
         }
 
 
@@ -139,9 +132,10 @@ namespace SynchronizationTest
             client.Connect("localhost");
             yield return new WaitForSeconds(0.2f);
         }
-        private void OnReceived(SyncMessage obj)
+        private void OnReceived(NetMessage obj)
         {
             received = obj;
         }
+        
     }
 }

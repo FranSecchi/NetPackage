@@ -30,10 +30,6 @@ namespace SynchronizationTest
             
             new GameObject().AddComponent<NetManager>();
             NetManager.StartClient();
-            
-            testObj = new TestObj(30, 600, "hello");
-            ids = 1;
-            netObject = new NetObject( ids++, testObj);
         }
 
         [UnityTest]

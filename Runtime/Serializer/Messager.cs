@@ -8,35 +8,33 @@ namespace Serializer.NetPackage.Runtime.Serializer
 {
     public static class Messager
     {
-        private static readonly Dictionary<Type, Action<NetMessage>> messageHandlers = new();
+        private static readonly Dictionary<Type, List<Action<NetMessage>>> messageHandlers = new();
 
         public static void RegisterHandler<T>(Action<T> handler) where T : NetMessage
         {
-            Action<NetMessage> wrapper = (NetMessage msg) =>
+            if (!messageHandlers.TryGetValue(typeof(T), out var handlers))
             {
-                handler((T)msg);
-            };
+                handlers = new List<Action<NetMessage>>();
+                messageHandlers[typeof(T)] = handlers;
+            }
 
-            messageHandlers[typeof(T)] = wrapper;
+            handlers.Add(msg => handler((T)msg));
         }
 
         public static void HandleMessage(NetMessage msg)
         {
-            try
+            if (messageHandlers.TryGetValue(msg.GetType(), out var handlers))
             {
-                if (messageHandlers.TryGetValue(msg.GetType(), out var handler))
+                foreach (var handler in handlers)
                 {
                     handler.Invoke(msg);
                 }
-                else
-                {
-                    Debug.LogError($"No handler found for message type: {msg.GetType()}");
-                }
             }
-            catch (Exception e)
+            else
             {
-                Debug.LogError($"Deserialization error: {e.Message}");
+                Debug.LogError($"No handler found for message type: {msg.GetType()}");
             }
+
         }
 
         public static void ClearHandlers()

@@ -1,10 +1,7 @@
-using System.Collections;
 using System.Collections.Generic;
 using MessagePack;
-using Serializer.NetPackage.Runtime.Serializer;
-using UnityEngine;
 
-namespace Serializer
+namespace Serializer.NetPackage.Runtime.Serializer
 {
     [MessagePackObject]
     public class ConnMessage : NetMessage

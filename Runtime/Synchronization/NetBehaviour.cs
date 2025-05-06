@@ -1,11 +1,14 @@
 using System;
 using Runtime.NetPackage.Runtime.NetworkManager;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Runtime.NetPackage.Runtime.Synchronization
 {
+    [RequireComponent(typeof(SceneObjectId))]
     public abstract class NetBehaviour : MonoBehaviour
     {
+        [NonSerialized]
         public NetObject NetObject;
         public bool isOwned = true;
         protected bool spawned;
@@ -13,36 +16,28 @@ namespace Runtime.NetPackage.Runtime.Synchronization
         // Start is called before the first frame update
         private void Awake()
         {
+            if (!Application.isPlaying && NetObject == null)
+            {
+                Debug.Log("app");
+                NetScene.Instance.RegisterSceneObject(this);
+            }
         }
 
-        private void Start()
+
+        public void SetNetObject(NetObject obj)
         {
-            
+            NetObject = obj;
+            //OnNetObjectInitialized(); 
         }
-
-        // Update is called once per frame
-        private void Update()
-        {
-        
-        }
-
-        public void OnSpawn()
-        {
-            spawned = true;
-            NetSpawn();
-        }
-        public virtual void NetSpawn(){}
-
-        public void PreAwakeInitialize()
+        private void RegisterBehaviour()
         {
             if(NetObject != null)
                 return;
-            if (TryGetComponent(out NetBehaviour netBehaviour))
+            if (TryGetComponent(out NetBehaviour netBehaviour) && netBehaviour.NetObject != null)
             {
-                NetObject = netBehaviour.NetObject;
                 NetObject.Register(this);
             }
-            else NetObject = new NetObject(this);
+            else NetScene.Instance.RegisterSceneObject(this);
         }
     }
 }

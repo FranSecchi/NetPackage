@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using NetworkManager.NetPackage.Runtime.NetworkManager;
 using Runtime.NetPackage.Runtime.Synchronization;
@@ -12,7 +13,9 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
 {
     public class NetManager : MonoBehaviour
     {
+        public NetPrefabRegistry NetPrefabs;
         private static NetManager _manager;
+        private NetScene m_scene;
         public static ITransport Transport;
         public static int Port = 9050;
         public static List<int> allPlayers;
@@ -24,15 +27,6 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
         {
             Transport = transport;
         }
-        // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        // private static void InitializeNetBehaviours()
-        // {
-        //     if (!IsHost) return;
-        //     foreach (var netBehaviour in FindObjectsByType<NetBehaviour>(FindObjectsSortMode.None))
-        //     {
-        //         netBehaviour.PreAwakeInitialize();
-        //     }
-        // }
         private void Awake()
         {
             if (_manager != null)
@@ -40,12 +34,34 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             else _manager = this;
             Transport ??= new UDPSolution();
             allPlayers = new List<int>();
+            if (m_scene == null) m_scene = new NetScene();
+            if(NetScene.Instance == null) NetScene.Instance = m_scene;
+            if(NetPrefabs != null) NetScene.Instance.RegisterPrefabs(NetPrefabs.prefabs);
             DontDestroyOnLoad(this);
         }
+        private readonly Queue<Action> mainThreadActions = new();
+        public static void EnqueueMainThread(Action action)
+        {
+            lock (_manager.mainThreadActions)
+            {
+                _manager.mainThreadActions.Enqueue(action);
+            }
+        }
+        private void Update()
+        {
+            lock (mainThreadActions)
+            {
+                while (mainThreadActions.Count > 0)
+                {
+                    var action = mainThreadActions.Dequeue();
+                    action?.Invoke();
+                }
+            }
+        }
+
         public static void StartHost()
         {
             ITransport.OnDataReceived += Receive;
-            SceneManager.sceneLoaded += NetScene.OnSceneLoaded;
             Transport.Setup(Port, true);
             _manager._isHost = true;
             NetHost.StartHost();
@@ -75,7 +91,7 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             allPlayers.Clear();
             Messager.ClearHandlers();
             ITransport.OnDataReceived -= Receive;
-            SceneManager.sceneLoaded -= NetScene.OnSceneLoaded;
+            // SceneManager.sceneLoaded -= NetScene.OnSceneLoaded;
         }
         public static int ConnectionId()
         {
@@ -89,15 +105,18 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             else NetClient.Send(netMessage);
         }
 
-        public static void Spawn(int prefabId, Vector3 position, Quaternion rotation = default(Quaternion), bool ownsPrefab = false)
+        public static void Spawn(GameObject prefab, Vector3 position, Quaternion rotation = default, bool ownsPrefab = false)
         {
+            SpawnMessage spm = new SpawnMessage(ConnectionId(), prefab.name, position, ownsPrefab);
+            spm.requesterId = ConnectionId();
             if (IsHost)
             {
-                NetScene.Spawn(prefabId, position, rotation);
+                spm.netObjectId = NetScene.Instance.Spawn(spm);
+                NetHost.Send(spm);
             }
             else
             {
-                // NetClient.Spawn(prefabId, position, rotation);
+                NetClient.Send(spm);
             }
         }
         private static void Receive(int id)

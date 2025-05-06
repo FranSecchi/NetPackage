@@ -21,7 +21,9 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             ITransport.OnClientConnected += OnClientConnected;;
             ITransport.OnClientDisconnected += OnClientDisconnected;
             Messager.RegisterHandler<SyncMessage>(OnSyncMessage);
+            Messager.RegisterHandler<SpawnMessage>(OnSpawnMessage);
         }
+
 
         private static void OnClientDisconnected(int id)
         {
@@ -92,6 +94,16 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
         private static void OnSyncMessage(SyncMessage obj)
         {
             StateManager.SetSync(obj);
+        }
+        
+        private static void OnSpawnMessage(SpawnMessage msg)
+        {
+            //Validate
+            if(msg.target == null) msg.target = new List<int>();
+            msg.target.Add(msg.requesterId);
+            int id = NetScene.Instance.Spawn(msg);
+            msg.netObjectId = id;
+            Send(msg);
         }
     }
 }

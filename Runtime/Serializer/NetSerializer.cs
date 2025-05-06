@@ -9,9 +9,9 @@ namespace Serializer.NetPackage.Runtime.Serializer
             return _Serializer.Serialize(data);
         }
 
-        public static NetMessage Deserialize<T>(byte[] data) where T : NetMessage
+        public static T Deserialize<T>(byte[] data) where T : NetMessage
         {
-            return _Serializer.Deserialize<NetMessage>(data);
+            return _Serializer.Deserialize<T>(data);
         }
     }
 }

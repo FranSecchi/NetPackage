@@ -1,14 +1,27 @@
 using System.Collections.Generic;
+using MessagePack;
+using UnityEngine;
 
 namespace Serializer.NetPackage.Runtime.Serializer
 {
+    [MessagePackObject]
     public class SpawnMessage : NetMessage
     {
-        
+        [Key(1)]public string prefabName;
+        [Key(2)]public Vector3 position;
+        [Key(3)]public int requesterId;
+        [Key(4)]public bool own;
+        [Key(5)]public int netObjectId;
+        [Key(6)]public long sceneId;
         public SpawnMessage(){}
-        public SpawnMessage(List<int> target = null) : base(target)
+        public SpawnMessage(int requesterId, string prefabName, Vector3 position, bool own = false, long sceneId = -1, List<int> target = null) : base(target)
         {
-            
+            this.requesterId = requesterId;
+            this.prefabName = prefabName;
+            this.position = position;
+            this.own = own;
+            this.sceneId = sceneId;
+            netObjectId = -1;
         }
     }
 }

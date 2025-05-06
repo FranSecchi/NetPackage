@@ -16,8 +16,8 @@ namespace SynchronizationTest
         [SetUp]
         public void SetUp()
         {
-            
-            testObj = new TestObj(30, 600, "hello");
+            testObj = new GameObject().AddComponent<TestObj>();
+            testObj.Set(30, 600, "hello");
             ids = 1;
             netObject = new NetObject( ids++, testObj);
         }
@@ -44,24 +44,5 @@ namespace SynchronizationTest
             Messager.ClearHandlers();
         }
 
-    }
-    
-    public class TestObj : MonoBehaviour
-    {
-        [Sync]public int id;
-        [Sync]public int health;
-        [Sync]public string msg;
-
-        public TestObj(int id, int i, string helloWorld)
-        {
-            this.id = id;
-            health = i;
-            msg = helloWorld;
-        }
-
-        public TestObj Clone()
-        {
-            return new TestObj(id, health, msg);
-        }
     }
 }

@@ -44,22 +44,44 @@ namespace SerializerTest
             yield return ConnectClients();
             yield return new WaitForSeconds(0.5f);
             
+            // Clear any pending connection messages
+            foreach (ITransport client in _clients)
+            {
+                while (client.Receive() != null) { }
+            }
+            
             TestMsg testMsg = new TestMsg(34, "Hello World");
             
+            // Send message once
             NetManager.Send(testMsg);
             yield return new WaitForSeconds(0.5f);
             
+            // Each client should receive exactly one message
             foreach (ITransport client in _clients)
             {
-                byte[] data = client.Receive();
-                Assert.IsNotNull(data);
+                byte[] data = null;
+                // Try to receive message for up to 1 second
+                float startTime = Time.time;
+                while (data == null && Time.time - startTime < 1f)
+                {
+                    data = client.Receive();
+                    if (data == null)
+                    {
+                        yield return null;
+                    }
+                }
+                Assert.IsNotNull(data, "No message received from client");
                 NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
                 Messager.HandleMessage(msg);
+                
+                // Verify no more messages are in the queue
+                byte[] extraData = client.Receive();
+                Assert.IsNull(extraData, "Extra message received from client");
             }
             
             Assert.IsNotNull(received, "Received message is null");
             Assert.IsTrue(testMsg.ObjectID == received.ObjectID, "Object ID is incorrect");
-            Assert.IsTrue(testMsg.msg.Equals(received.msg), "Object ID is incorrect");
+            Assert.IsTrue(testMsg.msg.Equals(received.msg), "Message content is incorrect");
         }
         [UnityTest]
         public IEnumerator Server_ReceiveMsg()

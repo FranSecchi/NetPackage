@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
@@ -11,15 +12,13 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
     {
         protected readonly NetManager Peer;
         protected readonly int Port;
-        private byte[] _lastPacket;
-
+        private readonly ConcurrentQueue<byte[]> _packetQueue = new ConcurrentQueue<byte[]>();
 
         protected APeer(int port)
         {
             Peer = new NetManager(this);
             Port = port;
         }
-        
         
         public abstract void Start();
         public abstract void Connect(string address);
@@ -40,7 +39,11 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         }
         public byte[] Receive()
         {
-            return _lastPacket;
+            if (_packetQueue.TryDequeue(out byte[] packet))
+            {
+                return packet;
+            }
+            return null;
         }
         public void OnConnectionRequest(ConnectionRequest request)
         {
@@ -51,7 +54,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
         {
             Debug.Log("Data received from peer " + peer.Address + "|" + peer.Port + ":" + peer.Id);
-            _lastPacket = reader.GetRemainingBytes();
+            _packetQueue.Enqueue(reader.GetRemainingBytes());
             TriggerOnDataReceived(peer.Id);
             reader.Recycle();
         }
@@ -69,7 +72,6 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             
         }
 
-
         public void Poll()
         {
             Peer.PollEvents();
@@ -80,6 +82,5 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             Peer.DisconnectAll();
             Peer.Stop();
         }
-
     }
 }

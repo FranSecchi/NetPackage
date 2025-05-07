@@ -22,6 +22,13 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             ITransport.OnClientDisconnected += OnClientDisconnected;
             Messager.RegisterHandler<SyncMessage>(OnSyncMessage);
             Messager.RegisterHandler<SpawnMessage>(OnSpawnMessage);
+            Messager.RegisterHandler<ConnMessage>(OnConnMessage);
+        }
+
+        private static void OnConnMessage(ConnMessage obj)
+        {
+            if(!obj.AllConnected.Count.Equals(NetManager.allPlayers.Count))
+                UpdatePlayers(obj.CurrentConnected);
         }
 
 
@@ -46,8 +53,9 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
 
         private static void UpdatePlayers(int id)
         {
-            NetManager.allPlayers.Add(id);
+            if(!NetManager.allPlayers.Contains(id)) NetManager.allPlayers.Add(id);
             NetMessage msg = new ConnMessage(id, NetManager.allPlayers);
+            Debug.Log("Sent conn message");
             Send(msg);
         }
 

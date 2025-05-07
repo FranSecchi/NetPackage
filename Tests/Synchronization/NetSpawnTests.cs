@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
@@ -21,6 +22,7 @@ namespace SynchronizationTest
     {
         private NetPrefabRegistry prefabs;
         private ITransport client;
+        private NetMessage received;
         private const int CLIENT_ID = 0;
 
         /// <summary>
@@ -99,14 +101,12 @@ namespace SynchronizationTest
             Vector3 spawnPos = new Vector3(4, 5, 6);
             NetMessage clientSpawnMsg = new SpawnMessage(CLIENT_ID, "TestObj", spawnPos, own: true);
             client.Send(NetSerializer.Serialize(clientSpawnMsg));
-            
             yield return new WaitForSeconds(0.5f);
             
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.AreEqual(initialCount + 1, objs.Length, "Object not spawned");
 
-            NetMessage msg = NetSerializer.Deserialize<NetMessage>(client.Receive());
-            Assert.IsTrue(msg is SpawnMessage, "Wrong message type received");
+            yield return WaitValidate(typeof(SpawnMessage));
             
             bool found = false;
             foreach (var obj in objs)
@@ -132,14 +132,7 @@ namespace SynchronizationTest
         public IEnumerator SceneObjectSpawnTest()
         {
             yield return WaitConnection();
-            
-            byte[] data = client.Receive();
-            Assert.NotNull(data, "Client did not receive scene object spawn");
-            
-            NetMessage receivedMsg = NetSerializer.Deserialize<NetMessage>(data);
-            Assert.IsTrue(receivedMsg is SpawnMessage, "Wrong message type received: " + receivedMsg.GetType());
-            
-            SpawnMessage spawnMsg = (SpawnMessage)receivedMsg;
+            SpawnMessage spawnMsg = (SpawnMessage)received;
             Assert.GreaterOrEqual(spawnMsg.sceneId, 0, "Scene ID not set");
             
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
@@ -173,15 +166,33 @@ namespace SynchronizationTest
         {
             yield return new WaitForSeconds(0.2f);
             client.Connect("localhost");
-            yield return new WaitForSeconds(0.5f);
-            yield return WaitValidate();
+            yield return WaitValidate(typeof(SpawnMessage));
+            client.Send(NetSerializer.Serialize(received));
+            yield return new WaitForSeconds(0.2f);
         }
 
-        private IEnumerator WaitValidate()
+        private IEnumerator WaitValidate(Type expectedType)
         {
-            yield return new WaitForSeconds(0.2f);
-            client.Send(client.Receive());
-            yield return new WaitForSeconds(0.5f);
+            byte[] data = null;
+            float startTime = Time.time;
+            NetMessage msg = null;
+            while (Time.time - startTime < 1f)
+            {
+                data = client.Receive();
+                if (data != null)
+                {
+                    msg = NetSerializer.Deserialize<NetMessage>(data);
+                    if (msg.GetType() == expectedType)
+                    {
+                        received = msg;
+                        yield break;
+                    }
+                }
+                yield return null;
+            }
+            
+            Assert.IsTrue(msg != null && msg.GetType() == expectedType, 
+                $"Expected message of type {expectedType.Name} but got {(msg == null ? "null" : msg.GetType().Name)}");
         }
         /// <summary>
         /// Registers test prefab with NetScene

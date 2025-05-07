@@ -62,28 +62,26 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             }
             else
             {
-                SpawnImmediate(msg);
+                NetManager.EnqueueMainThread(() => { SpawnImmediate(msg);});
             }
         }
 
         private void SpawnImmediate(SpawnMessage msg)
         {
+            if (NetManager.IsHost && msg.netObjectId >= 0) return;
             GameObject obj = m_prefabs[msg.prefabName];
-            msg.netObjectId = msg.netObjectId >= 0 ? msg.netObjectId : netObjectId++;
             
-            Debug.Log($"Spawned immediate"); 
-            NetManager.EnqueueMainThread(() => { 
-                GameObject instance = GameObject.Instantiate(obj, msg.position, Quaternion.identity);
-                int ownerId = msg.own ? msg.requesterId : NetManager.ConnectionId();
-                NetObject netObj = new NetObject(msg.netObjectId, instance.GetComponent<NetBehaviour>(), ownerId);
-                Register(netObj);
-                ValidateSpawn(msg);
-                Debug.Log($"Spawned NetObject with ID {msg.netObjectId}, owned by {ownerId}"); 
-            });
+            GameObject instance = GameObject.Instantiate(obj, msg.position, Quaternion.identity);
+            NetObject netObj = instance.GetComponent<NetBehaviour>().NetObject;
             
-            Debug.Log($"msg {msg.target}"); 
+            netObj.OwnerId = msg.own ? msg.requesterId : NetManager.ConnectionId();
+            msg.netObjectId = msg.netObjectId >= 0 ? msg.netObjectId : netObj.NetId;
+            Register(netObj);
+            ValidateSpawn(msg);
+            Debug.Log($"Spawned NetObject with ID {msg.netObjectId}, owned by {netObj.OwnerId}");
+            msg.target = null;
             if(NetManager.IsHost)
-                NetManager.Send(msg);
+                NetHost.Send(msg);
         }
 
         private void SpawnSceneObject(SpawnMessage msg)
@@ -127,6 +125,7 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
 
         private void Register(NetObject obj)
         {
+            if (netObjects.ContainsKey(obj.NetId)) return;
             netObjects[obj.NetId] = obj;
             StateManager.Register(obj.NetId, new ObjectState());
         }

@@ -40,6 +40,7 @@ namespace Synchronization.NetPackage.Runtime.Synchronization
         {
             foreach (var netObject in snapshot)
             {
+                Debug.Log("in state: " + netObject.Key);
                 var changes = netObject.Value.Update();
                 if (changes.Count > 0)
                     Send(netObject.Key, changes);
@@ -50,6 +51,7 @@ namespace Synchronization.NetPackage.Runtime.Synchronization
         {
             foreach (var change in changes)
             {
+                Debug.Log("syc msg sent");
                 SyncMessage msg = new SyncMessage(netObjectKey, change.Key, change.Value);
                 NetManager.Send(msg);
             }

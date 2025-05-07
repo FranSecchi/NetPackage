@@ -12,8 +12,12 @@ namespace Runtime.NetPackage.Runtime.Synchronization
         public readonly int NetId;
         private int _ownerId;
         public List<NetBehaviour> _behaviours;
-        public int OwnerId => _ownerId;
-        
+        public int OwnerId
+        {
+            get => _ownerId;
+            set => _ownerId = value;
+        }
+
         // Changed logic: object is owned if the current connection is the owner
         public bool Owned => _ownerId == NetManager.ConnectionId();
 

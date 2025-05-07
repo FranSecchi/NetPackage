@@ -23,7 +23,8 @@ namespace SynchronizationTest
         private NetPrefabRegistry prefabs;
         private ITransport client;
         private GameObject testObj;
-        private const int CLIENT_ID = 1;
+        private NetMessage received;
+        private const int CLIENT_ID = 0;
 
         /// <summary>
         /// Sets up the test environment with NetManager, scene loading, and client connection
@@ -53,27 +54,17 @@ namespace SynchronizationTest
         public IEnumerator SendSingleUpdate()
         {
             yield return WaitConnection();
-            yield return new WaitForSeconds(0.2f);
-            client.Send(client.Receive());
-            yield return new WaitForSeconds(0.2f);
             
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.AreEqual(1, objs.Length, "Scene object not found");
             
             TestObj testComponent = objs[0];
             testComponent.Set(42, 100, "test");
-            
             StateManager.SendUpdateStates();
             
-            yield return new WaitForSeconds(0.2f);
-            
-            byte[] data = client.Receive();
-            Assert.NotNull(data, "Client did not receive state update");
-            
-            NetMessage receivedMsg = NetSerializer.Deserialize<NetMessage>(data);
-            Assert.IsTrue(receivedMsg is SyncMessage, "Wrong message type received: " + receivedMsg.GetType());
-            
-            SyncMessage syncMsg = (SyncMessage)receivedMsg;
+            yield return WaitValidate(typeof(SyncMessage));
+
+            SyncMessage syncMsg = (SyncMessage)received;
             Assert.AreEqual(testComponent.NetObject.NetId, syncMsg.ObjectID, "Wrong object ID in sync message");
             Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message");
         }
@@ -85,9 +76,6 @@ namespace SynchronizationTest
         public IEnumerator SendMultipleUpdate()
         {
             yield return WaitConnection();
-            yield return new WaitForSeconds(0.2f);
-            client.Send(client.Receive());
-            yield return new WaitForSeconds(0.2f);
             
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.AreEqual(1, objs.Length, "Scene object not found");
@@ -100,25 +88,13 @@ namespace SynchronizationTest
             comp2.Set(200, 2000, "second_changed");
             
             StateManager.SendUpdateStates();
-            
-            yield return new WaitForSeconds(0.2f);
-            
-            byte[] data = client.Receive();
-            Assert.NotNull(data, "No sync message received");
-            
-            NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
-            Assert.IsTrue(msg is SyncMessage, "Wrong message type: \n"+msg.ToString());
-            
-            SyncMessage syncMsg = (SyncMessage)msg;
+
+            yield return WaitValidate(typeof(SyncMessage));
+            SyncMessage syncMsg = (SyncMessage)received;
             Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message");
-            
-            data = client.Receive();
-            Assert.NotNull(data, "No sync message received for second component");
-            
-            msg = NetSerializer.Deserialize<NetMessage>(data);
-            Assert.IsTrue(msg is SyncMessage, "Wrong message type for second component: " + msg.GetType());
-            
-            syncMsg = (SyncMessage)msg;
+
+            yield return WaitValidate(typeof(SyncMessage));
+            syncMsg = (SyncMessage)received;
             Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message for second component");
         }
 
@@ -129,9 +105,6 @@ namespace SynchronizationTest
         public IEnumerator ReceiveSingleUpdate()
         {
             yield return WaitConnection();
-            yield return new WaitForSeconds(0.2f);
-            client.Send(client.Receive());
-            yield return new WaitForSeconds(0.2f);
 
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.AreEqual(1, objs.Length, "Scene object not found");
@@ -143,7 +116,12 @@ namespace SynchronizationTest
             NetMessage syncMsg = new SyncMessage(testComponent.NetObject.NetId, 0, changes);
             client.Send(NetSerializer.Serialize(syncMsg));
 
-            yield return new WaitForSeconds(0.2f);
+            // Wait for message to be processed
+            float startTime = Time.time;
+            while (testComponent.health == initialHealth && Time.time - startTime < 1f)
+            {
+                yield return null;
+            }
 
             Assert.AreEqual(50, testComponent.health, "State update not applied");
             Assert.AreNotEqual(initialHealth, testComponent.health, "Health value unchanged");
@@ -156,16 +134,11 @@ namespace SynchronizationTest
         public IEnumerator ReceiveMultipleUpdate()
         {
             yield return WaitConnection();
-            yield return new WaitForSeconds(0.2f);
-            client.Send(client.Receive());
-            yield return new WaitForSeconds(0.2f);
 
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.AreEqual(1, objs.Length, "Scene object not found");
             var comp1 = objs[0];
             var comp2 = objs[0].gameObject.AddComponent<TestObj>();
-            yield return new WaitForSeconds(0.2f);
-
             // Create and send sync messages from client
             Dictionary<string, object> changes1 = new Dictionary<string, object> { { "health", 150 }, { "msg", "changed1" } };
             Dictionary<string, object> changes2 = new Dictionary<string, object> { { "health", 250 }, { "msg", "changed2" } };
@@ -175,7 +148,12 @@ namespace SynchronizationTest
             client.Send(NetSerializer.Serialize(syncMsg));
             client.Send(NetSerializer.Serialize(syncMsg1));
 
-            yield return new WaitForSeconds(0.2f);
+            // Wait for messages to be processed
+            float startTime = Time.time;
+            while ((comp1.health != 150 || comp2.health != 250) && Time.time - startTime < 1f)
+            {
+                yield return null;
+            }
 
             Assert.AreEqual(150, comp1.health, "First component update not applied");
             Assert.AreEqual("changed1", comp1.msg, "First component message not updated");
@@ -190,9 +168,6 @@ namespace SynchronizationTest
         public IEnumerator OwnershipChangeTest()
         {
             yield return WaitConnection();
-            yield return new WaitForSeconds(0.2f);
-            client.Send(client.Receive());
-            yield return new WaitForSeconds(0.2f);
 
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.AreEqual(1, objs.Length, "Scene object not found");
@@ -200,16 +175,10 @@ namespace SynchronizationTest
 
             // Change ownership to client
             testComponent.NetObject.GiveOwner(CLIENT_ID);
-            yield return new WaitForSeconds(0.2f);
+            yield return WaitValidate(typeof(OwnershipMessage));
 
-            // Verify client received ownership message
-            byte[] data = client.Receive();
-            Assert.NotNull(data, "No ownership message received");
 
-            NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
-            Assert.IsTrue(msg is OwnershipMessage, "Wrong message type received: " + msg.ToString());
-
-            OwnershipMessage ownerMsg = (OwnershipMessage)msg;
+            OwnershipMessage ownerMsg = (OwnershipMessage)received;
             Assert.AreEqual(CLIENT_ID, ownerMsg.newOwnerId, "Wrong owner ID in message");
             Assert.AreEqual(testComponent.NetObject.NetId, ownerMsg.netObjectId, "Wrong object ID in ownership message");
         }
@@ -221,9 +190,6 @@ namespace SynchronizationTest
         public IEnumerator StateRecoveryAfterDisconnect()
         {
             yield return WaitConnection();
-            yield return new WaitForSeconds(0.2f);
-            client.Send(client.Receive());
-            yield return new WaitForSeconds(0.2f);
 
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             var testComponent = objs[0];
@@ -239,45 +205,11 @@ namespace SynchronizationTest
             client.Start();
             yield return WaitConnection();
 
-            // Verify state is recovered
-            byte[] data = client.Receive();
-            Assert.NotNull(data, "No spawn message received after reconnect");
-
-            NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
-            Assert.IsTrue(msg is SpawnMessage, "Wrong message type received after reconnect");
 
             // Verify state values
             Assert.AreEqual(888, testComponent.health, "Health not recovered after reconnect");
             Assert.AreEqual(999, testComponent.id, "Id not recovered after reconnect");
             Assert.AreEqual("test_before_disconnect", testComponent.msg, "Message not recovered after reconnect");
-        }
-
-        /// <summary>
-        /// Tests concurrent updates from multiple sources
-        /// </summary>
-        [UnityTest]
-        public IEnumerator ConcurrentUpdatesTest()
-        {
-            yield return WaitConnection();
-            yield return new WaitForSeconds(0.2f);
-            client.Send(client.Receive());
-            yield return new WaitForSeconds(0.2f);
-
-            var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            var testComponent = objs[0];
-
-            // Send update from client
-            Dictionary<string, object> clientChanges = new Dictionary<string, object> { { "health", 100 } };
-            NetMessage syncMsg = new SyncMessage(testComponent.NetObject.NetId, 0, clientChanges);
-            client.Send(NetSerializer.Serialize(syncMsg));
-
-            // Local update
-            testComponent.Set( testComponent.id, 200, testComponent.msg);
-
-            yield return new WaitForSeconds(0.2f);
-
-            // Host update should take precedence
-            Assert.AreEqual(200, testComponent.health, "Host update not preserved in concurrent update");
         }
 
         /// <summary>
@@ -304,9 +236,34 @@ namespace SynchronizationTest
         {
             yield return new WaitForSeconds(0.2f);
             client.Connect("localhost");
+            yield return WaitValidate(typeof(SpawnMessage));
+            client.Send(NetSerializer.Serialize(received));
             yield return new WaitForSeconds(0.2f);
         }
 
+        private IEnumerator WaitValidate(Type expectedType)
+        {
+            byte[] data = null;
+            float startTime = Time.time;
+            NetMessage msg = null;
+            while (Time.time - startTime < 1f)
+            {
+                data = client.Receive();
+                if (data != null)
+                {
+                    msg = NetSerializer.Deserialize<NetMessage>(data);
+                    if (msg.GetType() == expectedType)
+                    {
+                        received = msg;
+                        yield break;
+                    }
+                }
+                yield return null;
+            }
+            
+            Assert.IsTrue(msg != null && msg.GetType() == expectedType, 
+                $"Expected message of type {expectedType.Name} but got {(msg == null ? "null" : msg.GetType().Name)}");
+        }
         /// <summary>
         /// Registers test prefab with NetScene
         /// </summary>

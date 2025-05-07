@@ -11,9 +11,9 @@ namespace Runtime.NetPackage.Runtime.Synchronization
     {
         [NonSerialized]
         public NetObject NetObject;
+        private bool registered = false;
         public bool isOwned = true;
         protected bool spawned;
-        public bool registered = false;
         
         private void Awake()
         {

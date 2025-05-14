@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using Runtime.NetPackage.Runtime.NetworkManager;
 using Runtime.NetPackage.Runtime.Synchronization;
@@ -8,6 +9,7 @@ using Transport.NetPackage.Runtime.Transport;
 using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
+using MessagePack;
 
 namespace SynchronizationTest
 {
@@ -39,9 +41,10 @@ namespace SynchronizationTest
         }
 
         [UnityTest]
-        public IEnumerator TestClientToServerRPC()
+        public IEnumerator TestBidirectionalRPC()
         {
-            NetMessage msg = new RPCMessage(0, testObj.NetObject.NetId, "TestRPC", 42, "test");
+            // Test client to server
+            NetMessage msg = new RPCMessage(0, testObj.NetObject.NetId, "TestRPC", null, 42, "test");
             client.Send(NetSerializer.Serialize(msg));
             
             float startTime = Time.time;
@@ -52,11 +55,8 @@ namespace SynchronizationTest
             
             Assert.AreEqual(42, testObj.lastReceivedValue, "Server did not receive correct value from client RPC");
             Assert.AreEqual("test", testObj.lastReceivedMessage, "Server did not receive correct message from client RPC");
-        }
 
-        [UnityTest]
-        public IEnumerator TestServerToClientRPC()
-        {
+            // Test server to client
             testObj.lastReceivedValue = 0;
             testObj.lastReceivedMessage = "";
             
@@ -65,53 +65,195 @@ namespace SynchronizationTest
             yield return WaitValidate(typeof(RPCMessage));
             Assert.IsTrue(received is RPCMessage, "Client did not receive RPC message");
             
-            float startTime = Time.time;
-            while (testObj.lastReceivedValue == 0 && Time.time - startTime < 1f)
-            {
-                yield return null;
-            }
             
-            
-            RPCMessage msg = (RPCMessage)received;
-            Assert.AreEqual(100, msg.Parameters[0], "Client did not receive correct value from server RPC");
-            Assert.AreEqual("server_test", msg.Parameters[1], "Client did not receive correct message from server RPC");
-            
-            Assert.AreEqual(100, testObj.lastReceivedValue, "Server did not call RPC itself");
-            Assert.AreEqual("server_test", testObj.lastReceivedMessage, "Server did not call RPC itself");
+            RPCMessage rpcMsg = (RPCMessage)received;
+            Assert.AreEqual(100, rpcMsg.Parameters[0], "Client did not receive correct value from server RPC");
+            Assert.AreEqual("server_test", rpcMsg.Parameters[1], "Client did not receive correct message from server RPC");
         }
 
         [UnityTest]
-        public IEnumerator TestServerOnlyRPC()
+        public IEnumerator TestServerToClientRPC()
         {
-            NetMessage msg = new RPCMessage(0, testObj.NetObject.NetId, "ServerOnlyRPC");
+            testObj.serverToClientCalled = false;
+            
+            testObj.CallServerToClientRPC();
+            
+            yield return WaitValidate(typeof(RPCMessage));
+            Assert.IsTrue(received is RPCMessage, "Client did not receive RPC message");
+        }
+
+        [UnityTest]
+        public IEnumerator TestClientToServerRPC()
+        {
+            testObj.clientToServerCalled = false;
+            
+            NetMessage msg = new RPCMessage(0, testObj.NetObject.NetId, "ClientToServerRPC");
             client.Send(NetSerializer.Serialize(msg));
             
             float startTime = Time.time;
-            while (!testObj.serverOnlyCalled && Time.time - startTime < 1f)
+            while (!testObj.clientToServerCalled && Time.time - startTime < 1f)
             {
                 yield return null;
             }
             
-            Assert.IsTrue(testObj.serverOnlyCalled, "Server-only RPC was not called on server");
+            Assert.IsTrue(testObj.clientToServerCalled, "Client-to-server RPC was not called on server");
         }
 
         [UnityTest]
-        public IEnumerator TestClientOnlyRPC()
+        public IEnumerator TestTargetModeAll()
         {
-            testObj.clientOnlyCalled = false;
+            testObj.targetModeAllCalled = false;
+            testObj.targetModeAllCallCount = 0;
             
-            testObj.CallClientOnlyRPC();
+            testObj.CallTargetModeAllRPC();
             
             yield return WaitValidate(typeof(RPCMessage));
             Assert.IsTrue(received is RPCMessage, "Client did not receive RPC message");
             
             float startTime = Time.time;
-            while (!testObj.clientOnlyCalled && Time.time - startTime < 1f)
+            while (!testObj.targetModeAllCalled && Time.time - startTime < 1f)
             {
                 yield return null;
             }
             
-            Assert.IsFalse(testObj.clientOnlyCalled, "Client-only RPC was not called on client");
+            Assert.IsTrue(testObj.targetModeAllCalled, "TargetMode.All RPC was not called on server");
+            Assert.AreEqual(1, testObj.targetModeAllCallCount, "TargetMode.All RPC was not called exactly once");
+        }
+
+        [UnityTest]
+        public IEnumerator TestTargetModeSpecific()
+        {
+            testObj.targetModeSpecificCalled = false;
+            testObj.targetModeSpecificCallCount = 0;
+            
+            // Test server sending to specific client
+            var targetList = new List<int> { 0 }; // Send to client with ID 0
+            testObj.CallTargetModeSpecificRPC(targetList);
+            
+            yield return WaitValidate(typeof(RPCMessage));
+            Assert.IsTrue(received is RPCMessage, "Client did not receive RPC message");
+            
+            
+            // Test client sending to server
+            testObj.targetModeSpecificCalled = false;
+            testObj.targetModeSpecificCallCount = 0;
+            
+            var serverTargetList = new List<int> { NetManager.ConnectionId() };
+            NetMessage msg = new RPCMessage(0, testObj.NetObject.NetId, "TargetModeSpecificRPC", null, serverTargetList);
+            client.Send(NetSerializer.Serialize(msg));
+            
+            float startTime = Time.time;
+            while (!testObj.targetModeSpecificCalled && Time.time - startTime < 1f)
+            {
+                yield return null;
+            }
+            
+            Assert.IsTrue(testObj.targetModeSpecificCalled, "TargetMode.Specific RPC was not called on server");
+            Assert.AreEqual(1, testObj.targetModeSpecificCallCount, "TargetMode.Specific RPC was not called exactly once");
+        }
+
+        [UnityTest]
+        public IEnumerator TestTargetModeOthers()
+        {
+            testObj.targetModeOthersCalled = false;
+            testObj.targetModeOthersCallCount = 0;
+            
+            // Test server sending to all clients except itself
+            testObj.CallTargetModeOthersRPC();
+            
+            yield return WaitValidate(typeof(RPCMessage));
+            Assert.IsTrue(received is RPCMessage, "Client did not receive RPC message");
+            
+            float startTime = Time.time;
+            while (!testObj.targetModeOthersCalled && Time.time - startTime < 1f)
+            {
+                yield return null;
+            }
+            
+            Assert.IsFalse(testObj.targetModeOthersCalled, "TargetMode.Others RPC was called on server when it shouldn't be");
+            Assert.AreEqual(0, testObj.targetModeOthersCallCount, "TargetMode.Others RPC was called on server when it shouldn't be");
+            
+            // Test client sending to server
+            testObj.targetModeOthersCalled = false;
+            testObj.targetModeOthersCallCount = 0;
+            
+            NetMessage msg = new RPCMessage(0, testObj.NetObject.NetId, "TargetModeOthersRPC");
+            client.Send(NetSerializer.Serialize(msg));
+            
+            startTime = Time.time;
+            while (!testObj.targetModeOthersCalled && Time.time - startTime < 1f)
+            {
+                yield return null;
+            }
+            
+            Assert.IsTrue(testObj.targetModeOthersCalled, "TargetMode.Others RPC was not called on server");
+            Assert.AreEqual(1, testObj.targetModeOthersCallCount, "TargetMode.Others RPC was not called exactly once");
+        }
+
+        [UnityTest]
+        public IEnumerator TestComplexDataRPC()
+        {
+            // Create complex data
+            var complexData = new TestRPCBehaviour.ComplexData
+            {
+                Id = 42,
+                Name = "TestObject",
+                Tags = new List<string> { "tag1", "tag2", "tag3" },
+                Stats = new Dictionary<string, int>
+                {
+                    { "health", 100 },
+                    { "mana", 50 },
+                    { "stamina", 75 }
+                }
+            };
+
+            // Test server to client
+            testObj.CallComplexDataRPC(complexData);
+            
+            yield return WaitValidate(typeof(RPCMessage));
+            Assert.IsTrue(received is RPCMessage, "Client did not receive RPC message");
+            
+            float startTime = Time.time;
+            while (testObj.lastReceivedComplexData == null && Time.time - startTime < 1f)
+            {
+                yield return null;
+            }
+            
+            Assert.IsNotNull(testObj.lastReceivedComplexData, "Complex data was not received");
+            Assert.AreEqual(complexData.Id, testObj.lastReceivedComplexData.Id, "Complex data Id mismatch");
+            Assert.AreEqual(complexData.Name, testObj.lastReceivedComplexData.Name, "Complex data Name mismatch");
+            Assert.AreEqual(complexData.Tags.Count, testObj.lastReceivedComplexData.Tags.Count, "Complex data Tags count mismatch");
+            Assert.AreEqual(complexData.Stats.Count, testObj.lastReceivedComplexData.Stats.Count, "Complex data Stats count mismatch");
+            
+            // Test client to server
+            testObj.lastReceivedComplexData = null;
+            
+            var clientComplexData = new TestRPCBehaviour.ComplexData
+            {
+                Id = 123,
+                Name = "ClientObject",
+                Tags = new List<string> { "client", "test" },
+                Stats = new Dictionary<string, int>
+                {
+                    { "score", 1000 },
+                    { "level", 5 }
+                }
+            };
+            
+            NetMessage msg = new RPCMessage(0, testObj.NetObject.NetId, "ComplexDataRPC", null, clientComplexData);
+            client.Send(NetSerializer.Serialize(msg));
+            
+            startTime = Time.time;
+            while (testObj.lastReceivedComplexData == null && Time.time - startTime < 1f)
+            {
+                yield return null;
+            }
+            
+            Assert.IsNotNull(testObj.lastReceivedComplexData, "Complex data was not received from client");
+            Assert.AreEqual(clientComplexData.Id, testObj.lastReceivedComplexData.Id, "Client complex data Id mismatch");
+            Assert.AreEqual(clientComplexData.Name, testObj.lastReceivedComplexData.Name, "Client complex data Name mismatch");
+            Assert.AreEqual(clientComplexData.Tags.Count, testObj.lastReceivedComplexData.Tags.Count, "Client complex data Tags count mismatch");
+            Assert.AreEqual(clientComplexData.Stats.Count, testObj.lastReceivedComplexData.Stats.Count, "Client complex data Stats count mismatch");
         }
 
         private IEnumerator WaitConnection()
@@ -172,8 +314,24 @@ namespace SynchronizationTest
     {
         public int lastReceivedValue;
         public string lastReceivedMessage;
-        public bool serverOnlyCalled;
-        public bool clientOnlyCalled;
+        public bool serverToClientCalled;
+        public bool clientToServerCalled;
+        public bool targetModeAllCalled;
+        public int targetModeAllCallCount;
+        public bool targetModeSpecificCalled;
+        public int targetModeSpecificCallCount;
+        public bool targetModeOthersCalled;
+        public int targetModeOthersCallCount;
+        public ComplexData lastReceivedComplexData;
+
+        [MessagePackObject]
+        public class ComplexData
+        {
+            [Key(0)] public int Id { get; set; }
+            [Key(1)] public string Name { get; set; }
+            [Key(2)] public List<string> Tags { get; set; }
+            [Key(3)] public Dictionary<string, int> Stats { get; set; }
+        }
 
         [NetRPC]
         public void TestRPC(int value, string message)
@@ -182,16 +340,43 @@ namespace SynchronizationTest
             lastReceivedMessage = message;
         }
 
-        [NetRPC(serverOnly: true)]
-        public void ServerOnlyRPC()
+        [NetRPC]
+        public void ComplexDataRPC(ComplexData data)
         {
-            serverOnlyCalled = true;
+            lastReceivedComplexData = data;
         }
 
-        [NetRPC(clientOnly: true)]
-        public void ClientOnlyRPC()
+        [NetRPC(Direction.ServerToClient)]
+        public void ServerToClientRPC()
         {
-            clientOnlyCalled = true;
+            serverToClientCalled = true;
+        }
+
+        [NetRPC(Direction.ClientToServer)]
+        public void ClientToServerRPC()
+        {
+            clientToServerCalled = true;
+        }
+
+        [NetRPC(Direction.Bidirectional, Send.All)]
+        public void TargetModeAllRPC()
+        {
+            targetModeAllCalled = true;
+            targetModeAllCallCount++;
+        }
+
+        [NetRPC(Direction.Bidirectional, Send.Specific)]
+        public void TargetModeSpecificRPC(List<int> targetId)
+        {
+            targetModeSpecificCalled = true;
+            targetModeSpecificCallCount++;
+        }
+
+        [NetRPC(Direction.Bidirectional, Send.Others)]
+        public void TargetModeOthersRPC()
+        {
+            targetModeOthersCalled = true;
+            targetModeOthersCallCount++;
         }
 
         public void CallTestRPC(int value, string message)
@@ -199,14 +384,34 @@ namespace SynchronizationTest
             CallRPC("TestRPC", value, message);
         }
 
-        public void CallServerOnlyRPC()
+        public void CallServerToClientRPC()
         {
-            CallRPC("ServerOnlyRPC");
+            CallRPC("ServerToClientRPC");
         }
 
-        public void CallClientOnlyRPC()
+        public void CallClientToServerRPC()
         {
-            CallRPC("ClientOnlyRPC");
+            CallRPC("ClientToServerRPC");
+        }
+
+        public void CallTargetModeAllRPC()
+        {
+            CallRPC("TargetModeAllRPC");
+        }
+
+        public void CallTargetModeSpecificRPC(List<int> targetId)
+        {
+            CallRPC("TargetModeSpecificRPC", targetId);
+        }
+
+        public void CallTargetModeOthersRPC()
+        {
+            CallRPC("TargetModeOthersRPC");
+        }
+
+        public void CallComplexDataRPC(ComplexData data)
+        {
+            CallRPC("ComplexDataRPC", data);
         }
     }
 } 

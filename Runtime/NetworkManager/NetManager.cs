@@ -37,8 +37,11 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             allPlayers = new List<int>();
             if (m_scene == null) m_scene = new NetScene();
             if(NetPrefabs != null) NetScene.Instance.RegisterPrefabs(NetPrefabs.prefabs);
+            Messager.RegisterHandler<RPCMessage>(RPCManager.CallRPC);
             DontDestroyOnLoad(this);
         }
+
+
         private readonly Queue<Action> mainThreadActions = new();
         public static void EnqueueMainThread(Action action)
         {

@@ -10,7 +10,6 @@ namespace Runtime.NetPackage.Runtime.Synchronization
 {
     public class RPCManager
     {
-
         private static Dictionary<int, List<object>> _rpcTargets = new();
         private static Dictionary<int, Dictionary<string, List<MethodInfo>>> _rpcMethods = new();
         
@@ -74,7 +73,12 @@ namespace Runtime.NetPackage.Runtime.Synchronization
             }
         }
 
-        public static void CallRPC(int netId, string methodName, params object[] parameters)
+        public static void CallRPC(RPCMessage message)
+        {
+            CallRPC(message.ObjectId, message.MethodName, message.Parameters);
+        }
+
+        public static void CallRPC(int netId, string methodName, object[] parameters)
         {
             if (!_rpcTargets.ContainsKey(netId))
             {
@@ -87,31 +91,34 @@ namespace Runtime.NetPackage.Runtime.Synchronization
                 Debug.LogWarning($"No RPC method {methodName} found for netId {netId}");
                 return;
             }
-
+            
             foreach (var method in _rpcMethods[netId][methodName])
             {
-                var rpcAttr = method.GetCustomAttribute<NetRPC>();
-                if (rpcAttr != null)
-                {
-                    if (rpcAttr.ServerOnly && !NetManager.IsHost)
-                    {
-                        Debug.LogWarning($"RPC {methodName} is server-only");
-                        continue;
-                    }
-                    if (rpcAttr.ClientOnly && NetManager.IsHost)
-                    {
-                        Debug.LogWarning($"RPC {methodName} is client-only");
-                        continue;
-                    }
-                }
-
                 try
                 {
                     var target = _rpcTargets[netId].Find(t => t.GetType() == method.DeclaringType);
                     if (target != null)
                     {
-                        Debug.Log("Calling RPC: " + method.Name);
-                        method.Invoke(target, parameters);
+                        var paramTypes = method.GetParameters();
+                        var convertedParams = new object[parameters.Length];
+                        for (int i = 0; i < parameters.Length; i++)
+                        {
+                            var p = parameters[i];
+                            if (p == null)
+                            {
+                                convertedParams[i] = null;
+                            }
+                            else if (paramTypes[i].ParameterType.IsInstanceOfType(p))
+                            {
+                                convertedParams[i] = p;
+                            }
+                            else
+                            {
+                                var bytes = NetSerializer._Serializer.Serialize(p);
+                                convertedParams[i] = NetSerializer._Serializer.Deserialize(bytes, paramTypes[i].ParameterType);
+                            }
+                        }
+                        method.Invoke(target, convertedParams);
                     }
                 }
                 catch (Exception e)
@@ -123,7 +130,57 @@ namespace Runtime.NetPackage.Runtime.Synchronization
 
         public static void SendRPC(int netId, string methodName, params object[] parameters)
         {
-            var message = new RPCMessage(NetManager.ConnectionId(), netId, methodName, parameters);
+            if (!_rpcTargets.ContainsKey(netId))
+            {
+                Debug.LogWarning($"No RPC targets found for netId {netId}");
+                return;
+            }
+
+            if (!_rpcMethods[netId].ContainsKey(methodName))
+            {
+                Debug.LogWarning($"No RPC method {methodName} found for netId {netId}");
+                return;
+            }
+            List<int> targetIds = null;
+            
+            foreach (var method in _rpcMethods[netId][methodName])
+            {
+                var rpcAttr = method.GetCustomAttribute<NetRPC>();
+                if (rpcAttr != null)
+                {
+                    if (rpcAttr.Direction == Direction.ServerToClient && !NetManager.IsHost)
+                    {
+                        Debug.LogWarning($"Cannot send RPC {methodName} - it is server-to-client only");
+                        return;
+                    }
+                    if (rpcAttr.Direction == Direction.ClientToServer && NetManager.IsHost)
+                    {
+                        Debug.LogWarning($"Cannot send RPC {methodName} - it is client-to-server only");
+                        return;
+                    }
+                    
+                    switch(rpcAttr.TargetMode)
+                    {
+                        case Send.Specific:
+                            if (parameters[^1].GetType() != typeof(List<int>))
+                            {
+                                Debug.LogWarning(
+                                    $"Cannot send RPC {methodName} - the last parameter should be the target clients as a List<int> and is {parameters[^1].GetType()}");
+                                return;
+                            }
+                            targetIds = (List<int>)parameters[^1];
+                            break;
+                        case Send.Others:
+                            targetIds = new List<int>(NetManager.allPlayers);
+                            targetIds.Remove(NetManager.ConnectionId());
+                            break;
+                        case Send.All:
+                            CallRPC(netId, methodName, parameters);
+                            break;
+                    }
+                }
+            }
+            var message = new RPCMessage(NetManager.ConnectionId(), netId, methodName, targetIds, parameters);
             NetManager.Send(message);
         }
     }

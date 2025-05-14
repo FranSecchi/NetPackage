@@ -24,7 +24,6 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             Messager.RegisterHandler<SyncMessage>(OnSyncMessage);
             Messager.RegisterHandler<SpawnMessage>(OnSpawnMessage);
             Messager.RegisterHandler<ConnMessage>(OnConnMessage);
-            Messager.RegisterHandler<RPCMessage>(OnRPCMessage);
         }
 
         private static void OnConnMessage(ConnMessage obj)
@@ -117,9 +116,5 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             NetScene.Instance.Spawn(msg);
         }
         
-        private static void OnRPCMessage(RPCMessage message)
-        {
-            RPCManager.CallRPC(message.ObjectId, message.MethodName, message.Parameters);
-        }
     }
 }

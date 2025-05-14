@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MessagePack;
 
 namespace Serializer.NetPackage.Runtime.Serializer
@@ -11,7 +12,7 @@ namespace Serializer.NetPackage.Runtime.Serializer
         [Key(4)] public object[] Parameters;
 
         public RPCMessage() { }
-        public RPCMessage(int SenderID, int objectId, string methodName, params object[] parameters)
+        public RPCMessage(int SenderID, int objectId, string methodName, List<int> target = null, params object[] parameters) : base(target)
         {
             this.SenderID = SenderID;
             this.ObjectId = objectId;

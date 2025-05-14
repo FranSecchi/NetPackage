@@ -43,8 +43,6 @@ namespace Runtime.NetPackage.Runtime.Synchronization
             if (NetObject != null)
             {
                 RPCManager.SendRPC(NetObject.NetId, methodName, parameters);
-                if(isOwned)
-                    RPCManager.CallRPC(NetObject.NetId, methodName, parameters);
             }
         }
 

@@ -31,5 +31,14 @@ namespace Serializer.NetPackage.Runtime.Serializer
             }
             return MessagePackSerializer.Deserialize<T>(data, options);
         }
+
+        public object Deserialize(byte[] data, Type type)
+        {
+            if (data == null || data.Length == 0)
+            {
+                throw new ArgumentException("Cannot deserialize: input data is null or empty.");
+            }
+            return MessagePackSerializer.Deserialize(type, data, options);
+        }
     }
 }

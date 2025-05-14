@@ -19,7 +19,9 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             Peer = new NetManager(this);
             Port = port;
         }
-        
+
+        public bool UseDebug { get; set; }
+
         public abstract void Start();
         public abstract void Connect(string address);
         public abstract void Kick(int id);
@@ -28,14 +30,14 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         public abstract void Send(byte[] data);
         public void Disconnect()
         {
-            Debug.Log($"All Peers disconnected");
+            if(UseDebug) Debug.Log($"All Peers disconnected");
             Peer.DisconnectAll();
         }
         public void SendTo(int id, byte[] data)
         {
             if (!Peer.TryGetPeerById(id, out NetPeer peer)) return;
             peer.Send(data, DeliveryMethod.Sequenced);
-            Debug.Log($"[SERVER] Sent message to client {id}");
+            if(UseDebug) Debug.Log($"[SERVER] Sent message to client {id}");
         }
         public byte[] Receive()
         {
@@ -47,13 +49,13 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         }
         public void OnConnectionRequest(ConnectionRequest request)
         {
-            Debug.Log($"[SERVER] Requested connection from {request.RemoteEndPoint}.");
+            if(UseDebug) Debug.Log($"[SERVER] Requested connection from {request.RemoteEndPoint}.");
             request.AcceptIfKey("Net_Key");
         }
 
         public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
         {
-            Debug.Log("Data received from peer " + peer.Address + "|" + peer.Port + ":" + peer.Id);
+            if(UseDebug) Debug.Log("Data received from peer " + peer.Address + "|" + peer.Port + ":" + peer.Id);
             _packetQueue.Enqueue(reader.GetRemainingBytes());
             TriggerOnDataReceived(peer.Id);
             reader.Recycle();

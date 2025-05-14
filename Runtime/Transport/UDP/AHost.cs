@@ -13,13 +13,13 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
 
         public override void Start()
         {
-            Debug.Log($"[SERVER] Listening on port {Port}.");
+            if(UseDebug) Debug.Log($"[SERVER] Listening on port {Port}.");
             Peer.Start(Port);
         }
 
         public override void Connect(string address)
         {
-            Debug.Log("[SERVER] Cannot connect to a client as a server.");
+            if(UseDebug) Debug.Log("[SERVER] Cannot connect to a client as a server.");
         }
 
         public override void Kick(int id)
@@ -27,7 +27,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             if (Peer.TryGetPeerById(id, out NetPeer peer))
             {
                 peer.Disconnect();
-                Debug.Log($"[SERVER] Client {id} kicked.");
+                if(UseDebug) Debug.Log($"[SERVER] Client {id} kicked.");
             }
         }
 
@@ -37,19 +37,19 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             {
                 peer.Send(data, DeliveryMethod.Sequenced);
             }
-            Debug.Log("[SERVER] Sent message to all clients");
+            if(UseDebug) Debug.Log("[SERVER] Sent message to all clients");
         }
         
 
         public override void OnPeerConnected(NetPeer peer)
         {
-            Debug.Log("[SERVER] Client connected: " + peer.Address + "|" + peer.Port + ":" + peer.Id);
+            if(UseDebug) Debug.Log("[SERVER] Client connected: " + peer.Address + "|" + peer.Port + ":" + peer.Id);
             ITransport.TriggerOnClientConnected(peer.Id);
         }
         
         public override void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
-            Debug.Log($"Client disconnected. Reason: {disconnectInfo.Reason}");
+            if(UseDebug) Debug.Log($"Client disconnected. Reason: {disconnectInfo.Reason}");
             ITransport.TriggerOnClientDisconnected(peer.Id);
         }
     }

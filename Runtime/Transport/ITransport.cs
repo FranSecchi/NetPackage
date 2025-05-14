@@ -14,7 +14,7 @@ namespace Transport.NetPackage.Runtime.Transport
         [CanBeNull] static event Action<int> OnClientConnected;
         [CanBeNull] static event Action<int> OnClientDisconnected;
         [CanBeNull] static event Action<int> OnDataReceived;
-        void Setup(int port, bool isServer, bool isBroadcast = false);
+        void Setup(int port, bool isServer, bool isBroadcast = false, bool useDebug = false);
         void Start();
         void Stop();
         void Connect(string address);

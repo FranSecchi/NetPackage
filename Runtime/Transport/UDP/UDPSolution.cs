@@ -10,17 +10,19 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         private APeer _aPeer;
         private Thread _pollingThread;
         private bool _isRunning;
-
+        
         public bool IsHost;
-
+        private bool _useDebug;
         private LANDiscovery _lanDiscovery;
         private LANBroadcast _lanBroadcaster;
         private List<IPEndPoint> _lanServers;
-        public void Setup(int port, bool isServer, bool isBroadcast = false)
+        public void Setup(int port, bool isServer, bool isBroadcast = false, bool useDebug = false)
         {
             if(_isRunning) Disconnect();
             _aPeer = isServer ? new AHost(port) : new AClient(port);
+            _aPeer.UseDebug = useDebug;
             IsHost = isServer;
+            _useDebug = useDebug;
 
             if (isBroadcast) Discover();
         }
@@ -38,7 +40,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
                 _lanDiscovery = new LANDiscovery();
                 _lanDiscovery.OnServerFound += address =>
                 {
-                    Debug.Log($"Found server at {address}");
+                    if(_useDebug) Debug.Log($"Found server at {address}");
                     if(!_lanServers.Contains(address))
                         _lanServers.Add(address);
                 };
@@ -70,7 +72,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         {
             if(IsHost)
             {
-                Debug.Log("[SERVER] Cannot connect to a client as a server.");
+                if(_useDebug) Debug.Log("[SERVER] Cannot connect to a client as a server.");
                 return;
             }
 
@@ -86,7 +88,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         {
             if (!IsHost) 
             {
-                Debug.Log("[Client] Client cannot kick other clients.");
+                if(_useDebug) Debug.Log("[Client] Client cannot kick other clients.");
                 return;
             }
 
@@ -101,7 +103,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         {
             if (!IsHost) 
             {
-                Debug.Log("[Client] Client cannot send data to other clients. Use ITransport.Send instead.");
+                if(_useDebug) Debug.Log("[Client] Client cannot send data to other clients. Use ITransport.Send instead.");
                 return;
             }
             _aPeer.SendTo(id, data);

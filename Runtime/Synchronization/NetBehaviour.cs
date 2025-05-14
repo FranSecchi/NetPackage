@@ -20,9 +20,32 @@ namespace Runtime.NetPackage.Runtime.Synchronization
             RegisterAsSceneObject();
         }
 
-        private void OnEnable()
+        public void OnEnable()
         {
-            StateManager.Register(NetObject.NetId, this);
+            if (NetObject != null)
+            {
+                StateManager.Register(NetObject.NetId, this);
+                RPCManager.Register(NetObject.NetId, this);
+            }
+        }
+
+        public void OnDisable()
+        {
+            if (NetObject != null)
+            {
+                StateManager.Unregister(NetObject.NetId);
+                RPCManager.Unregister(NetObject.NetId, this);
+            }
+        }
+
+        protected void CallRPC(string methodName, params object[] parameters)
+        {
+            if (NetObject != null)
+            {
+                RPCManager.SendRPC(NetObject.NetId, methodName, parameters);
+                if(isOwned)
+                    RPCManager.CallRPC(NetObject.NetId, methodName, parameters);
+            }
         }
 
         private void Start()

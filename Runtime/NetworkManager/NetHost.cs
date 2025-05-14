@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using NetworkManager.NetPackage.Runtime.NetworkManager;
+using Runtime.NetPackage.Runtime.Synchronization;
 using Serializer;
 using Serializer.NetPackage.Runtime.Serializer;
 using Synchronization.NetPackage.Runtime.Synchronization;
@@ -23,6 +24,7 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             Messager.RegisterHandler<SyncMessage>(OnSyncMessage);
             Messager.RegisterHandler<SpawnMessage>(OnSpawnMessage);
             Messager.RegisterHandler<ConnMessage>(OnConnMessage);
+            Messager.RegisterHandler<RPCMessage>(OnRPCMessage);
         }
 
         private static void OnConnMessage(ConnMessage obj)
@@ -34,18 +36,21 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
 
         private static void OnClientDisconnected(int id)
         {
-            Clients.TryRemove(id, out _);
-            Debug.Log($"Client {id} disconnected. Clients count: {Clients.Count}");
-            NetManager.allPlayers.Remove(id);
-            UpdatePlayers(id);
+            if(Clients.TryRemove(id, out _))
+            {
+                Debug.Log($"Client {id} disconnected. Clients count: {Clients.Count}");
+                NetManager.allPlayers.Remove(id);
+                UpdatePlayers(id);
+            }
         }
 
 
         private static void OnClientConnected(int id)
         {
-            if (Clients.TryAdd(id, new NetConn(id, true))) // Thread-safe add
+            if (Clients.TryAdd(id, new NetConn(id, true)))
             {
                 Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
+                NetManager.allPlayers.Add(id);
                 UpdatePlayers(id);
                 NetScene.Instance.SendObjects(id);
             }
@@ -53,9 +58,8 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
 
         private static void UpdatePlayers(int id)
         {
-            if(!NetManager.allPlayers.Contains(id)) NetManager.allPlayers.Add(id);
+            if (Clients.Count == 0) return;
             NetMessage msg = new ConnMessage(id, NetManager.allPlayers);
-            Debug.Log("Sent conn message");
             Send(msg);
         }
 
@@ -74,7 +78,7 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
 
         public static void Kick(int id)
         {
-            if (Clients.TryRemove(id, out NetConn client))
+            if (Clients.TryGetValue(id, out NetConn client))
             {
                 client.Disconnect();
             }
@@ -86,6 +90,7 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             {
                 foreach (var client in Clients.Values)
                 {
+                    Debug.Log($"Sending all: {netMessage.GetType().Name}");
                     client.Send(netMessage);
                 }
             }
@@ -95,6 +100,7 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
                 {
                     if (Clients.TryGetValue(targetId, out NetConn client))
                     {
+                        Debug.Log($"Sending to {targetId}: {netMessage.GetType().Name}");
                         client.Send(netMessage);
                     }
                 }
@@ -109,6 +115,11 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
         {
             //Validate
             NetScene.Instance.Spawn(msg);
+        }
+        
+        private static void OnRPCMessage(RPCMessage message)
+        {
+            RPCManager.CallRPC(message.ObjectId, message.MethodName, message.Parameters);
         }
     }
 }

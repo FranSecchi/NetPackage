@@ -29,13 +29,13 @@ namespace NetworkManagerTest
         [UnityTest]
         public IEnumerator TestStartServer()
         {
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.2f);
             NetManagerTest.StartClient();
             bool result = false;
             onClientConnectedHandler = i => result = true; 
 
             ITransport.OnClientConnected += onClientConnectedHandler;
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.2f);
             
             Assert.IsTrue(result, "Server did not start correctly");
             Assert.IsTrue(NetManager.allPlayers.Count == 2, "Server did not add one player");
@@ -44,26 +44,26 @@ namespace NetworkManagerTest
         [UnityTest]
         public IEnumerator TestStopServer()
         {
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.2f);
             
             NetManagerTest.StartClient();
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.2f);
 
             NetManager.StopHosting();
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.2f);
             
             Assert.IsTrue(NetManager.allPlayers.Count == 0, "Server did not stop correctly");
         }
         [UnityTest]
         public IEnumerator TestKickPlayer()
         {
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.2f);
             
             NetManagerTest.StartClient();
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.2f);
             int key = NetManager.allPlayers[1];
             NetHost.Kick(key);
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.2f);
             
             Assert.IsTrue(NetManager.allPlayers.Count == 1, "Server did not kick correctly " + NetManager.allPlayers.Count);
         }

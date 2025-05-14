@@ -138,7 +138,6 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
 
         public void SendObjects(int id)
         {
-            Debug.Log("Sending Objects: " + sceneObjects.Count);
             foreach(var sceneObjects in sceneObjects)
             {
                 GameObject obj = sceneObjects.Value.gameObject;

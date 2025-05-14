@@ -125,6 +125,7 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             if (data != null && data.Length != 0)
             {
                 NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
+                Debug.Log("Received: " + msg);
                 Messager.HandleMessage(msg);
             }
         }

@@ -44,6 +44,8 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
                         Debug.Log($"Discovered Server: {groupEP.Address}");
                         OnServerFound?.Invoke(groupEP);
                     }
+
+                    Thread.Yield();
                 }
                 catch (Exception e)
                 {

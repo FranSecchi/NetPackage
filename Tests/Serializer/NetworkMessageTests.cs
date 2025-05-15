@@ -166,8 +166,7 @@ namespace SerializerTest
                 }
                 _clients.Clear(); 
             }
-            NetManager.StopClient();
-            NetManager.StopHosting();
+            NetManager.StopNet();
             Messager.ClearHandlers();
             received = null;
         

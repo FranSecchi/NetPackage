@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Net;
 using NetworkManager.NetPackage.Runtime.NetworkManager;
 using NUnit.Framework;
 using Runtime.NetPackage.Runtime.NetworkManager;
@@ -44,7 +45,7 @@ namespace NetworkManagerTest
             NetManager.StartClient();
             yield return new WaitForSeconds(0.5f);
 
-            NetManager.StopClient();
+            NetManager.StopNet();
             yield return new WaitForSeconds(0.5f);
             
             Assert.IsTrue(NetManager.allPlayers.Count == 0, "Client did not stop correctly");
@@ -79,13 +80,65 @@ namespace NetworkManagerTest
             }
         }
         
+        [UnityTest]
+        public IEnumerator TestLANClientConnection()
+        {
+            // Setup host with LAN enabled
+            NetManagerTest.UseLan = true;
+            NetManagerTest.DebugLog = true;
+            NetManagerTest.StartHost();
+
+            yield return new WaitForSeconds(2f);
+
+            // Setup client with LAN enabled
+            NetManager.UseLan = true;
+            NetManager.DebugLog = true;
+            NetManager.StartClient();
+
+            yield return new WaitForSeconds(2f);
+
+            var discoveredServers = NetManager.GetDiscoveredServers();
+            Assert.IsTrue(discoveredServers.Count > 0, "No LAN servers were discovered");
+            NetManager.ConnectTo(discoveredServers[0]);
+            yield return new WaitForSeconds(0.2f);
+            Assert.IsTrue(NetManager.allPlayers.Count == 2, "LAN client did not connect to server");
+        }
+
+        // [UnityTest]
+        // public IEnumerator TestLANClientReconnection()
+        // {
+        //     // Setup host with LAN enabled
+        //     NetManagerTest.UseLan = true;
+        //     NetManagerTest.DebugLog = true;
+        //     NetManagerTest.StartHost();
+        //
+        //     yield return new WaitForSeconds(2f);
+        //
+        //     // Setup client with LAN enabled
+        //     NetManager.UseLan = true;
+        //     NetManager.DebugLog = true;
+        //     NetManager.StartClient();
+        //
+        //     yield return new WaitForSeconds(2f);
+        //     NetManager.ConnectTo(NetManager.GetDiscoveredServers()[0]);
+        //     yield return new WaitForSeconds(0.2f);
+        //
+        //     // Disconnect and reconnect
+        //     NetManager.StopNet();
+        //     yield return new WaitForSeconds(0.5f);
+        //
+        //     NetManager.StartClient();
+        //     yield return new WaitForSeconds(0.5f);
+        //
+        //     // Verify reconnection
+        //     Assert.IsTrue(NetManager.allPlayers.Count == 2, "LAN client did not reconnect to server");
+        // }
+
         [TearDown]
         public void TearDown()
         {
-            NetManagerTest.StopHosting();
-            NetManagerTest.StopClient();
-            NetManager.StopHosting();
-            NetManager.StopClient();
+            NetManagerTest.StopNet();
+            NetManager.StopNet();
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using NetworkManager.NetPackage.Runtime.NetworkManager;
 using Runtime.NetPackage.Runtime.Synchronization;
 using Serializer;
@@ -18,11 +19,28 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
         private static NetManager _manager;
         private NetScene m_scene;
         public static ITransport Transport;
-        public static int Port = 9050;
+        public static int Port = 7777;
         public static List<int> allPlayers;
         private bool _isHost = false;
+        private bool _running = false;
+        
+        [SerializeField] public bool useLAN = false;
+        [SerializeField] public bool debugLog = false;
+        [SerializeField] public float lanDiscoveryInterval = 1f;
+        private float _lastLanDiscovery;
+        private List<IPEndPoint> _discoveredServers = new List<IPEndPoint>();
         
         public static bool IsHost => _manager._isHost;
+        public static bool UseLan
+        {
+            get => _manager.useLAN;
+            set => _manager.useLAN = value;
+        }
+        public static bool DebugLog
+        {
+            get => _manager.useLAN;
+            set => _manager.useLAN = value;
+        }
         public string address = "localhost";
         public static void SetTransport(ITransport transport)
         {
@@ -40,7 +58,6 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             Messager.RegisterHandler<RPCMessage>(RPCManager.CallRPC);
             DontDestroyOnLoad(this);
         }
-
 
         private readonly Queue<Action> mainThreadActions = new();
         public static void EnqueueMainThread(Action action)
@@ -64,37 +81,49 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
 
         public static void StartHost()
         {
-            ITransport.OnDataReceived += Receive;
-            Transport.Setup(Port, true);
-            _manager._isHost = true;
-            NetHost.StartHost();
-        }
-        public static void StopHosting()
-        {
-            if (!IsHost) return;
-            NetHost.Stop();
             StopNet();
+            ITransport.OnDataReceived += Receive;
+            Transport.Setup(Port, true, _manager.useLAN, _manager.debugLog);
+            _manager._isHost = true;
+            _manager._running = true;
+            NetHost.StartHost();
         }
         public static void StartClient()
         {
-            ITransport.OnDataReceived += Receive;
-            Transport.Setup(Port, false);
-            _manager._isHost = false;
-            NetClient.Connect(_manager.address);
-        }
-        public static void StopClient()
-        {
-            if (IsHost) return;
-            NetClient.Disconnect();
             StopNet();
+            ITransport.OnDataReceived += Receive;
+            Transport.Setup(Port, false, _manager.useLAN, _manager.debugLog);
+            _manager._isHost = false;
+            _manager._running = true;
+            if (!_manager.useLAN)
+                NetClient.Connect(_manager.address);
+            else
+                ITransport.OnLanServerDiscovered += AddLanServer;
         }
 
-        private static void StopNet()
+
+        public static void ConnectTo(IPEndPoint endPoint)
         {
+            ConnectTo(endPoint.Address.ToString());
+        }
+        public static void ConnectTo(string address)
+        {
+            StopNet();
+            ITransport.OnDataReceived += Receive;
+            Transport.Setup(Port, false, _manager.useLAN);
+            _manager._isHost = false;
+            NetClient.Connect(address);
+        }
+        public static void StopNet()
+        {
+            if (!_manager._running) return;
+            if (IsHost) NetHost.Stop();
+            else NetClient.Disconnect();
             allPlayers.Clear();
             Messager.ClearHandlers();
             ITransport.OnDataReceived -= Receive;
-            // SceneManager.sceneLoaded -= NetScene.OnSceneLoaded;
+            if(UseLan && !IsHost) ITransport.OnLanServerDiscovered -= AddLanServer;
+            _manager._running = false;
         }
         public static int ConnectionId()
         {
@@ -131,6 +160,16 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
                 Debug.Log("Received: " + msg);
                 Messager.HandleMessage(msg);
             }
+        }
+
+        public static List<IPEndPoint> GetDiscoveredServers()
+        {
+            return _manager._discoveredServers;
+        }
+        private static void AddLanServer(IPEndPoint point)
+        {
+            Debug.Log("Detected Server" + point.ToString());
+            _manager._discoveredServers.Add(point);
         }
     }
 }

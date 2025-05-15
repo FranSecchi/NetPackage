@@ -270,7 +270,7 @@ namespace SynchronizationTest
                 RPCManager.Unregister(testObj.NetObject.NetId, testObj);
             }
 
-            NetManager.StopHosting();
+            NetManager.StopNet();
             client.Stop();
             Messager.ClearHandlers();
             

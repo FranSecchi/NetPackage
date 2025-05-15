@@ -218,7 +218,7 @@ namespace SynchronizationTest
         [TearDown]
         public void TearDown()
         {
-            NetManager.StopHosting();
+            NetManager.StopNet();
             client.Stop();
             Messager.ClearHandlers();
             

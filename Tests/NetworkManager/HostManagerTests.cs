@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Net;
 using NUnit.Framework;
 using Runtime.NetPackage.Runtime.NetworkManager;
 using Serializer.NetPackage.Runtime.Serializer;
@@ -49,7 +50,7 @@ namespace NetworkManagerTest
             NetManagerTest.StartClient();
             yield return new WaitForSeconds(0.2f);
 
-            NetManager.StopHosting();
+            NetManager.StopNet();
             yield return new WaitForSeconds(0.2f);
             
             Assert.IsTrue(NetManager.allPlayers.Count == 0, "Server did not stop correctly");
@@ -94,13 +95,34 @@ namespace NetworkManagerTest
                 client.Stop();
             }
         }
+        [UnityTest]
+        public IEnumerator TestLANServerDiscovery()
+        {
+            NetManager.UseLan = true;
+            NetManager.DebugLog = true;
+            NetManager.StartHost();
+            
+            yield return new WaitForSeconds(2f);
+
+            // Setup client with LAN enabled
+            NetManagerTest.UseLan = true;
+            NetManagerTest.DebugLog = true;
+            NetManagerTest.StartClient();
+            yield return new WaitForSeconds(2f);
+
+            // Verify server discovery
+            var discoveredServers = NetManagerTest.GetDiscoveredServers();
+            Assert.IsTrue(discoveredServers.Count > 0, "No LAN servers were discovered");
+            NetManagerTest.ConnectTo(discoveredServers[0]);
+            yield return new WaitForSeconds(0.5f);
+            // Verify connection
+            Assert.IsTrue(NetManager.allPlayers.Count == 2, "LAN client did not connect to server");
+        }
         [TearDown]
         public void TearDown()
         {
-            NetManagerTest.StopHosting();
-            NetManagerTest.StopClient();
-            NetManager.StopHosting();
-            NetManager.StopClient();
+            NetManagerTest.StopNet();
+            NetManager.StopNet();
         }
         
     }

@@ -43,6 +43,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
                     if(_useDebug) Debug.Log($"Found server at {address}");
                     if(!_lanServers.Contains(address))
                         _lanServers.Add(address);
+                    ITransport.TriggerOnLanServerDetected(address);
                 };
                 _lanDiscovery.StartDiscovery();
             }

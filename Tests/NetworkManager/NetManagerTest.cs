@@ -7,17 +7,37 @@ using Serializer.NetPackage.Runtime.Serializer;
 using Transport.NetPackage.Runtime.Transport;
 using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;
+using System.Net;
 
 namespace NetworkManagerTest
 {
-    public class NetManagerTest :MonoBehaviour
+    public class NetManagerTest : MonoBehaviour
     {
         private static NetManagerTest _manager;
         public static ITransport Transport;
-        public static int Port = 9050;
+        public static int Port = 7777;
         public static List<int> allPlayers;
-        private static bool IsHost = false;
+        private bool _isHost = false;
+        private bool _running = false;
         
+        [SerializeField] public bool useLAN = false;
+        [SerializeField] public bool debugLog = false;
+        [SerializeField] public float lanDiscoveryInterval = 1f;
+        private float _lastLanDiscovery;
+        private List<IPEndPoint> _discoveredServers = new List<IPEndPoint>();
+        
+        public static bool IsHost => _manager._isHost;
+        public static bool UseLan
+        {
+            get => _manager.useLAN;
+            set => _manager.useLAN = value;
+        }
+        public static bool DebugLog
+        {
+            get => _manager.useLAN;
+            set => _manager.useLAN = value;
+        }
+
         public string address = "localhost";
         
         public static void SetTransport(ITransport transport)
@@ -34,45 +54,72 @@ namespace NetworkManagerTest
             allPlayers = new List<int>();
             DontDestroyOnLoad(this);
         }
+
+        private void Update()
+        {
+            if (useLAN && !IsHost)
+            {
+                if (Time.time - _lastLanDiscovery >= lanDiscoveryInterval)
+                {
+                    _discoveredServers = Transport.GetDiscoveredServers();
+                    _lastLanDiscovery = Time.time;
+                }
+            }
+        }
+
         public static void StartHost()
         {
-            ITransport.OnDataReceived += Receive;
-            Transport.Setup(Port, true);
-            IsHost = true;
-            NetHostTest.StartHost();
-        }
-        public static void StopHosting()
-        {
-            if (!IsHost) return;
-            NetHostTest.Stop();
             StopNet();
+            ITransport.OnDataReceived += Receive;
+            Transport.Setup(Port, true, _manager.useLAN, _manager.debugLog);
+            _manager._isHost = true;
+            _manager._running = true;
+            NetHostTest.StartHost();
         }
         public static void StartClient()
         {
-            ITransport.OnDataReceived += Receive;
-            Transport.Setup(Port, false);
-            IsHost = false;
-            NetClientTest.Connect(_manager.address);
-        }
-        public static void StopClient()
-        {
-            if (IsHost) return;
-            NetClientTest.Disconnect();
             StopNet();
+            ITransport.OnDataReceived += Receive;
+            Transport.Setup(Port, false, _manager.useLAN, _manager.debugLog);
+            _manager._isHost = false;
+            _manager._running = true;
+            if (!_manager.useLAN)
+            {
+                NetClientTest.Connect(_manager.address);
+            }
         }
 
-        private static void StopNet()
+        public static void ConnectTo(IPEndPoint endPoint)
         {
+            ConnectTo(endPoint.Address.ToString());
+        }
+        public static void ConnectTo(string address)
+        {
+            StopNet();
+            ITransport.OnDataReceived += Receive;
+            Transport.Setup(Port, false, _manager.useLAN);
+            _manager._isHost = false;
+            NetClientTest.Connect(address);
+        }
+
+        public static void StopNet()
+        {
+            if (!_manager._running) return;
+            if (IsHost) NetHostTest.Stop();
+            else NetClientTest.Disconnect();
             allPlayers.Clear();
             Messager.ClearHandlers();
             ITransport.OnDataReceived -= Receive;
+            _manager._running = false;
         }
+
         public static void Send(NetMessage netMessage)
         {
             if(IsHost)
                 NetHostTest.Send(netMessage);
             else NetClientTest.Send(netMessage);
         }
+
         private static void Receive(int id)
         {
             byte[] data = Transport.Receive();
@@ -82,6 +129,11 @@ namespace NetworkManagerTest
                 NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
                 Messager.HandleMessage(msg);
             }
+        }
+
+        public static List<IPEndPoint> GetDiscoveredServers()
+        {
+            return _manager._discoveredServers;
         }
     }
     public static class NetClientTest

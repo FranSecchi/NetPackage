@@ -14,6 +14,7 @@ namespace Transport.NetPackage.Runtime.Transport
         [CanBeNull] static event Action<int> OnClientConnected;
         [CanBeNull] static event Action<int> OnClientDisconnected;
         [CanBeNull] static event Action<int> OnDataReceived;
+        [CanBeNull] static event Action<IPEndPoint> OnLanServerDiscovered;
         void Setup(int port, bool isServer, bool isBroadcast = false, bool useDebug = false);
         void Start();
         void Stop();
@@ -38,6 +39,10 @@ namespace Transport.NetPackage.Runtime.Transport
         static void TriggerOnDataReceived(int id)
         {
             OnDataReceived?.Invoke(id);
+        }
+        static void TriggerOnLanServerDetected(IPEndPoint endPoint)
+        {
+            OnLanServerDiscovered?.Invoke(endPoint);
         }
     }
 }

@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using UnityEngine;
+using static Transport.NetPackage.Runtime.Transport.ITransport;
 
 namespace Transport.NetPackage.Runtime.Transport.UDP
 {
@@ -15,8 +17,20 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         private bool _useDebug;
         private LANDiscovery _lanDiscovery;
         private LANBroadcast _lanBroadcaster;
-        private List<IPEndPoint> _lanServers;
-        public void Setup(int port, bool isServer, bool isBroadcast = false, bool useDebug = false)
+        private List<ServerInfo> _lanServers;
+        private ServerInfo _serverInfo;
+        private int _bandwidthLimit;
+
+        public UDPSolution()
+        {
+            _lanServers = new List<ServerInfo>();
+            _serverInfo = new ServerInfo
+            {
+                CustomData = new Dictionary<string, string>()
+            };
+        }
+
+        public void Setup(int port, bool isServer, bool useDebug = false)
         {
             if(_isRunning) Disconnect();
             _aPeer = isServer ? new AHost(port) : new AClient(port);
@@ -24,29 +38,6 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             IsHost = isServer;
             _useDebug = useDebug;
 
-            if (isBroadcast) Discover();
-        }
-
-        private void Discover()
-        {
-            if (IsHost)
-            {
-                _lanBroadcaster = new LANBroadcast();
-                _lanBroadcaster.StartBroadcast();
-            }
-            else
-            {
-                _lanServers = new List<IPEndPoint>();
-                _lanDiscovery = new LANDiscovery();
-                _lanDiscovery.OnServerFound += address =>
-                {
-                    if(_useDebug) Debug.Log($"Found server at {address}");
-                    if(!_lanServers.Contains(address))
-                        _lanServers.Add(address);
-                    ITransport.TriggerOnLanServerDetected(address);
-                };
-                _lanDiscovery.StartDiscovery();
-            }
         }
 
         public void Start()
@@ -115,10 +106,86 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             return _aPeer.Receive();
         }
 
-        public List<IPEndPoint> GetDiscoveredServers()
+        public List<ServerInfo> GetDiscoveredServers()
         {
-            return new List<IPEndPoint>(_lanServers);
+            return new List<ServerInfo>(_lanServers);
         }
+
+        public ConnectionInfo GetConnectionInfo(int clientId)
+        {
+            return _aPeer.ConnectionInfo.TryGetValue(clientId, out var info) ? info : null;
+        }
+
+        public ConnectionState GetConnectionState(int clientId)
+        {
+            return _aPeer.ConnectionInfo.TryGetValue(clientId, out var info) ? info.State : ConnectionState.Disconnected;
+        }
+
+        public void SetServerInfo(ServerInfo serverInfo)
+        {
+            _serverInfo = serverInfo;
+            if (IsHost)
+            {
+                _lanBroadcaster?.UpdateServerInfo(serverInfo);
+            }
+        }
+        public ServerInfo GetServerInfo()
+        {
+            return _serverInfo;
+        }
+        public void UpdateServerInfo(Dictionary<string, string> customData)
+        {
+            foreach (var kvp in customData)
+            {
+                _serverInfo.CustomData[kvp.Key] = kvp.Value;
+            }
+            if (IsHost)
+            {
+                _lanBroadcaster?.UpdateServerInfo(_serverInfo);
+            }
+        }
+        
+        public void SetBandwidthLimit(int bytesPerSecond)
+        {
+            _bandwidthLimit = bytesPerSecond;
+            _aPeer?.SetBandwidthLimit(bytesPerSecond);
+        }
+
+        public void StartServerDiscovery(int discoveryPort = -1)
+        {
+            if (!IsHost)
+            {
+                _lanServers = new List<ServerInfo>();
+                _lanDiscovery = new LANDiscovery();
+                _lanDiscovery.OnServerFound += address =>
+                {
+                    if(_useDebug) Debug.Log($"Found server at {address}");
+                    if(!_lanServers.Contains(address))
+                        _lanServers.Add(address);
+                    TriggerOnLanServerDetected(address);
+                };
+                if(discoveryPort == -1) _lanDiscovery.StartDiscovery();
+                else _lanDiscovery.StartDiscovery(discoveryPort);
+            }
+        }
+        public void BroadcastServerInfo()
+        {
+            if (IsHost)
+            {
+                _lanBroadcaster = new LANBroadcast();
+                _lanBroadcaster.StartBroadcast();
+                _lanBroadcaster.BroadcastServerInfo(_serverInfo);
+            }
+        }
+        public void StopServerDiscovery()
+        {
+            _lanDiscovery?.StopDiscovery();
+        }
+        public void StopServerBroadcast()
+        {
+            _lanBroadcaster?.StopBroadcast();
+        }
+
 
         private void StartThread()
         {

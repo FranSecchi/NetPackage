@@ -1,64 +1,106 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using UnityEngine;
 
 namespace Transport.NetPackage.Runtime.Transport.UDP
 {
-    public class LANDiscovery 
+    public class LANDiscovery
     {
         private UdpClient _udpClient;
-        private const int DiscoveryPort = 9050; // Port for discovery messages
-        private const string DiscoveryMessage = "ServerAvailable";
-        private Thread _listenThread;
-        private bool _isListening;
+        private Thread _discoveryThread;
+        private bool _isRunning;
+        private const int DiscoveryPort = 8888;
+        private const string DiscoveryMessage = "NetPackage_Discovery";
 
-        public event Action<IPEndPoint> OnServerFound;
+        public event Action<ServerInfo> OnServerFound;
 
-        public void StartDiscovery()
+        public void StartDiscovery(int port = DiscoveryPort)
         {
-            _udpClient = new UdpClient();
-            _udpClient.EnableBroadcast = true;
-            _isListening = true;
-            _listenThread = new Thread(ListenForServers)
+            if (_isRunning) return;
+
+            try
             {
-                IsBackground = true
-            };
-            _listenThread.Start();
-        }
+                _udpClient = new UdpClient();
+                _udpClient.EnableBroadcast = true;
+                _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                _udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, port));
 
-        private void ListenForServers()
-        {
-            IPEndPoint groupEP = new IPEndPoint(IPAddress.Any, DiscoveryPort);
-            _udpClient.Client.Bind(groupEP);
-
-            while (_isListening)
+                _isRunning = true;
+                _discoveryThread = new Thread(DiscoveryLoop)
+                {
+                    IsBackground = true
+                };
+                _discoveryThread.Start();
+            }
+            catch (Exception e)
             {
-                try
-                {
-                    byte[] bytes = _udpClient.Receive(ref groupEP);
-                    string message = System.Text.Encoding.UTF8.GetString(bytes);
-                    if (message == DiscoveryMessage)
-                    {
-                        Debug.Log($"Discovered Server: {groupEP.Address}");
-                        OnServerFound?.Invoke(groupEP);
-                    }
-
-                    Thread.Yield();
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"Error in LAN discovery: {e.Message}");
-                }
+                Debug.LogError($"Failed to start LAN discovery: {e.Message}");
             }
         }
 
         public void StopDiscovery()
         {
-            _isListening = false;
-            _listenThread?.Join();
+            _isRunning = false;
             _udpClient?.Close();
+            _discoveryThread?.Join();
+        }
+
+        private void DiscoveryLoop()
+        {
+            while (_isRunning)
+            {
+                try
+                {
+                    var remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                    var data = _udpClient.Receive(ref remoteEndPoint);
+                    var message = Encoding.ASCII.GetString(data);
+
+                    if (message.StartsWith(DiscoveryMessage))
+                    {
+                        var serverInfo = ParseServerInfo(message, remoteEndPoint);
+                        OnServerFound?.Invoke(serverInfo);
+                    }
+                }
+                catch (Exception e)
+                {
+                    if (_isRunning)
+                    {
+                        Debug.LogError($"Error in discovery loop: {e.Message}");
+                    }
+                }
+            }
+        }
+
+        private ServerInfo ParseServerInfo(string message, IPEndPoint endPoint)
+        {
+            var parts = message.Split('|');
+            var serverInfo = new ServerInfo
+            {
+                EndPoint = endPoint,
+                ServerName = parts.Length > 1 ? parts[1] : "Unknown Server",
+                CurrentPlayers = parts.Length > 2 ? int.Parse(parts[2]) : 0,
+                MaxPlayers = parts.Length > 3 ? int.Parse(parts[3]) : 0,
+                GameMode = parts.Length > 4 ? parts[4] : "Unknown",
+                Ping = 0,
+                CustomData = new System.Collections.Generic.Dictionary<string, string>()
+            };
+
+            // Parse custom data if present
+            if (parts.Length > 5)
+            {
+                for (int i = 5; i < parts.Length; i += 2)
+                {
+                    if (i + 1 < parts.Length)
+                    {
+                        serverInfo.CustomData[parts[i]] = parts[i + 1];
+                    }
+                }
+            }
+
+            return serverInfo;
         }
     }
 }

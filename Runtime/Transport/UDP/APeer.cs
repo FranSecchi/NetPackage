@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
@@ -13,32 +14,47 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         protected readonly NetManager Peer;
         protected readonly int Port;
         private readonly ConcurrentQueue<byte[]> _packetQueue = new ConcurrentQueue<byte[]>();
+        private Dictionary<int, ConnectionInfo> _connectionInfo;
+        protected int _bandwidthLimit;
 
         protected APeer(int port)
         {
             Peer = new NetManager(this);
+            _connectionInfo = new Dictionary<int, ConnectionInfo>();
             Port = port;
         }
 
         public bool UseDebug { get; set; }
-
+        public Dictionary<int, ConnectionInfo> ConnectionInfo  => _connectionInfo; 
         public abstract void Start();
         public abstract void Connect(string address);
         public abstract void Kick(int id);
         public abstract void OnPeerConnected(NetPeer peer);
         public abstract void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo);
         public abstract void Send(byte[] data);
+
+        public virtual void SetBandwidthLimit(int bytesPerSecond)
+        {
+            _bandwidthLimit = bytesPerSecond;
+            Peer.UpdateTime = 15; // Update more frequently for better bandwidth control
+            Peer.MaxConnectAttempts = 10;
+            Peer.ReconnectDelay = 500;
+            Peer.DisconnectTimeout = 5000;
+        }
+
         public void Disconnect()
         {
             if(UseDebug) Debug.Log($"All Peers disconnected");
             Peer.DisconnectAll();
         }
+
         public void SendTo(int id, byte[] data)
         {
             if (!Peer.TryGetPeerById(id, out NetPeer peer)) return;
             peer.Send(data, DeliveryMethod.Sequenced);
             if(UseDebug) Debug.Log($"[SERVER] Sent message to client {id}");
         }
+
         public byte[] Receive()
         {
             if (_packetQueue.TryDequeue(out byte[] packet))
@@ -47,6 +63,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             }
             return null;
         }
+
         public void OnConnectionRequest(ConnectionRequest request)
         {
             if(UseDebug) Debug.Log($"[SERVER] Requested connection from {request.RemoteEndPoint}.");
@@ -67,13 +84,49 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         
         public void OnNetworkLatencyUpdate(NetPeer peer, int latency)
         {
-            
+            if(UseDebug) Debug.Log($"Latency update for peer {peer.Id}: {latency}ms"); 
+            UpdateConnectionInfo(peer.Id, ConnectionState.Connected, latency);
         }
+
         public void OnNetworkError(IPEndPoint endPoint, SocketError socketError)
         {
+            if(UseDebug) Debug.LogError($"Network error: {socketError} from {endPoint}");
+                // Find the client ID associated with this endpoint
+                foreach (NetPeer peer in Peer.ConnectedPeerList)
+                {
+                    if (peer.Address.Equals(endPoint.Address))
+                    {
+                        UpdateConnectionInfo(peer.Id, ConnectionState.Disconnected);
+                        break;
+                    }
+                }
             
         }
 
+        protected void UpdateConnectionInfo(int clientId, ConnectionState state, int ping = 0, float packetLoss = 0)
+        {
+            if (!_connectionInfo.ContainsKey(clientId))
+            {
+                _connectionInfo[clientId] = new ConnectionInfo
+                {
+                    State = state,
+                    ConnectedSince = DateTime.Now,
+                    BytesReceived = 0,
+                    BytesSent = 0,
+                    Ping = ping,
+                    PacketLoss = packetLoss
+                };
+            }
+            else
+            {
+                var info = _connectionInfo[clientId];
+                if(info.State != state) TriggerOnConnectionStateChanged(_connectionInfo[clientId]);
+                info.State = state;
+                info.Ping = ping;
+                info.PacketLoss = packetLoss;
+                _connectionInfo[clientId] = info;
+            }
+        }
         public void Poll()
         {
             Peer.PollEvents();

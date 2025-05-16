@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using NUnit.Framework;
 using Runtime;
 using Runtime.NetPackage.Runtime.NetworkManager;
@@ -15,9 +14,6 @@ using UnityEngine.TestTools;
 
 namespace SynchronizationTest
 {
-    /// <summary>
-    /// Tests for object destruction functionality in the networking system
-    /// </summary>
     public class NetDestroyTests
     {
         private NetPrefabRegistry prefabs;
@@ -25,9 +21,6 @@ namespace SynchronizationTest
         private NetMessage received;
         private const int CLIENT_ID = 0;
 
-        /// <summary>
-        /// Sets up the test environment with NetManager, scene loading, and client connection
-        /// </summary>
         [UnitySetUp]
         public IEnumerator SetUp()
         {
@@ -45,25 +38,19 @@ namespace SynchronizationTest
             yield return null;
         }
 
-        /// <summary>
-        /// Tests if host can destroy objects and clients receive destroy messages correctly
-        /// </summary>
         [UnityTest]
         public IEnumerator HostDestroySynchronizationTest()
         {
             yield return WaitConnection();
             
-            // Find the spawned object
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.Greater(objs.Length, 0, "Object not spawned");
 
             TestObj spawnedObj = objs[0];
             
-            // Destroy the object
             NetManager.Destroy(spawnedObj.NetObject.NetId);
             yield return new WaitForSeconds(0.2f);
             
-            // Verify client received destroy message
             byte[] data = client.Receive();
             Assert.NotNull(data, "Client did not receive destroy message");
             
@@ -73,26 +60,20 @@ namespace SynchronizationTest
             DestroyMessage destroyMsg = (DestroyMessage)receivedMsg;
             Assert.AreEqual(spawnedObj.NetObject.NetId, destroyMsg.netObjectId, "Wrong object ID in destroy message");
             
-            // Verify object was destroyed
             objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.AreEqual(0, objs.Length, "Object not destroyed");
         }
 
-        /// <summary>
-        /// Tests if clients can request object destruction and host handles them correctly
-        /// </summary>
         [UnityTest]
         public IEnumerator ClientDestroyRequestTest()
         {
             yield return WaitConnection();
             
-            // First spawn an object owned by client
             Vector3 spawnPos = new Vector3(4, 5, 6);
             NetMessage clientSpawnMsg = new SpawnMessage(CLIENT_ID, "TestObj", spawnPos, own: true);
             client.Send(NetSerializer.Serialize(clientSpawnMsg));
             yield return new WaitForSeconds(0.5f);
             
-            // Find the spawned object
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.Greater(objs.Length, 1, "Object not spawned");
             
@@ -107,7 +88,6 @@ namespace SynchronizationTest
             }
             Assert.NotNull(spawnedObj, "Spawned object not found");
             
-            // Client requests destruction
             NetMessage clientDestroyMsg = new DestroyMessage(spawnedObj.NetObject.NetId, CLIENT_ID);
             client.Send(NetSerializer.Serialize(clientDestroyMsg));
             yield return new WaitForSeconds(0.5f);
@@ -117,15 +97,11 @@ namespace SynchronizationTest
             Assert.AreEqual(1, objs.Length, "Object not destroyed");
         }
 
-        /// <summary>
-        /// Tests if unauthorized destroy requests are rejected
-        /// </summary>
         [UnityTest]
         public IEnumerator UnauthorizedDestroyTest()
         {
             yield return WaitConnection();
             
-            // First spawn an object owned by host
             Vector3 spawnPos = new Vector3(1, 2, 3);
             SpawnMessage hostSpawnMsg = new SpawnMessage(NetManager.ConnectionId(), "TestObj", spawnPos);
             NetScene.Instance.Spawn(hostSpawnMsg);
@@ -134,7 +110,6 @@ namespace SynchronizationTest
             client.Send(NetSerializer.Serialize(received));
             yield return new WaitForSeconds(0.2f);
             
-            // Find the spawned object
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.Greater(objs.Length, 1, "Object not spawned");
             
@@ -149,19 +124,14 @@ namespace SynchronizationTest
             }
             Assert.NotNull(spawnedObj, "Spawned object not found");
             
-            // Client tries to destroy host's object
             NetMessage clientDestroyMsg = new DestroyMessage(spawnedObj.NetObject.NetId, CLIENT_ID);
             client.Send(NetSerializer.Serialize(clientDestroyMsg));
             yield return new WaitForSeconds(0.5f);
             
-            // Verify object was not destroyed
             objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.Greater(objs.Length, 0, "Object was destroyed by unauthorized client");
         }
 
-        /// <summary>
-        /// Cleans up test environment after each test
-        /// </summary>
         [UnityTearDown]
         public IEnumerator TearDown()
         {
@@ -179,9 +149,6 @@ namespace SynchronizationTest
             yield return new WaitForSeconds(0.2f);
         }
 
-        /// <summary>
-        /// Waits for client connection to be established
-        /// </summary>
         private IEnumerator WaitConnection()
         {
             yield return new WaitForSeconds(0.2f);
@@ -215,9 +182,6 @@ namespace SynchronizationTest
                 $"Expected message of type {expectedType.Name} but got {(msg == null ? "null" : msg.GetType().Name)}");
         }
 
-        /// <summary>
-        /// Registers test prefab with NetScene
-        /// </summary>
         private void RegisterPrefab()
         {
             var prefab = Resources.Load<GameObject>("TestObj");

@@ -22,7 +22,6 @@ namespace TransportTest
         {
             _connectedClients = new List<int>();
             
-            // Create and start the server
             _transport = new UDPSolution();
             _transport.Setup(Port, true);
             _transport.Start();
@@ -102,10 +101,8 @@ namespace TransportTest
                 yield return new WaitForSeconds(0.5f);
             }
             
-            // Send a test message
             _transport.Send(System.Text.Encoding.ASCII.GetBytes(TestMessage));
         
-            // Wait for message to be received
             yield return new WaitForSeconds(1f);
 
             int count = 0;

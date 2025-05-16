@@ -15,9 +15,6 @@ using UnityEngine.TestTools;
 
 namespace SynchronizationTest
 {
-    /// <summary>
-    /// Tests for state synchronization functionality in the networking system
-    /// </summary>
     public class ServerSyncTests
     {
         private NetPrefabRegistry prefabs;
@@ -26,9 +23,6 @@ namespace SynchronizationTest
         private NetMessage received;
         private const int CLIENT_ID = 0;
 
-        /// <summary>
-        /// Sets up the test environment with NetManager, scene loading, and client connection
-        /// </summary>
         [UnitySetUp]
         public IEnumerator SetUp()
         {
@@ -47,9 +41,6 @@ namespace SynchronizationTest
             yield return null;
         }
 
-        /// <summary>
-        /// Tests if host can send single state update to client
-        /// </summary>
         [UnityTest]
         public IEnumerator SendSingleUpdate()
         {
@@ -69,9 +60,6 @@ namespace SynchronizationTest
             Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message");
         }
 
-        /// <summary>
-        /// Tests if host can send updates for multiple components
-        /// </summary>
         [UnityTest]
         public IEnumerator SendMultipleUpdate()
         {
@@ -98,9 +86,6 @@ namespace SynchronizationTest
             Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message for second component");
         }
 
-        /// <summary>
-        /// Tests if host can receive and apply state updates from client
-        /// </summary>
         [UnityTest]
         public IEnumerator ReceiveSingleUpdate()
         {
@@ -111,12 +96,10 @@ namespace SynchronizationTest
             TestObj testComponent = objs[0];
             int initialHealth = testComponent.health;
 
-            // Create and send sync message from client
             Dictionary<string, object> changes = new Dictionary<string, object> { { "health", 50 } };
             NetMessage syncMsg = new SyncMessage(testComponent.NetObject.NetId, 0, changes);
             client.Send(NetSerializer.Serialize(syncMsg));
 
-            // Wait for message to be processed
             float startTime = Time.time;
             while (testComponent.health == initialHealth && Time.time - startTime < 1f)
             {
@@ -127,9 +110,6 @@ namespace SynchronizationTest
             Assert.AreNotEqual(initialHealth, testComponent.health, "Health value unchanged");
         }
 
-        /// <summary>
-        /// Tests if host can receive and apply updates for multiple components from client
-        /// </summary>
         [UnityTest]
         public IEnumerator ReceiveMultipleUpdate()
         {
@@ -139,7 +119,7 @@ namespace SynchronizationTest
             Assert.AreEqual(1, objs.Length, "Scene object not found");
             var comp1 = objs[0];
             var comp2 = objs[0].gameObject.AddComponent<TestObj>();
-            // Create and send sync messages from client
+            
             Dictionary<string, object> changes1 = new Dictionary<string, object> { { "health", 150 }, { "msg", "changed1" } };
             Dictionary<string, object> changes2 = new Dictionary<string, object> { { "health", 250 }, { "msg", "changed2" } };
             
@@ -148,7 +128,6 @@ namespace SynchronizationTest
             client.Send(NetSerializer.Serialize(syncMsg));
             client.Send(NetSerializer.Serialize(syncMsg1));
 
-            // Wait for messages to be processed
             float startTime = Time.time;
             while ((comp1.health != 150 || comp2.health != 250) && Time.time - startTime < 1f)
             {
@@ -161,9 +140,6 @@ namespace SynchronizationTest
             Assert.AreEqual("changed2", comp2.msg, "Second component message not updated");
         }
 
-        /// <summary>
-        /// Tests if ownership changes are properly synchronized
-        /// </summary>
         [UnityTest]
         public IEnumerator OwnershipChangeTest()
         {
@@ -173,7 +149,6 @@ namespace SynchronizationTest
             Assert.AreEqual(1, objs.Length, "Scene object not found");
             var testComponent = objs[0];
 
-            // Change ownership to client
             testComponent.NetObject.GiveOwner(CLIENT_ID);
             yield return WaitValidate(typeof(OwnershipMessage));
 
@@ -183,9 +158,6 @@ namespace SynchronizationTest
             Assert.AreEqual(testComponent.NetObject.NetId, ownerMsg.netObjectId, "Wrong object ID in ownership message");
         }
 
-        /// <summary>
-        /// Tests if state is properly recovered after client disconnection and reconnection
-        /// </summary>
         [UnityTest]
         public IEnumerator StateRecoveryAfterDisconnect()
         {
@@ -195,26 +167,20 @@ namespace SynchronizationTest
             var testComponent = objs[0];
             testComponent.Set(999, 888, "test_before_disconnect");
 
-            // Simulate disconnection
             client.Stop();
             yield return new WaitForSeconds(0.5f);
 
-            // Reconnect client
             client = new UDPSolution();
             client.Setup(NetManager.Port, false);
             client.Start();
             yield return WaitConnection();
 
 
-            // Verify state values
             Assert.AreEqual(888, testComponent.health, "Health not recovered after reconnect");
             Assert.AreEqual(999, testComponent.id, "Id not recovered after reconnect");
             Assert.AreEqual("test_before_disconnect", testComponent.msg, "Message not recovered after reconnect");
         }
-
-        /// <summary>
-        /// Cleans up test environment after each test
-        /// </summary>
+        
         [TearDown]
         public void TearDown()
         {
@@ -230,9 +196,6 @@ namespace SynchronizationTest
             }
         }
 
-        /// <summary>
-        /// Waits for client connection to be established
-        /// </summary>
         private IEnumerator WaitConnection()
         {
             yield return new WaitForSeconds(0.2f);
@@ -265,9 +228,7 @@ namespace SynchronizationTest
             Assert.IsTrue(msg != null && msg.GetType() == expectedType, 
                 $"Expected message of type {expectedType.Name} but got {(msg == null ? "null" : msg.GetType().Name)}");
         }
-        /// <summary>
-        /// Registers test prefab with NetScene
-        /// </summary>
+        
         private void RegisterPrefab()
         {
             var prefab = Resources.Load<GameObject>("TestObj");

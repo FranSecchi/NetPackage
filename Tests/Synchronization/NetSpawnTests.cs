@@ -14,9 +14,6 @@ using UnityEngine.TestTools;
 
 namespace SynchronizationTest
 {
-    /// <summary>
-    /// Tests for object spawning functionality in the networking system
-    /// </summary>
     public class NetSpawnTests
     {
         private NetPrefabRegistry prefabs;
@@ -24,9 +21,6 @@ namespace SynchronizationTest
         private NetMessage received;
         private const int CLIENT_ID = 0;
 
-        /// <summary>
-        /// Sets up the test environment with NetManager, scene loading, and client connection
-        /// </summary>
         [UnitySetUp]
         public IEnumerator SetUp()
         {
@@ -45,9 +39,6 @@ namespace SynchronizationTest
             yield return null;
         }
 
-        /// <summary>
-        /// Tests if host can spawn objects and clients receive spawn messages correctly
-        /// </summary>
         [UnityTest]
         public IEnumerator SpawnSynchronizationTest()
         {
@@ -87,9 +78,6 @@ namespace SynchronizationTest
             Assert.IsTrue(found, "Spawned object not found at correct position");
         }
 
-        /// <summary>
-        /// Tests if clients can request object spawns and host handles them correctly
-        /// </summary>
         [UnityTest]
         public IEnumerator ClientSpawnRequestTest()
         {
@@ -124,9 +112,6 @@ namespace SynchronizationTest
             Assert.IsTrue(found, "Spawned object not found at correct position");
         }
 
-        /// <summary>
-        /// Tests if scene objects are properly spawned and synchronized
-        /// </summary>
         [UnityTest]
         public IEnumerator SceneObjectSpawnTest()
         {
@@ -141,9 +126,6 @@ namespace SynchronizationTest
             Assert.AreEqual(objs[0].transform.position, spawnMsg.position, $"Wrong position {spawnMsg.position}");
         }
 
-        /// <summary>
-        /// Cleans up test environment after each test
-        /// </summary>
         [UnityTearDown]
         public IEnumerator TearDown()
         {
@@ -161,9 +143,6 @@ namespace SynchronizationTest
             yield return new WaitForSeconds(0.2f);
         }
 
-        /// <summary>
-        /// Waits for client connection to be established
-        /// </summary>
         private IEnumerator WaitConnection()
         {
             yield return new WaitForSeconds(0.2f);
@@ -196,9 +175,7 @@ namespace SynchronizationTest
             Assert.IsTrue(msg != null && msg.GetType() == expectedType, 
                 $"Expected message of type {expectedType.Name} but got {(msg == null ? "null" : msg.GetType().Name)}");
         }
-        /// <summary>
-        /// Registers test prefab with NetScene
-        /// </summary>
+        
         private void RegisterPrefab()
         {
             var prefab = Resources.Load<GameObject>("TestObj");

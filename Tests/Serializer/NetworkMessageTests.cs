@@ -41,7 +41,6 @@ namespace SerializerTest
             yield return ConnectClients();
             yield return new WaitForSeconds(0.5f);
             
-            // Clear any pending connection messages
             foreach (ITransport client in _clients)
             {
                 while (client.Receive() != null) { }
@@ -49,15 +48,12 @@ namespace SerializerTest
             
             TestMsg testMsg = new TestMsg(34, "Hello World");
             
-            // Send message once
             NetManager.Send(testMsg);
             yield return new WaitForSeconds(0.5f);
             
-            // Each client should receive exactly one message
             foreach (ITransport client in _clients)
             {
                 byte[] data = null;
-                // Try to receive message for up to 1 second
                 float startTime = Time.time;
                 while (data == null && Time.time - startTime < 1f)
                 {
@@ -71,7 +67,6 @@ namespace SerializerTest
                 NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
                 Messager.HandleMessage(msg);
                 
-                // Verify no more messages are in the queue
                 byte[] extraData = client.Receive();
                 Assert.IsNull(extraData, "Extra message received from client");
             }
@@ -154,7 +149,6 @@ namespace SerializerTest
         [TearDown]
         public void TearDown()
         {
-            // Unsubscribe from the event properly
             if (_clients != null)
             {
                 foreach (ITransport client in _clients)
@@ -165,8 +159,6 @@ namespace SerializerTest
                 _clients.Clear();
             }
             NetManager.StopNet();
-
-            // Clear all message handlers
             Messager.ClearHandlers();
             received = null;
         }

@@ -19,7 +19,6 @@ namespace TransportTest
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            // Create and start the server
             for (int i = 0; i < 3; i++)
             {
                 ITransport server = new UDPSolution();
@@ -30,7 +29,7 @@ namespace TransportTest
                 _servers.Add(server);
                 yield return new WaitForSeconds(1f);
             }
-            // Create and start the client with LAN discovery
+            
             _client = new UDPSolution();
             _client.Setup(Port, false, true);
             _client.Start();

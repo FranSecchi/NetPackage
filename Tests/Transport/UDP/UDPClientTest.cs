@@ -35,13 +35,10 @@ namespace TransportTest
         [UnityTest]
         public IEnumerator TestClientConnected()
         {
-            // Client connects to the server
             _client.Connect("localhost");
 
-            // Wait a bit to allow connection
             yield return new WaitForSeconds(1f);
             
-            //Assert
             Assert.IsTrue(_connected, "Client did not connect.");
         }
         
@@ -59,14 +56,11 @@ namespace TransportTest
         [UnityTest]
         public IEnumerator TestMessageClientToServer()
         {
-            // Ensure client is connected
             _client.Connect("localhost");
             yield return new WaitForSeconds(1f);
         
-            // Send a test message
             _client.Send(System.Text.Encoding.ASCII.GetBytes(TestMessage));
         
-            // Wait for message to be received
             yield return new WaitForSeconds(1f);
 
             string receivedMessage = System.Text.Encoding.ASCII.GetString(_server.Receive());

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Runtime.NetPackage.Runtime.Synchronization;
-using Serializer.NetPackage.Runtime.Serializer;
+using NetPackage.Runtime.Serializer;
+using NetPackage.Runtime.Messages;
 using Transport.NetPackage.Runtime.Transport;
 
 namespace Runtime.NetPackage.Runtime.NetworkManager

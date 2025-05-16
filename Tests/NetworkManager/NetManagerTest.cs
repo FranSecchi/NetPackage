@@ -1,9 +1,6 @@
 using System.Collections.Generic;
-using System.Linq;
-using NetworkManager.NetPackage.Runtime.NetworkManager;
-using Runtime.NetPackage.Runtime.NetworkManager;
-using Serializer;
-using Serializer.NetPackage.Runtime.Serializer;
+using NetPackage.Runtime.Serializer;
+using NetPackage.Runtime.Messages;
 using Transport.NetPackage.Runtime.Transport;
 using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;

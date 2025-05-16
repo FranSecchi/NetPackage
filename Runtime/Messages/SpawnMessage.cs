@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using MessagePack;
 using UnityEngine;
 
-namespace Serializer.NetPackage.Runtime.Serializer
+namespace NetPackage.Runtime.Messages
 {
     [MessagePackObject]
     public class SpawnMessage : NetMessage

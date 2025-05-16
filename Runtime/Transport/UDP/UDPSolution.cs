@@ -159,7 +159,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
                 _lanDiscovery = new LANDiscovery();
                 _lanDiscovery.OnServerFound += address =>
                 {
-                    if(_useDebug) Debug.Log($"Found server at {address}");
+                    if(_useDebug) Debug.Log($"Found server at {address.EndPoint}");
                     if(!_lanServers.Contains(address))
                         _lanServers.Add(address);
                     TriggerOnLanServerDetected(address);

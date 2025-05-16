@@ -1,8 +1,7 @@
 using System;
 using MessagePack;
-using UnityEngine;
 
-namespace Serializer.NetPackage.Runtime.Serializer
+namespace NetPackage.Runtime.Serializer
 {
     public class MPSerializer : ISerialize
     {

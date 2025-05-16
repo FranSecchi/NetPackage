@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using MessagePack;
 
-namespace Serializer.NetPackage.Runtime.Serializer
+namespace NetPackage.Runtime.Messages
 {
     [MessagePackObject]
     public class ConnMessage : NetMessage

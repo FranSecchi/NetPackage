@@ -1,4 +1,6 @@
-namespace Serializer.NetPackage.Runtime.Serializer
+using NetPackage.Runtime.Messages;
+
+namespace NetPackage.Runtime.Serializer
 {
     public static class NetSerializer
     {

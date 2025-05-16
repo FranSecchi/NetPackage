@@ -1,7 +1,7 @@
 {
-    "name": "Serializer",
-    "rootNamespace": "NetPackage.Runtime.Serializer",
-    "references": ["Messages"],
+    "name": "Messages",
+    "rootNamespace": "NetPackage.Runtime.Messages",
+    "references": [    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
@@ -11,4 +11,4 @@
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false
-}
+} 

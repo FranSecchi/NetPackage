@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using MessagePack;
 using NUnit.Framework;
-using Serializer.NetPackage.Runtime.Serializer;
-using UnityEngine;
-using UnityEngine.TestTools;
+using NetPackage.Runtime.Serializer;
 
 namespace SerializerTest
 {

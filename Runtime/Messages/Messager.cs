@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using MessagePack;
 using UnityEngine;
 
-namespace Serializer.NetPackage.Runtime.Serializer
+namespace NetPackage.Runtime.Messages
 {
     public static class Messager
     {

@@ -1,6 +1,5 @@
 using Runtime.NetPackage.Runtime.NetworkManager;
-using Serializer;
-using Serializer.NetPackage.Runtime.Serializer;
+using NetPackage.Runtime.Messages;
 
 namespace NetworkManager.NetPackage.Runtime.NetworkManager
 {

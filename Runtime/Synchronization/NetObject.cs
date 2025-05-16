@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Runtime.NetPackage.Runtime.NetworkManager;
-using Serializer.NetPackage.Runtime.Serializer;
-using Synchronization.NetPackage.Runtime.Synchronization;
+using NetPackage.Runtime.Messages;
 using UnityEngine;
 
 namespace Runtime.NetPackage.Runtime.Synchronization

@@ -1,11 +1,10 @@
 using System;
 using System.Collections;
 using NUnit.Framework;
-using Runtime;
-using Runtime.NetPackage.Runtime.NetworkManager;
+using NetPackage.Runtime.NetworkManager;
 using NetPackage.Runtime.Serializer;
 using NetPackage.Runtime.Messages;
-using Synchronization.NetPackage.Runtime.Synchronization;
+using NetPackage.Runtime.Synchronization;
 using Transport.NetPackage.Runtime.Transport;
 using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;

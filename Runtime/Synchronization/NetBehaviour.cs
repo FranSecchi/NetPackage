@@ -1,10 +1,8 @@
 using System;
-using Runtime.NetPackage.Runtime.NetworkManager;
-using Synchronization.NetPackage.Runtime.Synchronization;
+using NetPackage.Runtime.NetworkManager;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
-namespace Runtime.NetPackage.Runtime.Synchronization
+namespace NetPackage.Runtime.Synchronization
 {
     [RequireComponent(typeof(SceneObjectId))]
     public abstract class NetBehaviour : MonoBehaviour

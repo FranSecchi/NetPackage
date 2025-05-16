@@ -1,7 +1,6 @@
-using Runtime.NetPackage.Runtime.NetworkManager;
 using NetPackage.Runtime.Messages;
 
-namespace NetworkManager.NetPackage.Runtime.NetworkManager
+namespace NetPackage.Runtime.NetworkManager
 {
     public static class NetClient
     {

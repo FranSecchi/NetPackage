@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using MessagePack;
 using NUnit.Framework;
-using Runtime.NetPackage.Runtime.NetworkManager;
+using NetPackage.Runtime.NetworkManager;
 using NetPackage.Runtime.Serializer;
 using NetPackage.Runtime.Messages;
 using Transport.NetPackage.Runtime.Transport;

@@ -2,13 +2,11 @@
     "name": "Tests",
     "rootNamespace": "Tests",
     "references": [
-        "GUID:2624d5b30ae68cb458c788b775d3ff95",
         "GUID:87f04dc89cdba054e856636de9e4b87f",
         "GUID:c86c06357137b3644913980a4df0ec93",
         "GUID:e1f1d8fab120d7f4d9a3117fb5ad7849",
-        "GUID:8807c1127ccf5cf4f8be0b589df1be0c",
-        "GUID:f923a6e9247b21b489d880f9c54a08ce",
-        "GUID:27619889b8ba8c24980f49ee34dbb44a"
+        "GUID:27619889b8ba8c24980f49ee34dbb44a",
+        "GUID:2624d5b30ae68cb458c788b775d3ff95"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

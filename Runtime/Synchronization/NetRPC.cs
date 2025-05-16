@@ -1,6 +1,6 @@
 using System;
 
-namespace Runtime.NetPackage.Runtime.Synchronization
+namespace NetPackage.Runtime.Synchronization
 {
     public enum Direction
     {

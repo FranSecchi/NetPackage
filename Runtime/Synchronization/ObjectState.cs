@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-namespace Synchronization.NetPackage.Runtime.Synchronization
+namespace NetPackage.Runtime.Synchronization
 {
     [AttributeUsage(AttributeTargets.Field)]
     public class Sync : Attribute { }

@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Runtime.NetPackage.Runtime.NetworkManager;
+using NetPackage.Runtime.NetworkManager;
 using NetPackage.Runtime.Messages;
 using UnityEngine;
 
-namespace Synchronization.NetPackage.Runtime.Synchronization
+namespace NetPackage.Runtime.Synchronization
 {
     public static class StateManager
     {

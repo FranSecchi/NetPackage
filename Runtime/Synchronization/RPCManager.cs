@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Runtime.NetPackage.Runtime.NetworkManager;
+using NetPackage.Runtime.NetworkManager;
 using NetPackage.Runtime.Serializer;
 using NetPackage.Runtime.Messages;
 using UnityEngine;
 
-namespace Runtime.NetPackage.Runtime.Synchronization
+namespace NetPackage.Runtime.Synchronization
 {
     public class RPCManager
     {

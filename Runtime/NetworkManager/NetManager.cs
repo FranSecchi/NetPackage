@@ -1,15 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using NetworkManager.NetPackage.Runtime.NetworkManager;
-using Runtime.NetPackage.Runtime.Synchronization;
+using NetPackage.Runtime.Synchronization;
 using NetPackage.Runtime.Serializer;
 using NetPackage.Runtime.Messages;
 using Transport.NetPackage.Runtime.Transport;
 using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;
 
-namespace Runtime.NetPackage.Runtime.NetworkManager
+namespace NetPackage.Runtime.NetworkManager
 {
     public class NetManager : MonoBehaviour
     {

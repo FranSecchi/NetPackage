@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Runtime.NetPackage.Runtime.Synchronization
+namespace NetPackage.Runtime.Synchronization
 {
     [ExecuteAlways]
     public class SceneObjectId : MonoBehaviour

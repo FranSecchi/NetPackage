@@ -24,11 +24,13 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
         private bool _isHost = false;
         private bool _running = false;
         
+        [SerializeField] public string ServerName = "Net_Server";
+        [SerializeField] public int maxPlayers = 10;
         [SerializeField] public bool useLAN = false;
         [SerializeField] public bool debugLog = false;
         [SerializeField] public float lanDiscoveryInterval = 1f;
         private float _lastLanDiscovery;
-        private List<IPEndPoint> _discoveredServers = new List<IPEndPoint>();
+        private List<ServerInfo> _discoveredServers = new List<ServerInfo>();
         
         public static bool IsHost => _manager._isHost;
         public static bool UseLan
@@ -83,22 +85,30 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
         {
             StopNet();
             ITransport.OnDataReceived += Receive;
-            Transport.Setup(Port, true, _manager.useLAN, _manager.debugLog);
+            Transport.Setup(Port, true, _manager.debugLog);
             _manager._isHost = true;
             _manager._running = true;
             NetHost.StartHost();
+            if (UseLan)
+            {
+                Transport.SetServerInfo(new ServerInfo(){ServerName = _manager.ServerName, MaxPlayers = _manager.maxPlayers});
+                Transport.BroadcastServerInfo();
+            }
         }
         public static void StartClient()
         {
             StopNet();
             ITransport.OnDataReceived += Receive;
-            Transport.Setup(Port, false, _manager.useLAN, _manager.debugLog);
+            Transport.Setup(Port, false, _manager.debugLog);
             _manager._isHost = false;
             _manager._running = true;
             if (!_manager.useLAN)
                 NetClient.Connect(_manager.address);
             else
+            {
+                Transport.StartServerDiscovery();
                 ITransport.OnLanServerDiscovered += AddLanServer;
+            }
         }
 
 
@@ -122,8 +132,19 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             allPlayers.Clear();
             Messager.ClearHandlers();
             ITransport.OnDataReceived -= Receive;
-            if(UseLan && !IsHost) ITransport.OnLanServerDiscovered -= AddLanServer;
+            
+            if (UseLan) StopLan();
             _manager._running = false;
+        }
+
+        public static void StopLan()
+        {
+            if (!IsHost)
+            {
+                ITransport.OnLanServerDiscovered -= AddLanServer;
+                Transport.StopServerDiscovery();
+            }
+            else Transport.StopServerBroadcast();
         }
         public static int ConnectionId()
         {
@@ -162,14 +183,14 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             }
         }
 
-        public static List<IPEndPoint> GetDiscoveredServers()
+        public static List<ServerInfo> GetDiscoveredServers()
         {
             return _manager._discoveredServers;
         }
-        private static void AddLanServer(IPEndPoint point)
+        private static void AddLanServer(ServerInfo point)
         {
-            Debug.Log("Detected Server" + point.ToString());
-            _manager._discoveredServers.Add(point);
+            Debug.Log("Detected Server: " + point.EndPoint.ToString());
+            _manager._discoveredServers = Transport.GetDiscoveredServers();
         }
     }
 }

@@ -157,19 +157,21 @@ namespace SerializerTest
         [TearDown]
         public void TearDown()
         {
-            ITransport.OnClientConnected -= id => TransportOnOnClientConnected(id, new UDPSolution());
+            // Unsubscribe from the event properly
             if (_clients != null)
             {
                 foreach (ITransport client in _clients)
                 {
-                    client.Stop(); 
+                    ITransport.OnClientConnected -= id => TransportOnOnClientConnected(id, client);
+                    client.Stop();
                 }
-                _clients.Clear(); 
+                _clients.Clear();
             }
             NetManager.StopNet();
+
+            // Clear all message handlers
             Messager.ClearHandlers();
             received = null;
-        
         }
         private void OnReceived(TestMsg obj)
         {

@@ -145,18 +145,21 @@ namespace SynchronizationTest
         /// <summary>
         /// Cleans up test environment after each test
         /// </summary>
-        [TearDown]
-        public void TearDown()
+        [UnityTearDown]
+        public IEnumerator TearDown()
         {
-            NetManager.StopNet();
             client.Stop();
+            NetManager.StopNet();
+            yield return new WaitForSeconds(0.2f);
             Messager.ClearHandlers();
+            StateManager.Clear();
             
             var objects = GameObject.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (var obj in objects)
             {
                 GameObject.DestroyImmediate(obj);
             }
+            yield return new WaitForSeconds(0.2f);
         }
 
         /// <summary>

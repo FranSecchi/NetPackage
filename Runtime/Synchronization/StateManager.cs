@@ -29,7 +29,11 @@ namespace Synchronization.NetPackage.Runtime.Synchronization
         }
         public static void Unregister(int netId)
         {
-            snapshot[netId] = null;
+            snapshot.Remove(netId);
+        }
+        public static void Clear()
+        {
+            snapshot.Clear();
         }
         public static ObjectState GetState(int objectId)
         {
@@ -40,6 +44,8 @@ namespace Synchronization.NetPackage.Runtime.Synchronization
         {
             foreach (var netObject in snapshot)
             {
+                if (netObject.Value == null) continue;
+                
                 Debug.Log("in state: " + netObject.Key);
                 var changes = netObject.Value.Update();
                 if (changes.Count > 0)

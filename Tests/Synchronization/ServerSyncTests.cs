@@ -221,6 +221,7 @@ namespace SynchronizationTest
             NetManager.StopNet();
             client.Stop();
             Messager.ClearHandlers();
+            StateManager.Clear();
             
             var objects = GameObject.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (var obj in objects)

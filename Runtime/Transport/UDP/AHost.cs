@@ -33,9 +33,11 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
 
         public override void Send(byte[] data)
         {
-            foreach (var peer in Peer.ConnectedPeerList)
+            List<NetPeer> peers = new List<NetPeer>(Peer.ConnectedPeerList);
+            foreach (var peer in peers)
             {
-                peer.Send(data, DeliveryMethod.Sequenced);
+                if(peer.ConnectionState == LiteNetLib.ConnectionState.Connected)
+                    peer.Send(data, DeliveryMethod.Sequenced);
             }
             if(UseDebug) Debug.Log("[SERVER] Sent message to all clients");
         }
@@ -45,12 +47,14 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         {
             if(UseDebug) Debug.Log("[SERVER] Client connected: " + peer.Address + "|" + peer.Port + ":" + peer.Id);
             ITransport.TriggerOnClientConnected(peer.Id);
+            UpdateConnectionInfo(peer.Id, ConnectionState.Connected, peer.Ping);
         }
         
         public override void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
             if(UseDebug) Debug.Log($"Client disconnected. Reason: {disconnectInfo.Reason}");
             ITransport.TriggerOnClientDisconnected(peer.Id);
+            UpdateConnectionInfo(peer.Id, ConnectionState.Disconnected, peer.Ping);
         }
     }
 }

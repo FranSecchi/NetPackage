@@ -39,11 +39,13 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         {
             if(UseDebug) Debug.Log($"[CLIENT] Connected to server: "+ peer.Address + ":" + peer.Port);
             ITransport.TriggerOnClientConnected(peer.Id);
+            UpdateConnectionInfo(peer.Id, ConnectionState.Connected, peer.Ping);
         }
         
         public override void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
             if(UseDebug) Debug.Log($"Disconnected from server. Reason: {disconnectInfo.Reason}");
+            UpdateConnectionInfo(peer.Id, ConnectionState.Disconnected, peer.Ping);
         }
     }
 }

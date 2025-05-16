@@ -16,8 +16,8 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
         private ITransport _client;
         private bool _connected = false;
         
-        [SetUp]
-        public void SetUp()
+        [UnitySetUp]
+        public IEnumerator SetUp()
         {
             // Create and start the server
             for (int i = 0; i < 3; i++)
@@ -25,29 +25,34 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
                 ITransport server = new UDPSolution();
                 server.Setup(Port + i, true, true);
                 server.Start();
+                server.SetServerInfo(new ServerInfo(){ServerName = "Name"});
+                server.BroadcastServerInfo();
                 _servers.Add(server);
+                yield return new WaitForSeconds(1f);
             }
             // Create and start the client with LAN discovery
             _client = new UDPSolution();
             _client.Setup(Port, false, true);
             _client.Start();
+            _client.StartServerDiscovery();
+            yield return new WaitForSeconds(2f);
         }
 
         [UnityTest]
         public IEnumerator TestDiscoverServer()
         {
-            yield return new WaitForSeconds(2f);
+            yield return new WaitForSeconds(0.2f);
             Assert.IsNotEmpty(_client.GetDiscoveredServers(), "GetDiscoveredServers failed");
         }
 
         [UnityTest] public IEnumerator TestDiscoverMultipleServers()
         {
-            yield return new WaitForSeconds(2f);
-            List<IPEndPoint> discoveredServers = _client.GetDiscoveredServers();
+            yield return new WaitForSeconds(0.2f);
+            List<ServerInfo> discoveredServers = _client.GetDiscoveredServers();
 
             Debug.Log($"Discovered servers: {string.Join(", ", discoveredServers)}");
             Assert.GreaterOrEqual(discoveredServers.Count, 2, "Expected multiple servers, but found less.");
-            Assert.AreEqual(discoveredServers.Count, new HashSet<IPEndPoint>(discoveredServers).Count, "Duplicate servers detected.");
+            Assert.AreEqual(discoveredServers.Count, new HashSet<ServerInfo>(discoveredServers).Count, "Duplicate servers detected.");
         }
 
         [TearDown]

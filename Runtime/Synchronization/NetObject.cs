@@ -71,10 +71,7 @@ namespace Runtime.NetPackage.Runtime.Synchronization
 
         public void Destroy()
         {
-            foreach (var obj in _behaviours)
-            {
-                GameObject.Destroy(obj.gameObject);
-            }
+            GameObject.Destroy(_behaviours[0].gameObject);
         }
 
         public void Enable()

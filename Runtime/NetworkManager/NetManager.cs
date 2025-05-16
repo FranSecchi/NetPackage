@@ -171,6 +171,25 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
                 NetClient.Send(spm);
             }
         }
+
+        public static void Destroy(int netObjectId)
+        {
+            var netObj = NetScene.Instance.GetNetObject(netObjectId);
+            if (netObj != null && (netObj.Owned || IsHost))
+            {
+                DestroyMessage msg = new DestroyMessage(netObjectId, ConnectionId());
+                if (IsHost)
+                {
+                    NetScene.Instance.Destroy(netObjectId);
+                    NetHost.Send(msg);
+                }
+                else
+                {
+                    NetClient.Send(msg);
+                }
+            }
+        }
+
         private static void Receive(int id)
         {
             byte[] data = Transport.Receive();

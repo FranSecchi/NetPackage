@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MessagePack;
 
 namespace Serializer.NetPackage.Runtime.Serializer
@@ -5,13 +6,20 @@ namespace Serializer.NetPackage.Runtime.Serializer
     [MessagePackObject]
     public class DestroyMessage : NetMessage
     {
-        [Key(0)] public int ObjectId;
-        
+        [Key(1)] public int netObjectId;
+        [Key(2)] public int requesterId;
+
         public DestroyMessage() { }
 
-        public DestroyMessage(int objectId)
+        public DestroyMessage(int netObjectId, int requesterId, List<int> target = null) : base(target)
         {
-            ObjectId = objectId;
+            this.netObjectId = netObjectId;
+            this.requesterId = requesterId;
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} NetObjectId:{netObjectId}, Requester:{requesterId}";
         }
     }
 }

@@ -1,10 +1,7 @@
 {
     "name": "Runtime",
-    "rootNamespace": "Runtime",
-    "references": [
-        "GUID:c86c06357137b3644913980a4df0ec93",
-        "GUID:87f04dc89cdba054e856636de9e4b87f"
-    ],
+    "rootNamespace": "NetPackage.Runtime",
+    "references": ["GUID:c86c06357137b3644913980a4df0ec93","GUID:87f04dc89cdba054e856636de9e4b87f"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

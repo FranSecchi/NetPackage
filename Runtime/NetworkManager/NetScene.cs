@@ -22,6 +22,7 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             netObjectId = 0;
             Instance = this;
             Messager.RegisterHandler<OwnershipMessage>(OnOwnership);
+            Messager.RegisterHandler<DestroyMessage>(OnDestroyMessage);
         }
 
         private void OnOwnership(OwnershipMessage msg)
@@ -30,6 +31,24 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
             if (netObj != null)
             {
                 netObj.GiveOwner(msg.newOwnerId);
+            }
+        }
+
+        private void OnDestroyMessage(DestroyMessage msg)
+        {
+            if (NetManager.IsHost)
+            {
+                // Validate ownership before destroying
+                var netObj = GetNetObject(msg.netObjectId);
+                if (netObj != null && (netObj.OwnerId == msg.requesterId || NetManager.IsHost))
+                {
+                    Destroy(msg.netObjectId);
+                    NetHost.Send(msg);
+                }
+            }
+            else
+            {
+                Destroy(msg.netObjectId);
             }
         }
 
@@ -107,9 +126,9 @@ namespace Runtime.NetPackage.Runtime.NetworkManager
         {
             if (netObjects.TryGetValue(objectId, out NetObject obj))
             {
-                obj.Destroy();
+                NetManager.EnqueueMainThread(() => { obj.Destroy(); });
+                Unregister(objectId);
             }
-            Unregister(objectId);
         }
 
         public NetObject GetNetObject(int netId)

@@ -70,7 +70,7 @@ namespace NetworkManagerTest
         {
             StopNet();
             ITransport.OnDataReceived += Receive;
-            Transport.Setup(Port, true, _manager.debugLog);
+            Transport.Setup(Port, true, useDebug:_manager.debugLog);
             _manager._isHost = true;
             _manager._running = true;
             NetHostTest.StartHost();
@@ -84,7 +84,7 @@ namespace NetworkManagerTest
         {
             StopNet();
             ITransport.OnDataReceived += Receive;
-            Transport.Setup(Port, false, _manager.debugLog);
+            Transport.Setup(Port, false, useDebug:_manager.debugLog);
             _manager._isHost = false;
             _manager._running = true;
             if (!_manager.useLAN)
@@ -111,7 +111,7 @@ namespace NetworkManagerTest
         {
             StopNet();
             ITransport.OnDataReceived += Receive;
-            Transport.Setup(Port, false, _manager.useLAN);
+            Transport.Setup(Port, false, useDebug:_manager.debugLog);
             _manager._isHost = false;
             NetClientTest.Connect(address);
         }

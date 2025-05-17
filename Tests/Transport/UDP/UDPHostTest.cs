@@ -131,7 +131,7 @@ namespace TransportTest
                 client.Connect("localhost");
                 clients.Add(client);
             }
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(0.5f);
             _transport.Kick(2);
             yield return new WaitForSeconds(0.5f);
             

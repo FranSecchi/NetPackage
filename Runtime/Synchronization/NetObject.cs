@@ -30,9 +30,6 @@ namespace NetPackage.Runtime.Synchronization
             {
                 Register(b);
             }
-            
-            // Update NetBehaviour ownership state
-            UpdateBehaviourOwnership();
         }
 
         public void GiveOwner(int ownerId)
@@ -40,7 +37,6 @@ namespace NetPackage.Runtime.Synchronization
             if (_ownerId == ownerId) return;
             if (!NetManager.allPlayers.Contains(ownerId)) return;
             _ownerId = ownerId;
-            UpdateBehaviourOwnership();
             
             if (NetManager.IsHost)
             {
@@ -50,13 +46,6 @@ namespace NetPackage.Runtime.Synchronization
             }
         }
 
-        private void UpdateBehaviourOwnership()
-        {
-            foreach (var behaviour in _behaviours)
-            {
-                behaviour.isOwned = Owned;
-            }
-        }
 
         public void Register(NetBehaviour obj)
         {
@@ -65,7 +54,6 @@ namespace NetPackage.Runtime.Synchronization
                 _behaviours.Add(obj);
             }
             obj.SetNetObject(this);
-            obj.isOwned = Owned;
         }
 
         public void Destroy()

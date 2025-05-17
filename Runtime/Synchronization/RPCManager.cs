@@ -78,7 +78,7 @@ namespace NetPackage.Runtime.Synchronization
             CallRPC(message.ObjectId, message.MethodName, message.Parameters);
         }
 
-        public static void CallRPC(int netId, string methodName, object[] parameters)
+        private static void CallRPC(int netId, string methodName, object[] parameters)
         {
             if (!_rpcTargets.ContainsKey(netId))
             {

@@ -9,15 +9,15 @@ namespace NetPackage.Runtime.Synchronization
     {
         [NonSerialized]
         public NetObject NetObject;
+        public int NetID => NetObject.NetId;
         private bool registered = false;
-        public bool isOwned = true;
-        protected bool spawned;
+        public  bool isOwned => NetObject.Owned;
+        protected bool spawned = false;
         
-        private void Awake()
+        protected virtual void Awake()
         {
             RegisterAsSceneObject();
         }
-
         public void OnEnable()
         {
             if (NetObject != null)
@@ -25,6 +25,12 @@ namespace NetPackage.Runtime.Synchronization
                 StateManager.Register(NetObject.NetId, this);
                 RPCManager.Register(NetObject.NetId, this);
             }
+            if (!spawned)
+            {
+                spawned = true;
+                OnNetSpawn();
+            }
+            OnNetEnable();
         }
 
         public void OnDisable()
@@ -34,7 +40,19 @@ namespace NetPackage.Runtime.Synchronization
                 StateManager.Unregister(NetObject.NetId);
                 RPCManager.Unregister(NetObject.NetId, this);
             }
+            OnNetDisable();
         }
+        protected virtual void Start()
+        {
+            // Register in play mode if not already registered
+            if (!registered && NetObject == null)
+            {
+                RegisterAsSceneObject();
+            }
+        }
+        protected virtual void OnNetEnable(){ }
+        protected virtual void OnNetDisable(){ }
+        protected virtual void OnNetSpawn(){ }
 
         protected void CallRPC(string methodName, params object[] parameters)
         {
@@ -43,16 +61,6 @@ namespace NetPackage.Runtime.Synchronization
                 RPCManager.SendRPC(NetObject.NetId, methodName, parameters);
             }
         }
-
-        private void Start()
-        {
-            // Register in play mode if not already registered
-            if (!registered && NetObject == null)
-            {
-                RegisterAsSceneObject();
-            }
-        }
-
         private void RegisterAsSceneObject()
         {
             if (registered) return;

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "displayName": "Net Package",
   "description": "This is a net package",
-  "unity": "2023.8.3",
+  "unity": "2023.1.0",
   "dependencies": {
     
   },

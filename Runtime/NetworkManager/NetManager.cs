@@ -78,6 +78,25 @@ namespace NetPackage.Runtime.NetworkManager
             }
         }
 
+        private void OnDestroy()
+        {
+            if (_manager == this)
+            {
+                _manager = null;
+                Transport?.Stop();
+                Messager.ClearHandlers();
+                m_scene?.Cleanup();
+                m_scene = null;
+            }
+        }
+
+        private void OnApplicationQuit()
+        {
+            Transport?.Stop();
+            Messager.ClearHandlers();
+            m_scene?.Cleanup();
+        }
+
         public static void StartHost(ServerInfo serverInfo = null)
         {
             StopNet();

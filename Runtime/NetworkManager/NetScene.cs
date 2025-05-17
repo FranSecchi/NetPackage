@@ -20,15 +20,6 @@ namespace NetPackage.Runtime.NetworkManager
             Messager.RegisterHandler<OwnershipMessage>(OnOwnership);
             Messager.RegisterHandler<DestroyMessage>(OnDestroyMessage);
         }
-
-        public void Cleanup()
-        {
-            netObjects.Clear();
-            sceneObjects.Clear();
-            m_prefabs.Clear();
-            Instance = null;
-        }
-
         private void OnOwnership(OwnershipMessage msg)
         {
             var netObj = GetNetObject(msg.netObjectId);

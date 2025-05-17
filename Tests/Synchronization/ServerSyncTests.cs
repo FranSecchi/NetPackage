@@ -6,7 +6,6 @@ using NetPackage.Runtime.NetworkManager;
 using NetPackage.Runtime.Serializer;
 using NetPackage.Runtime.Messages;
 using NetPackage.Runtime.Synchronization;
-using NetPackage.Tests;
 using Transport.NetPackage.Runtime.Transport;
 using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;
@@ -17,7 +16,6 @@ namespace SynchronizationTest
 {
     public class ServerSyncTests
     {
-        private TestSceneManager sceneManager;
         private NetPrefabRegistry prefabs;
         private ITransport client;
         private GameObject testObj;
@@ -27,15 +25,11 @@ namespace SynchronizationTest
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            sceneManager = new TestSceneManager("TestScene");
-            sceneManager.SetUp();
-            yield return new WaitForSeconds(0.2f);
-            
             var managerObj = new GameObject();
             var manager = managerObj.AddComponent<NetManager>();
             NetManager.StartHost();
             
-            SceneManager.LoadScene("TestScene");
+            new GameObject().AddComponent<TestObj>().Set(10,500,"init");
             yield return new WaitForSeconds(0.2f);
             
             RegisterPrefab();

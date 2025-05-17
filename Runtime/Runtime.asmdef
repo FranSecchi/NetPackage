@@ -2,15 +2,19 @@
     "name": "Runtime",
     "rootNamespace": "NetPackage.Runtime",
     "references": [
-        "GUID:c86c06357137b3644913980a4df0ec93",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f",
+        "GUID:e1f1d8fab120d7f4d9a3117fb5ad7849",
         "GUID:87f04dc89cdba054e856636de9e4b87f",
-        "GUID:e1f1d8fab120d7f4d9a3117fb5ad7849"
+        "GUID:c86c06357137b3644913980a4df0ec93"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
-    "precompiledReferences": [],
+    "precompiledReferences": [
+        "MessagePack.dll",
+        "MessagePack.Annotations.dll"
+    ],
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],

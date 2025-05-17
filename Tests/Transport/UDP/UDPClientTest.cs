@@ -5,7 +5,7 @@ using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace TransportTest.NetPackage.Tests.Transport.UDP
+namespace TransportTest
 {
     public class UDPClientTest
     {
@@ -35,13 +35,10 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
         [UnityTest]
         public IEnumerator TestClientConnected()
         {
-            // Client connects to the server
             _client.Connect("localhost");
 
-            // Wait a bit to allow connection
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.2f);
             
-            //Assert
             Assert.IsTrue(_connected, "Client did not connect.");
         }
         
@@ -49,25 +46,22 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
         public IEnumerator TestClientDisconnected()
         {
             _client.Connect("localhost");
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.2f);
             
             _client.Disconnect();
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.2f);
             Assert.IsTrue(!_connected, "Client did not disconnect.");
         }
         
         [UnityTest]
         public IEnumerator TestMessageClientToServer()
         {
-            // Ensure client is connected
             _client.Connect("localhost");
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.2f);
         
-            // Send a test message
             _client.Send(System.Text.Encoding.ASCII.GetBytes(TestMessage));
         
-            // Wait for message to be received
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.2f);
 
             string receivedMessage = System.Text.Encoding.ASCII.GetString(_server.Receive());
             Assert.AreEqual(TestMessage, receivedMessage, "Received message.");

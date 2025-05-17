@@ -33,7 +33,12 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             Peer.FirstPeer.Send(data, DeliveryMethod.Sequenced);
             if(UseDebug) Debug.Log("[CLIENT] Sent message to host");
         }
-        
+
+        public override void OnConnectionRequest(ConnectionRequest request)
+        {
+            Debug.LogWarning("[CLIENT] Connection request received. Clients should not receive requests");
+        }
+
 
         public override void OnPeerConnected(NetPeer peer)
         {

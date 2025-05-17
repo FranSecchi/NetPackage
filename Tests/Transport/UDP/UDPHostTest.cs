@@ -7,7 +7,7 @@ using Transport.NetPackage.Runtime.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace TransportTest.NetPackage.Tests.Transport.UDP
+namespace TransportTest
 {
     public class UDPHostTest
     {
@@ -22,7 +22,6 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
         {
             _connectedClients = new List<int>();
             
-            // Create and start the server
             _transport = new UDPSolution();
             _transport.Setup(Port, true);
             _transport.Start();
@@ -51,7 +50,7 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
                 client.Connect("localhost");
                 clients.Add(client);
             }
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.2f);
             
             Assert.IsTrue(_connectedClients.Count == 5, "There should be 5 clients.");
             
@@ -72,12 +71,12 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
                 client.Start();
                 client.Connect("localhost");
                 clients.Add(client);
-                yield return new WaitForSeconds(0.5f);
             }
+            yield return new WaitForSeconds(0.2f);
             for (int i = 0; i < 5; i++)
             {
                 _transport.SendTo(_connectedClients[i], System.Text.Encoding.ASCII.GetBytes(TestMessage));
-                yield return new WaitForSeconds(1f);
+                yield return new WaitForSeconds(0.2f);
                 string receivedMessage = System.Text.Encoding.ASCII.GetString(clients[i].Receive());
                 Assert.AreEqual(TestMessage, receivedMessage, "Message did not match.");
             }
@@ -99,14 +98,12 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
                 client.Start();
                 client.Connect("localhost");
                 clients.Add(client);
-                yield return new WaitForSeconds(0.5f);
             }
+            yield return new WaitForSeconds(0.2f);
             
-            // Send a test message
             _transport.Send(System.Text.Encoding.ASCII.GetBytes(TestMessage));
         
-            // Wait for message to be received
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.2f);
 
             int count = 0;
             for (int i = 0; i < 5; i++)
@@ -133,8 +130,8 @@ namespace TransportTest.NetPackage.Tests.Transport.UDP
                 client.Start();
                 client.Connect("localhost");
                 clients.Add(client);
-                yield return new WaitForSeconds(0.5f);
             }
+            yield return new WaitForSeconds(0.2f);
             _transport.Kick(2);
             yield return new WaitForSeconds(0.5f);
             

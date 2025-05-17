@@ -7,6 +7,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
 {
     public class AHost : APeer
     {
+        private int _connected;
         public AHost(int port) : base(port)
         {
         }
@@ -41,7 +42,14 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             }
             if(UseDebug) Debug.Log("[SERVER] Sent message to all clients");
         }
-        
+
+        public override void OnConnectionRequest(ConnectionRequest request)
+        {
+            if(UseDebug) Debug.Log($"[SERVER] Requested connection from {request.RemoteEndPoint}.");
+            if(_connected < MaxPlayers) request.AcceptIfKey("Net_Key");
+            else if(UseDebug) Debug.Log($"[SERVER] Requested connection denied from {request.RemoteEndPoint}. Max players: {MaxPlayers}");
+        }
+
 
         public override void OnPeerConnected(NetPeer peer)
         {

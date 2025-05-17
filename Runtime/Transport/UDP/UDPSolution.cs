@@ -30,14 +30,26 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             };
         }
 
-        public void Setup(int port, bool isServer, bool useDebug = false)
+        public void Setup(int port, bool isServer, int maxPlayers = 10, bool useDebug = false)
         {
             if(_isRunning) Disconnect();
             _aPeer = isServer ? new AHost(port) : new AClient(port);
+            _aPeer.MaxPlayers = maxPlayers;
             _aPeer.UseDebug = useDebug;
             IsHost = isServer;
             _useDebug = useDebug;
+            _serverInfo = new ServerInfo{CurrentPlayers = 0, MaxPlayers = maxPlayers, ServerName = "New_Server"};
+        }
 
+        public void Setup(int port, ServerInfo serverInfo, bool useDebug = false)
+        {
+            if(_isRunning) Disconnect();
+            _aPeer = new AHost(port);
+            _aPeer.MaxPlayers = serverInfo.MaxPlayers;
+            _aPeer.UseDebug = useDebug;
+            IsHost = true;
+            _useDebug = useDebug;
+            _serverInfo = serverInfo;
         }
 
         public void Start()

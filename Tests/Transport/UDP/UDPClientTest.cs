@@ -37,7 +37,7 @@ namespace TransportTest
         {
             _client.Connect("localhost");
 
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.2f);
             
             Assert.IsTrue(_connected, "Client did not connect.");
         }
@@ -46,10 +46,10 @@ namespace TransportTest
         public IEnumerator TestClientDisconnected()
         {
             _client.Connect("localhost");
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.2f);
             
             _client.Disconnect();
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.2f);
             Assert.IsTrue(!_connected, "Client did not disconnect.");
         }
         
@@ -57,11 +57,11 @@ namespace TransportTest
         public IEnumerator TestMessageClientToServer()
         {
             _client.Connect("localhost");
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.2f);
         
             _client.Send(System.Text.Encoding.ASCII.GetBytes(TestMessage));
         
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.2f);
 
             string receivedMessage = System.Text.Encoding.ASCII.GetString(_server.Receive());
             Assert.AreEqual(TestMessage, receivedMessage, "Received message.");

@@ -25,13 +25,16 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
         }
 
         public bool UseDebug { get; set; }
-        public Dictionary<int, ConnectionInfo> ConnectionInfo  => _connectionInfo; 
+        public Dictionary<int, ConnectionInfo> ConnectionInfo  => _connectionInfo;
+        public int MaxPlayers { get; set; }
+
         public abstract void Start();
         public abstract void Connect(string address);
         public abstract void Kick(int id);
         public abstract void OnPeerConnected(NetPeer peer);
         public abstract void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo);
         public abstract void Send(byte[] data);
+        public abstract void OnConnectionRequest(ConnectionRequest request);
 
         public virtual void SetBandwidthLimit(int bytesPerSecond)
         {
@@ -64,11 +67,6 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             return null;
         }
 
-        public void OnConnectionRequest(ConnectionRequest request)
-        {
-            if(UseDebug) Debug.Log($"[SERVER] Requested connection from {request.RemoteEndPoint}.");
-            request.AcceptIfKey("Net_Key");
-        }
 
         public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
         {

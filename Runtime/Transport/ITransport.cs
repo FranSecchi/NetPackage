@@ -72,8 +72,10 @@ namespace Transport.NetPackage.Runtime.Transport
         /// </summary>
         /// <param name="port">The port to use for communication</param>
         /// <param name="isServer">Whether this instance should act as a server</param>
+        /// <param name="maxPlayers">Number of maximum connections on server</param>
         /// <param name="useDebug">Whether to enable debug logging</param>
-        void Setup(int port, bool isServer, bool useDebug = false);
+        void Setup(int port, bool isServer, int maxPlayers = 10, bool useDebug = false);
+        void Setup(int port, ServerInfo serverInfo, bool useDebug = false);
 
         /// <summary>
         /// Starts the transport service

@@ -50,7 +50,7 @@ namespace TransportTest
                 client.Connect("localhost");
                 clients.Add(client);
             }
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.2f);
             
             Assert.IsTrue(_connectedClients.Count == 5, "There should be 5 clients.");
             
@@ -71,12 +71,12 @@ namespace TransportTest
                 client.Start();
                 client.Connect("localhost");
                 clients.Add(client);
-                yield return new WaitForSeconds(0.5f);
             }
+            yield return new WaitForSeconds(0.2f);
             for (int i = 0; i < 5; i++)
             {
                 _transport.SendTo(_connectedClients[i], System.Text.Encoding.ASCII.GetBytes(TestMessage));
-                yield return new WaitForSeconds(1f);
+                yield return new WaitForSeconds(0.2f);
                 string receivedMessage = System.Text.Encoding.ASCII.GetString(clients[i].Receive());
                 Assert.AreEqual(TestMessage, receivedMessage, "Message did not match.");
             }
@@ -98,12 +98,12 @@ namespace TransportTest
                 client.Start();
                 client.Connect("localhost");
                 clients.Add(client);
-                yield return new WaitForSeconds(0.5f);
             }
+            yield return new WaitForSeconds(0.2f);
             
             _transport.Send(System.Text.Encoding.ASCII.GetBytes(TestMessage));
         
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.2f);
 
             int count = 0;
             for (int i = 0; i < 5; i++)
@@ -130,8 +130,8 @@ namespace TransportTest
                 client.Start();
                 client.Connect("localhost");
                 clients.Add(client);
-                yield return new WaitForSeconds(0.5f);
             }
+            yield return new WaitForSeconds(0.2f);
             _transport.Kick(2);
             yield return new WaitForSeconds(0.5f);
             

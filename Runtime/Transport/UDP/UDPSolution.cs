@@ -171,7 +171,7 @@ namespace NetPackage.Transport.UDP
                 _lanDiscovery = new LANDiscovery();
                 _lanDiscovery.OnServerFound += serverInfo =>
                 {
-                    if(_lanServers.Contains(serverInfo))
+                    if(_lanServers.Find(s => s.EndPoint.Equals(serverInfo.EndPoint)) != null)
                     {
                         SetServerInfo(serverInfo);
                         if(_useDebug) Debug.Log($"Found server at {serverInfo.EndPoint}");
@@ -179,9 +179,9 @@ namespace NetPackage.Transport.UDP
                     else
                     {
                         _lanServers.Add(serverInfo);
-                        TriggerOnLanServerDetected(serverInfo);
                         if(_useDebug) Debug.Log($"Found new server at {serverInfo.EndPoint}");
                     }
+                    TriggerOnLanServerDetected(serverInfo);
                 };
                 _lanDiscovery.OnServerLost += address =>
                 {

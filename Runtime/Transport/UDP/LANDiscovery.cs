@@ -86,7 +86,6 @@ namespace NetPackage.Transport.UDP
         private void UpdateServerInfo(ServerInfo serverInfo)
         {
             DateTime currentTime = DateTime.UtcNow;
-            bool isNewServer = !_knownServers.ContainsKey(serverInfo.EndPoint);
 
             _knownServers[serverInfo.EndPoint] = (serverInfo, currentTime);
 

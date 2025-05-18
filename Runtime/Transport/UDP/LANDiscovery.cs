@@ -102,6 +102,7 @@ namespace NetPackage.Transport.UDP
                 if ((currentTime - kvp.Value.LastSeenTime).TotalSeconds > ServerTimeoutSeconds)
                 {
                     timedOutServers.Add(kvp.Key);
+                    Debug.Log($"Timed out {kvp.Key}");
                 }
             }
 
@@ -109,6 +110,7 @@ namespace NetPackage.Transport.UDP
             {
                 var serverInfo = _knownServers[endPoint].Info;
                 _knownServers.Remove(endPoint);
+                Debug.Log($"Server lost: {endPoint.ToString()}: {serverInfo}");
                 OnServerLost?.Invoke(serverInfo);
             }
         }

@@ -248,7 +248,8 @@ namespace NetPackage.Network
             List<ConnectionInfo> clients = new List<ConnectionInfo>();
             for (int i = 0; i < allPlayers.Count - 1; i++)
             {
-                clients.Add(Transport.GetConnectionInfo(i));
+                ConnectionInfo client = Transport.GetConnectionInfo(i);
+                if(client != null) clients.Add(client);
             }
             return clients;
         }

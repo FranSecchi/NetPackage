@@ -61,7 +61,7 @@ namespace NetPackage.Transport
         /// <summary>
         /// Event triggered when a new LAN server is discovered
         /// </summary>
-        [CanBeNull] static event Action<ServerInfo> OnLanServerDiscovered;
+        [CanBeNull] static event Action<ServerInfo> OnLanServerUpdate;
         
         /// <summary>
         /// Event triggered when the connection state changes
@@ -220,9 +220,9 @@ namespace NetPackage.Transport
         /// Triggers the OnLanServerDiscovered event
         /// </summary>
         /// <param name="serverInfo">Information about the discovered server</param>
-        static void TriggerOnLanServerDetected(ServerInfo serverInfo)
+        static void TriggerOnLanServersUpdate(ServerInfo serverInfo)
         {
-            OnLanServerDiscovered?.Invoke(serverInfo);
+            OnLanServerUpdate?.Invoke(serverInfo);
         }
 
         /// <summary>

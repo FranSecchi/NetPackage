@@ -181,12 +181,13 @@ namespace NetPackage.Transport.UDP
                         _lanServers.Add(serverInfo);
                         if(_useDebug) Debug.Log($"Found new server at {serverInfo.EndPoint}");
                     }
-                    TriggerOnLanServerDetected(serverInfo);
+                    TriggerOnLanServersUpdate(serverInfo);
                 };
-                _lanDiscovery.OnServerLost += address =>
+                _lanDiscovery.OnServerLost += serverInfo =>
                 {
-                    if(_useDebug) Debug.Log($"Lost server at {address.EndPoint}");
-                    _lanServers.Remove(address);
+                    if(_useDebug) Debug.Log($"Lost server at {serverInfo.EndPoint}");
+                    _lanServers.Remove(serverInfo);
+                    TriggerOnLanServersUpdate(serverInfo);
                 };
                 if(discoveryPort == -1) _lanDiscovery.StartDiscovery();
                 else _lanDiscovery.StartDiscovery(discoveryPort);

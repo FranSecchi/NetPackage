@@ -122,7 +122,7 @@ namespace NetPackage.Network
             else
             {
                 Transport.StartServerDiscovery();
-                ITransport.OnLanServerDiscovered += AddLanServer;
+                ITransport.OnLanServerUpdate += UpdateLanServers;
             }
         }
 
@@ -199,7 +199,7 @@ namespace NetPackage.Network
         {
             if (!IsHost)
             {
-                ITransport.OnLanServerDiscovered -= AddLanServer;
+                ITransport.OnLanServerUpdate -= UpdateLanServers;
                 Transport.StopServerDiscovery();
             }
             else Transport.StopServerBroadcast();
@@ -264,7 +264,7 @@ namespace NetPackage.Network
             }
         }
 
-        private static void AddLanServer(ServerInfo point)
+        private static void UpdateLanServers(ServerInfo point)
         {
             Debug.Log("Detected Server: " + point.EndPoint.ToString());
             _manager._discoveredServers = Transport.GetDiscoveredServers();

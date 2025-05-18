@@ -94,7 +94,7 @@ namespace NetworkManagerTest
             else
             {
                 Transport.StartServerDiscovery();
-                ITransport.OnLanServerDiscovered += AddLanServer;
+                ITransport.OnLanServerUpdate += AddLanServer;
             }
         }
 
@@ -132,7 +132,7 @@ namespace NetworkManagerTest
         {
             if (!IsHost)
             {
-                ITransport.OnLanServerDiscovered -= AddLanServer;
+                ITransport.OnLanServerUpdate -= AddLanServer;
                 Transport.StopServerDiscovery();
             }
             else Transport.StopServerBroadcast();

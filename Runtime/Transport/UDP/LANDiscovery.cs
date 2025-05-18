@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace NetPackage.Transport.UDP
@@ -14,8 +15,12 @@ namespace NetPackage.Transport.UDP
         private bool _isRunning;
         private const int DiscoveryPort = 8888;
         private const string DiscoveryMessage = "NetPackage_Discovery";
+        private const float ServerTimeoutSeconds = 5f; // Server will be removed if not seen for 5 seconds
+
+        private Dictionary<IPEndPoint, (ServerInfo Info, float LastSeenTime)> _knownServers = new Dictionary<IPEndPoint, (ServerInfo, float)>();
 
         public event Action<ServerInfo> OnServerFound;
+        public event Action<ServerInfo> OnServerLost;
 
         public void StartDiscovery(int port = DiscoveryPort)
         {
@@ -46,6 +51,7 @@ namespace NetPackage.Transport.UDP
             _isRunning = false;
             _udpClient?.Close();
             _discoveryThread?.Join();
+            _knownServers.Clear();
         }
 
         private void DiscoveryLoop()
@@ -61,8 +67,11 @@ namespace NetPackage.Transport.UDP
                     if (message.StartsWith(DiscoveryMessage))
                     {
                         var serverInfo = ParseServerInfo(message, remoteEndPoint);
-                        OnServerFound?.Invoke(serverInfo);
+                        UpdateServerInfo(serverInfo);
                     }
+
+                    // Check for timed out servers
+                    CheckForTimedOutServers();
                 }
                 catch (Exception e)
                 {
@@ -71,6 +80,40 @@ namespace NetPackage.Transport.UDP
                         Debug.LogError($"Error in discovery loop: {e.Message}");
                     }
                 }
+            }
+        }
+
+        private void UpdateServerInfo(ServerInfo serverInfo)
+        {
+            float currentTime = Time.realtimeSinceStartup;
+            bool isNewServer = !_knownServers.ContainsKey(serverInfo.EndPoint);
+
+            _knownServers[serverInfo.EndPoint] = (serverInfo, currentTime);
+
+            if (isNewServer)
+            {
+                OnServerFound?.Invoke(serverInfo);
+            }
+        }
+
+        private void CheckForTimedOutServers()
+        {
+            float currentTime = Time.realtimeSinceStartup;
+            var timedOutServers = new List<IPEndPoint>();
+
+            foreach (var kvp in _knownServers)
+            {
+                if (currentTime - kvp.Value.LastSeenTime > ServerTimeoutSeconds)
+                {
+                    timedOutServers.Add(kvp.Key);
+                }
+            }
+
+            foreach (var endPoint in timedOutServers)
+            {
+                var serverInfo = _knownServers[endPoint].Info;
+                _knownServers.Remove(endPoint);
+                OnServerLost?.Invoke(serverInfo);
             }
         }
 

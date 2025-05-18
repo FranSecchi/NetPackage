@@ -176,6 +176,11 @@ namespace NetPackage.Transport.UDP
                         _lanServers.Add(address);
                     TriggerOnLanServerDetected(address);
                 };
+                _lanDiscovery.OnServerLost += address =>
+                {
+                    if(_useDebug) Debug.Log($"Lost server at {address.EndPoint}");
+                    _lanServers.Remove(address);
+                };
                 if(discoveryPort == -1) _lanDiscovery.StartDiscovery();
                 else _lanDiscovery.StartDiscovery(discoveryPort);
             }

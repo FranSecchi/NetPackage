@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using MessagePack;
 using UnityEngine;
 
-namespace NetPackage.Runtime.Messages
+namespace NetPackage.Messages
 {
     [MessagePackObject]
     public class SpawnMessage : NetMessage

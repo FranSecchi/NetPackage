@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using MessagePack;
 using NUnit.Framework;
-using NetPackage.Runtime.Serializer;
+using NetPackage.Serializer;
 
 namespace SerializerTest
 {

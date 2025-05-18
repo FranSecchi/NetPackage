@@ -2,12 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
-using NetPackage.Runtime.NetworkManager;
-using NetPackage.Runtime.Synchronization;
-using NetPackage.Runtime.Serializer;
-using NetPackage.Runtime.Messages;
-using Transport.NetPackage.Runtime.Transport;
-using Transport.NetPackage.Runtime.Transport.UDP;
+using NetPackage.Network;
+using NetPackage.Synchronization;
+using NetPackage.Serializer;
+using NetPackage.Messages;
+using NetPackage.Transport;
+using NetPackage.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 using MessagePack;
@@ -18,7 +18,6 @@ namespace SynchronizationTest
     {
         private ITransport client;
         private TestRPCBehaviour testObj;
-        private TestRPCBehaviour clientTestObj;
         private NetMessage received;
 
         [UnitySetUp]
@@ -282,7 +281,6 @@ namespace SynchronizationTest
             }
 
             testObj = null;
-            clientTestObj = null;
             received = null;
         }
         

@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using NetPackage.Runtime.Messages;
-using NetPackage.Runtime.Synchronization;
+using NetPackage.Messages;
+using NetPackage.Synchronization;
 using UnityEngine;
 
-namespace NetPackage.Runtime.NetworkManager
+namespace NetPackage.Network
 {
     public class NetScene
     { 

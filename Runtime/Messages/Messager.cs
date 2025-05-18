@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace NetPackage.Runtime.Messages
+namespace NetPackage.Messages
 {
     public static class Messager
     {

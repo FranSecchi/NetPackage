@@ -2,11 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using MessagePack;
 using NUnit.Framework;
-using NetPackage.Runtime.NetworkManager;
-using NetPackage.Runtime.Serializer;
-using NetPackage.Runtime.Messages;
-using Transport.NetPackage.Runtime.Transport;
-using Transport.NetPackage.Runtime.Transport.UDP;
+using NetPackage.Network;
+using NetPackage.Serializer;
+using NetPackage.Messages;
+using NetPackage.Transport;
+using NetPackage.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 

@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using MessagePack;
 using System.Linq;
-using UnityEngine;
 
-namespace NetPackage.Runtime.Messages
+namespace NetPackage.Messages
 {
     [MessagePackObject]
     public class SyncMessage : NetMessage

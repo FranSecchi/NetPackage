@@ -1,10 +1,10 @@
 using System.Collections.Concurrent;
-using NetPackage.Runtime.Messages;
-using NetPackage.Runtime.Synchronization;
-using Transport.NetPackage.Runtime.Transport;
+using NetPackage.Messages;
+using NetPackage.Synchronization;
+using NetPackage.Transport;
 using UnityEngine;
 
-namespace NetPackage.Runtime.NetworkManager
+namespace NetPackage.Network
 {
     public static class NetHost
     {

@@ -1,4 +1,4 @@
-using NetPackage.Runtime.Synchronization;
+using NetPackage.Synchronization;
 using UnityEngine;
 
 namespace SynchronizationTest

@@ -5,9 +5,9 @@ using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
 using UnityEngine;
-using static Transport.NetPackage.Runtime.Transport.ITransport;
+using static NetPackage.Transport.ITransport;
 
-namespace Transport.NetPackage.Runtime.Transport.UDP
+namespace NetPackage.Transport.UDP
 {
     public abstract class APeer : INetEventListener
     {
@@ -107,6 +107,7 @@ namespace Transport.NetPackage.Runtime.Transport.UDP
             {
                 _connectionInfo[clientId] = new ConnectionInfo
                 {
+                    Id = clientId,
                     State = state,
                     ConnectedSince = DateTime.Now,
                     BytesReceived = 0,

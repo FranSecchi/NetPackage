@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using UnityEngine;
-using static Transport.NetPackage.Runtime.Transport.ITransport;
+using static NetPackage.Transport.ITransport;
 
-namespace Transport.NetPackage.Runtime.Transport.UDP
+namespace NetPackage.Transport.UDP
 {
     public class UDPSolution : ITransport
     {

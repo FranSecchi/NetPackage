@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using JetBrains.Annotations;
 
-namespace Transport.NetPackage.Runtime.Transport
+namespace NetPackage.Transport
 {
     public enum TransportType
     {
@@ -31,6 +31,7 @@ namespace Transport.NetPackage.Runtime.Transport
 
     public class ConnectionInfo
     {
+        public int Id { get; set; }
         public ConnectionState State { get; set; }
         public IPEndPoint RemoteEndPoint { get; set; }
         public int Ping { get; set; }

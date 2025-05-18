@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace NetPackage.Runtime.Synchronization
+namespace NetPackage.Synchronization
 {
     [CreateAssetMenu(fileName = "Data", menuName = "ScriptableObjects/PrefabList", order = 1)]
     public class NetPrefabRegistry : ScriptableObject

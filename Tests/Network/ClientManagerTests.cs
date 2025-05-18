@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
-using NetPackage.Runtime.NetworkManager;
-using Transport.NetPackage.Runtime.Transport;
-using Transport.NetPackage.Runtime.Transport.UDP;
+using NetPackage.Network;
+using NetPackage.Transport;
+using NetPackage.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -75,6 +75,45 @@ namespace NetworkManagerTest
             {
                 client.Stop();
             }
+        }
+
+        [UnityTest]
+        public IEnumerator TestGetServerInfo()
+        {
+            yield return new WaitForSeconds(0.5f);
+
+            NetManager.StartClient();
+            yield return new WaitForSeconds(0.5f);
+            
+            var serverInfo = NetManager.GetServerInfo();
+            Assert.IsNotNull(serverInfo, "Server info should not be null after connecting");
+            Assert.IsTrue(serverInfo.MaxPlayers > 0, "Server info should have valid max players");
+        }
+
+        [UnityTest]
+        public IEnumerator TestGetConnectionInfo()
+        {
+            yield return new WaitForSeconds(0.5f);
+
+            NetManager.StartClient();
+            yield return new WaitForSeconds(0.5f);
+            
+            var connectionInfo = NetManager.GetConnectionInfo();
+            Assert.IsNotNull(connectionInfo, "Connection info should not be null after connecting");
+            Assert.IsTrue(connectionInfo.Id == 0, "Connection info should have valid connection ID");
+        }
+
+        [UnityTest]
+        public IEnumerator TestGetConnectionState()
+        {
+            yield return new WaitForSeconds(0.5f);
+
+            NetManager.StartClient();
+            yield return new WaitForSeconds(0.5f);
+            
+            var connectionState = NetManager.GetConnectionState();
+            Assert.IsNotNull(connectionState, "Connection state should not be null after connecting");
+            Assert.AreEqual(ConnectionState.Connected, connectionState, "Connection state should be Connected");
         }
 
         [TearDown]

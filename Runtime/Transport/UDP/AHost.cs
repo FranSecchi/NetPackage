@@ -1,9 +1,8 @@
 using System.Collections.Generic;
-using System.Net;
 using LiteNetLib;
 using UnityEngine;
 
-namespace Transport.NetPackage.Runtime.Transport.UDP
+namespace NetPackage.Transport.UDP
 {
     public class AHost : APeer
     {

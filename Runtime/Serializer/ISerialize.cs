@@ -1,6 +1,6 @@
 using System;
 
-namespace NetPackage.Runtime.Serializer
+namespace NetPackage.Serializer
 {
     public interface ISerialize
     {

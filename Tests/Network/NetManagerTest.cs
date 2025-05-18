@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using NetPackage.Runtime.Serializer;
-using NetPackage.Runtime.Messages;
-using Transport.NetPackage.Runtime.Transport;
-using Transport.NetPackage.Runtime.Transport.UDP;
+using NetPackage.Serializer;
+using NetPackage.Messages;
+using NetPackage.Transport;
+using NetPackage.Transport.UDP;
 using UnityEngine;
 using System.Net;
 

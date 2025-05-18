@@ -1,6 +1,6 @@
-using NetPackage.Runtime.Messages;
+using NetPackage.Messages;
 
-namespace NetPackage.Runtime.Serializer
+namespace NetPackage.Serializer
 {
     public static class NetSerializer
     {

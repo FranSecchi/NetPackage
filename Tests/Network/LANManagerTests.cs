@@ -1,6 +1,6 @@
 using System.Collections;
 using NUnit.Framework;
-using NetPackage.Runtime.NetworkManager;
+using NetPackage.Network;
 using UnityEngine;
 using UnityEngine.TestTools;
 

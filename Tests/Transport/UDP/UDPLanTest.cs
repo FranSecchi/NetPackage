@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
-using Transport.NetPackage.Runtime.Transport;
-using Transport.NetPackage.Runtime.Transport.UDP;
+using NetPackage.Transport;
+using NetPackage.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 namespace TransportTest
@@ -14,7 +14,6 @@ namespace TransportTest
         private const int Port = 7777;
         private List<ITransport> _servers = new List<ITransport>();
         private ITransport _client;
-        private bool _connected = false;
         
         [UnitySetUp]
         public IEnumerator SetUp()

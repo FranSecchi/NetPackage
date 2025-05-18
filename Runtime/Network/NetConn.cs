@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using NetPackage.Runtime.Synchronization;
-using NetPackage.Runtime.Serializer;
-using NetPackage.Runtime.Messages;
-using Transport.NetPackage.Runtime.Transport;
+using NetPackage.Synchronization;
+using NetPackage.Serializer;
+using NetPackage.Messages;
+using NetPackage.Transport;
 
-namespace NetPackage.Runtime.NetworkManager
+namespace NetPackage.Network
 {
     public class NetConn
     {

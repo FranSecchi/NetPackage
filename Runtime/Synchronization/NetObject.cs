@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
-using NetPackage.Runtime.Messages;
-using NetPackage.Runtime.NetworkManager;
+using NetPackage.Messages;
+using NetPackage.Network;
 using UnityEngine;
 
-namespace NetPackage.Runtime.Synchronization
+namespace NetPackage.Synchronization
 {
     public class NetObject
     {

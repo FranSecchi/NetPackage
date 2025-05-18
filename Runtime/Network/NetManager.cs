@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using NetPackage.Runtime.Synchronization;
-using NetPackage.Runtime.Serializer;
-using NetPackage.Runtime.Messages;
-using Transport.NetPackage.Runtime.Transport;
-using Transport.NetPackage.Runtime.Transport.UDP;
+using NetPackage.Synchronization;
+using NetPackage.Serializer;
+using NetPackage.Messages;
+using NetPackage.Transport;
+using NetPackage.Transport.UDP;
 using UnityEngine;
 
-namespace NetPackage.Runtime.NetworkManager
+namespace NetPackage.Network
 {
     public class NetManager : MonoBehaviour
     {
@@ -21,7 +21,7 @@ namespace NetPackage.Runtime.NetworkManager
         private bool _isHost = false;
         private bool _running = false;
         
-        [SerializeField] public string ServerName = "Net_Server";
+        [SerializeField] public string serverName = "Net_Server";
         [SerializeField] public int maxPlayers = 10;
         [SerializeField] public bool useLAN = false;
         [SerializeField] public bool debugLog = false;
@@ -30,6 +30,8 @@ namespace NetPackage.Runtime.NetworkManager
         private List<ServerInfo> _discoveredServers = new List<ServerInfo>();
         
         public static bool IsHost => _manager._isHost;
+        public static string ServerName => _manager.serverName;
+        public static int MaxPlayers => _manager.maxPlayers;
         public static bool UseLan
         {
             get => _manager.useLAN;
@@ -90,7 +92,7 @@ namespace NetPackage.Runtime.NetworkManager
             NetHost.StartHost();
             if (UseLan)
             {
-                Transport.SetServerInfo(new ServerInfo(){ServerName = _manager.ServerName, MaxPlayers = _manager.maxPlayers});
+                Transport.SetServerInfo(new ServerInfo(){ServerName = _manager.serverName, MaxPlayers = _manager.maxPlayers});
                 Transport.BroadcastServerInfo();
             }
         }
@@ -193,6 +195,49 @@ namespace NetPackage.Runtime.NetworkManager
             return _manager._discoveredServers;
         }
 
+        public static ServerInfo GetServerInfo()
+        {
+            if(!_manager._running) return null;
+            return Transport.GetServerInfo();
+        }
+        public static ConnectionInfo GetConnectionInfo(int clientId = 0)
+        {
+            if(!_manager._running) return null;
+            return Transport.GetConnectionInfo(clientId);
+        }
+        public static ConnectionState? GetConnectionState(int clientId = 0)
+        {
+            if(!_manager._running) return null;
+            return Transport.GetConnectionState(clientId);
+        }
+
+        public static void SetServerInfo(ServerInfo serverInfo)
+        {
+            if (_manager._running && IsHost)
+            {
+                Transport.SetServerInfo(serverInfo);
+            }
+        }
+        public static void SetServerName(string serverName)
+        {
+            if (_manager._running && IsHost)
+            {
+                ServerInfo serverInfo = Transport.GetServerInfo();
+                serverInfo.ServerName = serverName;
+                Transport.SetServerInfo(serverInfo);
+            }
+        }
+
+        public static List<ConnectionInfo> GetClients()
+        {
+            if(!IsHost) return null;
+            List<ConnectionInfo> clients = new List<ConnectionInfo>();
+            for (int i = 0; i < allPlayers.Count - 1; i++)
+            {
+                clients.Add(Transport.GetConnectionInfo(i));
+            }
+            return clients;
+        }
         private static void Receive(int id)
         {
             byte[] data = Transport.Receive();

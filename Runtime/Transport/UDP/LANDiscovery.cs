@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 
-namespace Transport.NetPackage.Runtime.Transport.UDP
+namespace NetPackage.Transport.UDP
 {
     public class LANDiscovery
     {

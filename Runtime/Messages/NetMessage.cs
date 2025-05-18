@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using MessagePack;
 
-namespace NetPackage.Runtime.Messages
+namespace NetPackage.Messages
 {
     [MessagePackObject]
     public abstract class NetMessage

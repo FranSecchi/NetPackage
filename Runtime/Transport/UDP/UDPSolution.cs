@@ -171,10 +171,10 @@ namespace NetPackage.Transport.UDP
                 _lanDiscovery = new LANDiscovery();
                 _lanDiscovery.OnServerFound += serverInfo =>
                 {
-                    if(_lanServers.Find(s => s.EndPoint.Equals(serverInfo.EndPoint)) != null)
+                    if(_lanServers.Contains(serverInfo))
                     {
                         SetServerInfo(serverInfo);
-                        if(_useDebug) Debug.Log($"Found server at {serverInfo.EndPoint}");
+                        if(_useDebug) Debug.Log($"Ping server at {serverInfo.EndPoint}");
                     }
                     else
                     {

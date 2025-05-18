@@ -27,6 +27,25 @@ namespace NetPackage.Transport
         public string GameMode { get; set; }
         public int Ping { get; set; }
         public Dictionary<string, string> CustomData { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is ServerInfo other)
+            {
+                return EndPoint.Equals(other.EndPoint);
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return EndPoint.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return $"{ServerName} ({EndPoint})";
+        }
     }
 
     public class ConnectionInfo

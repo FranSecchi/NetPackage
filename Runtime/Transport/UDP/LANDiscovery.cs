@@ -15,7 +15,7 @@ namespace NetPackage.Transport.UDP
         private bool _isRunning;
         private const int DiscoveryPort = 8888;
         private const string DiscoveryMessage = "NetPackage_Discovery";
-        private const double ServerTimeoutSeconds = 5.0; // Server will be removed if not seen for 5 seconds
+        private const double ServerTimeoutSeconds = 5.0;
 
         private Dictionary<IPEndPoint, (ServerInfo Info, DateTime LastSeenTime)> _knownServers = new Dictionary<IPEndPoint, (ServerInfo, DateTime)>();
 
@@ -56,6 +56,7 @@ namespace NetPackage.Transport.UDP
 
         private void DiscoveryLoop()
         {
+            DateTime lastTimeoutCheck = DateTime.UtcNow;
             while (_isRunning)
             {
                 try
@@ -70,8 +71,12 @@ namespace NetPackage.Transport.UDP
                         UpdateServerInfo(serverInfo);
                     }
 
-                    // Check for timed out servers
-                    CheckForTimedOutServers();
+                    // Check for timed out servers every 100ms
+                    if ((DateTime.UtcNow - lastTimeoutCheck).TotalMilliseconds >= 100)
+                    {
+                        CheckForTimedOutServers();
+                        lastTimeoutCheck = DateTime.UtcNow;
+                    }
                 }
                 catch (Exception e)
                 {
@@ -86,6 +91,7 @@ namespace NetPackage.Transport.UDP
         private void UpdateServerInfo(ServerInfo serverInfo)
         {
             DateTime currentTime = DateTime.UtcNow;
+            bool isNewServer = !_knownServers.ContainsKey(serverInfo.EndPoint);
 
             _knownServers[serverInfo.EndPoint] = (serverInfo, currentTime);
 
@@ -99,10 +105,11 @@ namespace NetPackage.Transport.UDP
 
             foreach (var kvp in _knownServers)
             {
-                if ((currentTime - kvp.Value.LastSeenTime).TotalSeconds > ServerTimeoutSeconds)
+                var timeSinceLastSeen = (currentTime - kvp.Value.LastSeenTime).TotalSeconds;
+                
+                if (timeSinceLastSeen > ServerTimeoutSeconds)
                 {
                     timedOutServers.Add(kvp.Key);
-                    Debug.Log($"Timed out {kvp.Key}");
                 }
             }
 
@@ -110,7 +117,6 @@ namespace NetPackage.Transport.UDP
             {
                 var serverInfo = _knownServers[endPoint].Info;
                 _knownServers.Remove(endPoint);
-                Debug.Log($"Server lost: {endPoint.ToString()}: {serverInfo}");
                 OnServerLost?.Invoke(serverInfo);
             }
         }

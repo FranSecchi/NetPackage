@@ -176,6 +176,7 @@ namespace NetPackage.Network
 
         public static void CleanUp()
         {
+            if (Instance == null) return;
             Instance.m_prefabs.Clear();
             Instance.netObjects.Clear();
             Instance.sceneObjects.Clear();

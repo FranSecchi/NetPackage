@@ -142,13 +142,13 @@ namespace NetPackage.Network
         public static void StopNet()
         {
             if (!_manager._running) return;
+            if (UseLan) StopLan();
             if (IsHost) NetHost.Stop();
             else NetClient.Disconnect();
             allPlayers.Clear();
             Messager.ClearHandlers();
             ITransport.OnDataReceived -= Receive;
             
-            if (UseLan) StopLan();
             _manager._running = false;
         }
 

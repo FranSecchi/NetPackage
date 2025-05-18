@@ -90,10 +90,7 @@ namespace NetPackage.Transport.UDP
 
             _knownServers[serverInfo.EndPoint] = (serverInfo, currentTime);
 
-            if (isNewServer)
-            {
-                OnServerFound?.Invoke(serverInfo);
-            }
+            OnServerFound?.Invoke(serverInfo);
         }
 
         private void CheckForTimedOutServers()

@@ -169,12 +169,19 @@ namespace NetPackage.Transport.UDP
             {
                 _lanServers = new List<ServerInfo>();
                 _lanDiscovery = new LANDiscovery();
-                _lanDiscovery.OnServerFound += address =>
+                _lanDiscovery.OnServerFound += serverInfo =>
                 {
-                    if(_useDebug) Debug.Log($"Found server at {address.EndPoint}");
-                    if(!_lanServers.Contains(address))
-                        _lanServers.Add(address);
-                    TriggerOnLanServerDetected(address);
+                    if(_lanServers.Contains(serverInfo))
+                    {
+                        SetServerInfo(serverInfo);
+                        if(_useDebug) Debug.Log($"Found server at {serverInfo.EndPoint}");
+                    }
+                    else
+                    {
+                        _lanServers.Add(serverInfo);
+                        TriggerOnLanServerDetected(serverInfo);
+                        if(_useDebug) Debug.Log($"Found new server at {serverInfo.EndPoint}");
+                    }
                 };
                 _lanDiscovery.OnServerLost += address =>
                 {

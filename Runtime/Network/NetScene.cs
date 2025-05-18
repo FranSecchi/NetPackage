@@ -173,5 +173,13 @@ namespace NetPackage.Network
                 
             }
         }
+
+        public static void CleanUp()
+        {
+            Instance.m_prefabs.Clear();
+            Instance.netObjects.Clear();
+            Instance.sceneObjects.Clear();
+            Instance = null;
+        }
     }
 }

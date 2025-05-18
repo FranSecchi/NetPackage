@@ -80,6 +80,20 @@ namespace NetPackage.Network
             }
         }
 
+        private void OnDestroy()
+        {
+            StopNet();
+            _manager.mainThreadActions.Clear();
+            Messager.ClearHandlers();
+            NetScene.CleanUp();
+        }
+
+        private void OnApplicationQuit()
+        {
+            StopNet();
+            Messager.ClearHandlers();
+            NetScene.CleanUp();
+        }
 
         public static void StartHost(ServerInfo serverInfo = null)
         {

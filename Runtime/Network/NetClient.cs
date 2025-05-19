@@ -1,4 +1,5 @@
 using NetPackage.Messages;
+using NetPackage.Synchronization;
 using UnityEngine.SceneManagement;
 
 namespace NetPackage.Network
@@ -10,10 +11,16 @@ namespace NetPackage.Network
         {
             if (Connection != null) return;
             Messager.RegisterHandler<ConnMessage>(OnConnected);
-            Messager.RegisterHandler<SpawnMessage>(OnSpawned);;
+            Messager.RegisterHandler<SpawnMessage>(OnSpawned);
+            Messager.RegisterHandler<SyncMessage>(OnSync);
             Messager.RegisterHandler<SceneLoadMessage>(OnSceneLoadMessage);
             NetManager.Transport.Start();
             NetManager.Transport.Connect(address);
+        }
+
+        private static void OnSync(SyncMessage obj)
+        {
+            StateManager.SetSync(obj);
         }
 
         private static void OnSpawned(SpawnMessage obj)

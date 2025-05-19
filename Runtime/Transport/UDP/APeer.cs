@@ -105,7 +105,6 @@ namespace NetPackage.Transport.UDP
         {
             if (!_connectionInfo.ContainsKey(clientId))
             {
-                Debug.Log("Added " + clientId + " to connection info");
                 _connectionInfo[clientId] = new ConnectionInfo
                 {
                     Id = clientId,
@@ -116,16 +115,17 @@ namespace NetPackage.Transport.UDP
                     Ping = ping,
                     PacketLoss = packetLoss
                 };
+                Debug.Log("Added " + _connectionInfo[clientId] + " to " +clientId);
             }
             else
             {
-                Debug.Log("Modified " + clientId + " connection info");
                 var info = _connectionInfo[clientId];
                 if(info.State != state) TriggerOnConnectionStateChanged(_connectionInfo[clientId]);
                 info.State = state;
                 info.Ping = ping;
                 info.PacketLoss = packetLoss;
                 _connectionInfo[clientId] = info;
+                Debug.Log("Modified " + _connectionInfo[clientId] + " to " +clientId);
             }
         }
         public void Poll()
@@ -135,6 +135,7 @@ namespace NetPackage.Transport.UDP
 
         public void Stop()
         {
+            _connectionInfo.Clear();
             Peer.DisconnectAll();
             Peer.Stop();
         }

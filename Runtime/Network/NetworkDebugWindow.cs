@@ -2,7 +2,6 @@ using UnityEngine;
 using NetPackage.Network;
 using System.Collections.Generic;
 using NetPackage.Transport;
-using UnityEditor;
 
 namespace NetPackage.Network
 {
@@ -14,6 +13,13 @@ namespace NetPackage.Network
         private Dictionary<int, bool> clientFoldouts = new Dictionary<int, bool>();
         private Rect windowRect = new Rect(20, 20, 400, 600);
         private KeyCode toggleKey = KeyCode.F3;
+        private GUIStyle boldLabelStyle;
+
+        private void Awake()
+        {
+            boldLabelStyle = new GUIStyle(GUI.skin.label);
+            boldLabelStyle.fontStyle = FontStyle.Bold;
+        }
 
         private void Update()
         {
@@ -35,14 +41,14 @@ namespace NetPackage.Network
             scrollPosition = GUILayout.BeginScrollView(scrollPosition);
 
             // Connection Status
-            GUILayout.Label("Connection Status", EditorStyles.boldLabel);
+            GUILayout.Label("Connection Status", boldLabelStyle);
             GUILayout.Label($"Is Host: {NetManager.IsHost}");
             GUILayout.Label($"Running: {NetManager.GetConnectionState()?.ToString() ?? "Not Connected"}");
 
             GUILayout.Space(10);
 
             // Server Information
-            GUILayout.Label("Server Information", EditorStyles.boldLabel);
+            GUILayout.Label("Server Information", boldLabelStyle);
             var serverInfo = NetManager.GetServerInfo();
             if (serverInfo != null)
             {
@@ -63,7 +69,7 @@ namespace NetPackage.Network
             // Client Information
             if (NetManager.IsHost)
             {
-                GUILayout.Label("Connected Clients", EditorStyles.boldLabel);
+                GUILayout.Label("Connected Clients", boldLabelStyle);
                 var clients = NetManager.GetClients();
                 if (clients != null && clients.Count > 0)
                 {
@@ -108,7 +114,7 @@ namespace NetPackage.Network
             }
             else
             {
-                GUILayout.Label("Client Information", EditorStyles.boldLabel);
+                GUILayout.Label("Client Information", boldLabelStyle);
                 var connectionInfo = NetManager.GetConnectionInfo();
                 if (connectionInfo != null)
                 {

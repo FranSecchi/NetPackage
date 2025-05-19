@@ -72,7 +72,7 @@ namespace NetPackage.Network
             if (msg.sceneId >= 0)
             {
                 if (NetManager.IsHost) NetManager.EnqueueMainThread(() => { ValidateSpawn(msg);});
-                else SpawnSceneObject(msg);
+                else NetManager.EnqueueMainThread(() => { SpawnSceneObject(msg);});;
             }
             else
             {

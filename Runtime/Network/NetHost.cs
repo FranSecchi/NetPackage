@@ -85,7 +85,7 @@ namespace NetPackage.Network
         {
             if (netMessage.target == null)
             {
-                Debug.Log($"Sending all: {netMessage.GetType().Name}");
+                Debug.Log($"Sending all: {netMessage}");
                 foreach (var client in Clients.Values)
                 {
                     client.Send(netMessage);

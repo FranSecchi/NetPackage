@@ -118,7 +118,7 @@ namespace NetPackage.Synchronization
                                 convertedParams[i] = NetSerializer._Serializer.Deserialize(bytes, paramTypes[i].ParameterType);
                             }
                         }
-                        method.Invoke(target, convertedParams);
+                        NetManager.EnqueueMainThread(()=>method.Invoke(target, convertedParams));
                     }
                 }
                 catch (Exception e)

@@ -143,6 +143,7 @@ namespace NetPackage.Transport.UDP
                     serverInfo.Address = _serverInfo.Address;
                     serverInfo.Port = _serverInfo.Port;
                 }
+                Debug.Log("Set server info: " + serverInfo);
                 _serverInfo = serverInfo;
                 if (IsHost)
                 {
@@ -152,6 +153,7 @@ namespace NetPackage.Transport.UDP
         }
         public ServerInfo GetServerInfo()
         {
+            Debug.Log("Get server info: " + _serverInfo);
             return _serverInfo;
         }
         public void UpdateServerInfo(Dictionary<string, string> customData)

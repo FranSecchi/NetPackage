@@ -105,6 +105,7 @@ namespace NetPackage.Transport.UDP
         {
             if (!_connectionInfo.ContainsKey(clientId))
             {
+                Debug.Log("Added " + clientId + " to connection info");
                 _connectionInfo[clientId] = new ConnectionInfo
                 {
                     Id = clientId,
@@ -118,6 +119,7 @@ namespace NetPackage.Transport.UDP
             }
             else
             {
+                Debug.Log("Modified " + clientId + " connection info");
                 var info = _connectionInfo[clientId];
                 if(info.State != state) TriggerOnConnectionStateChanged(_connectionInfo[clientId]);
                 info.State = state;

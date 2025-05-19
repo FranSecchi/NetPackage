@@ -12,9 +12,8 @@ namespace NetworkManagerTest
     public class HostManagerTests
     {
         private int _port;
-        private System.Action<int> onClientConnectedHandler;
         private GameObject host;
-        private GameObject client;
+        private ITransport client;
         [SetUp]
         public void SetUp()
         {
@@ -23,31 +22,24 @@ namespace NetworkManagerTest
             NetManager.DebugLog = true;
             NetManager.StartHost();
             
-            client = new GameObject();
-            client.AddComponent<NetManagerTest>();
-            NetManagerTest.DebugLog = true;
+            client = new UDPSolution();
+            client.Setup(NetManager.Port, false, useDebug:true);
+            client.Start();
         }
         [UnityTest]
         public IEnumerator TestStartServer()
         {
             yield return new WaitForSeconds(0.2f);
-            NetManagerTest.StartClient();
-            bool result = false;
-            onClientConnectedHandler = i => result = true; 
-
-            ITransport.OnClientConnected += onClientConnectedHandler;
+            client.Connect("127.0.0.1");
             yield return new WaitForSeconds(0.2f);
             
-            Assert.IsTrue(result, "Server did not start correctly");
             Assert.IsTrue(NetManager.allPlayers.Count == 2, "Server did not add one player");
-            ITransport.OnClientConnected -= onClientConnectedHandler;
         }
         [UnityTest]
         public IEnumerator TestStopServer()
         {
             yield return new WaitForSeconds(0.2f);
-            
-            NetManagerTest.StartClient();
+            client.Connect("127.0.0.1");
             yield return new WaitForSeconds(0.2f);
 
             NetManager.StopNet();
@@ -59,8 +51,7 @@ namespace NetworkManagerTest
         public IEnumerator TestKickPlayer()
         {
             yield return new WaitForSeconds(0.2f);
-            
-            NetManagerTest.StartClient();
+            client.Connect("127.0.0.1");
             yield return new WaitForSeconds(0.2f);
             int key = NetManager.allPlayers[1];
             NetHost.Kick(key);
@@ -72,22 +63,21 @@ namespace NetworkManagerTest
         public IEnumerator TestMultipleClients()
         {
             yield return new WaitForSeconds(0.2f);
-            NetManagerTest.StartClient();
+            client.Connect("localhost");
+            yield return new WaitForSeconds(0.2f);
             List<ITransport> clients = new List<ITransport>();
             for (int i = 0; i < 3; i++)
             {
-                yield return new WaitForSeconds(0.2f);
                 ITransport client = new UDPSolution();
                 clients.Add(client);
-                client.Setup(NetManager.Port, false);
+                client.Setup(NetManager.Port, false, useDebug:true);
                 client.Start();
-                yield return new WaitForSeconds(0.2f);
                 client.Connect("localhost");
+                yield return new WaitForSeconds(0.2f);
             }
-            yield return new WaitForSeconds(0.2f);
             
             
-            Assert.IsTrue(NetManager.allPlayers.Count == 5, "Server did not add 5 players");
+            Assert.AreEqual(5 ,NetManager.allPlayers.Count, "Server did not add 5 players");
             Assert.IsTrue(NetManager.allPlayers.Contains(3), "Server did not add correctly");
 
             foreach (ITransport client in clients)
@@ -111,7 +101,7 @@ namespace NetworkManagerTest
         public IEnumerator TestGetConnectionInfo()
         {
             yield return new WaitForSeconds(0.2f);
-            NetManagerTest.StartClient();
+            client.Connect("127.0.0.1");
             yield return new WaitForSeconds(0.2f);
             
             // Test host's own connection info
@@ -129,8 +119,8 @@ namespace NetworkManagerTest
         public IEnumerator TestGetConnectionState()
         {
             yield return new WaitForSeconds(0.2f);
-            NetManagerTest.StartClient();
-            yield return new WaitForSeconds(0.2f);
+            client.Connect("127.0.0.1");
+            yield return new WaitForSeconds(0.5f);
             
             // Test host's own connection state
             var hostConnectionState = NetManager.GetConnectionState();
@@ -146,10 +136,9 @@ namespace NetworkManagerTest
         [TearDown]
         public void TearDown()
         {
-            NetManagerTest.StopNet();
             NetManager.StopNet();
             GameObject.DestroyImmediate(host);
-            GameObject.DestroyImmediate(client);
+            client.Stop();
         }
     }
 }

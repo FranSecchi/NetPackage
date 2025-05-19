@@ -126,7 +126,7 @@ namespace NetPackage.Transport.UDP
 
         public ConnectionInfo GetConnectionInfo(int clientId)
         {
-            return _aPeer.ConnectionInfo.TryGetValue(clientId, out var info) ? info : null;
+            return _aPeer.ConnectionInfo.TryGetValue(clientId < 0 ? 0 : clientId, out var info) ? info : null;
         }
 
         public ConnectionState GetConnectionState(int clientId)

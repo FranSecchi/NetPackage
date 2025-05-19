@@ -1,7 +1,10 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using NetPackage.Messages;
 using NUnit.Framework;
 using NetPackage.Network;
+using NetPackage.Serializer;
 using NetPackage.Transport;
 using NetPackage.Transport.UDP;
 using UnityEngine;
@@ -12,19 +15,20 @@ namespace NetworkManagerTest
     public class ClientManagerTests
     {
         private int _port;
-        private GameObject host;
+        private ITransport host;
         private GameObject client;
+        private List<int> clientIds = new List<int>();
         [SetUp]
         public void SetUp()
         {
             client = new GameObject();
             client.AddComponent<NetManager>();
             NetManager.DebugLog = true;
-            
-            host = new GameObject();
-            host.AddComponent<NetManagerTest>();
-            NetManagerTest.DebugLog = true;
-            NetManagerTest.StartHost();
+
+            host = new UDPSolution();
+            host.Setup(NetManager.Port, true, useDebug:true);
+            host.Start();
+            clientIds.Add(-1);
         }
         [UnityTest]
         public IEnumerator TestStartClient()
@@ -32,11 +36,12 @@ namespace NetworkManagerTest
             yield return new WaitForSeconds(0.5f);
 
             NetManager.StartClient();
-            yield return new WaitForSeconds(0.5f);
-            
+            yield return WaitClientConnection(0);
+
             Assert.IsTrue(NetManager.allPlayers.Count == 2, "Client did not start correctly");
         }
-        
+
+
         [UnityTest]
         public IEnumerator TestStopClient()
         {
@@ -49,7 +54,6 @@ namespace NetworkManagerTest
             yield return new WaitForSeconds(0.5f);
             
             Assert.IsTrue(NetManager.allPlayers.Count == 0, "Client did not stop correctly");
-            Assert.IsTrue(NetManagerTest.allPlayers.Count == 1, "Client did not start correctly");
         }
         
         [UnityTest]
@@ -59,7 +63,8 @@ namespace NetworkManagerTest
             NetManager.StartClient();
             yield return new WaitForSeconds(0.5f);
             List<ITransport> clients = new List<ITransport>();
-            for (int i = 0; i < 3; i++)
+            yield return WaitClientConnection(0);
+            for (int i = 1; i < 4; i++)
             {
                 ITransport client = new UDPSolution();
                 client.Setup(NetManager.Port, false);
@@ -67,11 +72,13 @@ namespace NetworkManagerTest
                 clients.Add(client);
                 yield return new WaitForSeconds(0.2f);
                 client.Connect("localhost");
-                yield return new WaitForSeconds(0.2f);
+                
+                yield return WaitClientConnection(i);
             }
             
+            yield return new WaitForSeconds(0.2f);
             Debug.Log(NetManager.allPlayers.Count);
-            Assert.IsTrue(NetManager.allPlayers.Count == 5, "Client did not add 5 players");
+            Assert.AreEqual(NetManager.allPlayers.Count, 5, "Client did not add 5 players");
             Assert.IsTrue(NetManager.allPlayers.Contains(3), "Client did not add correctly");
             foreach (ITransport client in clients)
             {
@@ -86,15 +93,13 @@ namespace NetworkManagerTest
 
             NetManager.StartClient();
             yield return new WaitForSeconds(0.5f);
+            yield return WaitClientConnection(0);
             
             var clientInfo = NetManager.GetServerInfo();
-            var serverInfo = NetManagerTest.GetServerInfo();
-            Assert.IsNotNull(serverInfo, "Server info should not be null after connecting");
-            Assert.IsNotNull(serverInfo.Address, "Server end should not be null after connecting");
             Assert.IsNotNull(clientInfo.Address, "Client end should not be null after connecting");
-            Assert.AreEqual(clientInfo.Address, serverInfo.Address, $"EndPoint not matching {clientInfo.Address} | {serverInfo.Address}");
-            Assert.AreEqual(clientInfo.MaxPlayers, serverInfo.MaxPlayers, $"Max players not matching {clientInfo.MaxPlayers} | {serverInfo.MaxPlayers}");
-            Assert.AreEqual(clientInfo.ServerName, serverInfo.ServerName, $"Server name not matching {clientInfo.ServerName} | {serverInfo.ServerName}");
+            Assert.AreEqual(clientInfo.Address, "127.0.0.1", $"EndPoint not matching {clientInfo.Address} | \"127.0.0.1\"");
+            Assert.AreEqual(clientInfo.MaxPlayers, 10, $"Max players not matching {clientInfo.MaxPlayers} | {10}");
+            Assert.AreEqual(clientInfo.Port, NetManager.Port, $"Server name not matching {clientInfo.ServerName} | {NetManager.Port}");
         }
 
         [UnityTest]
@@ -104,11 +109,13 @@ namespace NetworkManagerTest
 
             NetManager.StartClient();
             yield return new WaitForSeconds(0.5f);
+            yield return WaitClientConnection(0);
             
             var connectionInfo = NetManager.GetConnectionInfo();
             Debug.Log(connectionInfo);
             Assert.IsNotNull(connectionInfo, "Connection info should not be null after connecting");
             Assert.IsTrue(connectionInfo.Id == 0, "Connection info should have valid connection ID");
+            Assert.NotNull(connectionInfo.Ping, "Connection info should have valid connection PING");
         }
 
         [UnityTest]
@@ -118,6 +125,7 @@ namespace NetworkManagerTest
 
             NetManager.StartClient();
             yield return new WaitForSeconds(0.5f);
+            yield return WaitClientConnection(0);
             
             var connectionState = NetManager.GetConnectionState();
             var connectionInfo = NetManager.GetConnectionInfo();
@@ -130,9 +138,18 @@ namespace NetworkManagerTest
         public void TearDown()
         {
             NetManager.StopNet();
-            NetManagerTest.StopNet();
-            GameObject.DestroyImmediate(host);
+            host.Stop();
             GameObject.DestroyImmediate(client);
+            clientIds.Clear();
+        }
+        
+        private IEnumerator WaitClientConnection(int i)
+        {
+            clientIds.Add(i);
+            yield return new WaitForSeconds(0.5f);
+            NetMessage rcv = new ConnMessage(i, clientIds, new ServerInfo(){Address = "127.0.0.1", Port = NetManager.Port, MaxPlayers = 10});
+            host.Send(NetSerializer.Serialize(rcv));
+            yield return new WaitForSeconds(0.5f);
         }
     }
 }

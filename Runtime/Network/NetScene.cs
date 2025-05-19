@@ -154,11 +154,10 @@ namespace NetPackage.Network
         {
             foreach(var sceneObjects in sceneObjects)
             {
-                Debug.Log("Called");
                 GameObject obj = sceneObjects.Value.gameObject;
                 NetManager.EnqueueMainThread(() => {
                     NetObject netObj = obj.GetComponent<NetBehaviour>().NetObject;
-                    if (netObj == null) Debug.Log("IS NULL");
+                    if (netObj == null) Debug.Log("NetObject IS NULL");
                 
                     SpawnMessage msg = new SpawnMessage(
                         NetManager.ConnectionId(),

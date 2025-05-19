@@ -16,5 +16,10 @@ namespace NetPackage.Messages
             this.requesterId = requesterId;
             this.isLoaded = isLoaded;
         }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} Scene:{sceneName}, Loaded:{isLoaded}, Requester:{requesterId}";
+        }
     }
 } 

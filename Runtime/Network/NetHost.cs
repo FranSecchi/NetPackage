@@ -125,7 +125,7 @@ namespace NetPackage.Network
             {
                 NetScene.Instance?.SendObjects(msg.requesterId);
             }
-            else NetManager.LoadScene(msg.sceneName);
+            // else NetManager.LoadScene(msg.sceneName);
         }
 
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)

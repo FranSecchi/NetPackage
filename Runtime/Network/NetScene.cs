@@ -107,6 +107,7 @@ namespace NetPackage.Network
                 Register(netObj);
                 obj.transform.position = msg.position;
                 NetManager.Send(msg);
+                ValidateSpawn(msg);
             }
             else Debug.LogWarning($"A spawn request of a not found scene object has been received. Scene Id: {msg.sceneId} Requested by {msg.requesterId}");
         }

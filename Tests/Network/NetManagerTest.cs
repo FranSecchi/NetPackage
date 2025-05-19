@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using NetPackage.Serializer;
 using NetPackage.Messages;
@@ -5,6 +6,7 @@ using NetPackage.Transport;
 using NetPackage.Transport.UDP;
 using UnityEngine;
 using System.Net;
+using NetPackage.Network;
 
 namespace NetworkManagerTest
 {
@@ -13,11 +15,12 @@ namespace NetworkManagerTest
         private static NetManagerTest _manager;
         public static ITransport Transport;
         public static int Port = 7777;
+        private static ServerInfo _serverInfo;
         public static List<int> allPlayers;
         private bool _isHost = false;
         private bool _running = false;
         
-        [SerializeField] public string ServerName = "Net_Server";
+        [SerializeField] public string serverName = "Net_Server";
         [SerializeField] public int maxPlayers = 10;
         [SerializeField] public bool useLAN = false;
         [SerializeField] public bool debugLog = false;
@@ -26,6 +29,9 @@ namespace NetworkManagerTest
         private List<ServerInfo> _discoveredServers = new List<ServerInfo>();
         
         public static bool IsHost => _manager._isHost;
+        public static string ServerName => _manager.serverName;
+        public static int MaxPlayers => _manager.maxPlayers;
+        public static ServerInfo ServerInfo => _serverInfo;
         public static bool UseLan
         {
             get => _manager.useLAN;
@@ -33,17 +39,14 @@ namespace NetworkManagerTest
         }
         public static bool DebugLog
         {
-            get => _manager.useLAN;
-            set => _manager.useLAN = value;
+            get => _manager.debugLog;
+            set => _manager.debugLog = value;
         }
-
         public string address = "localhost";
-        
         public static void SetTransport(ITransport transport)
         {
             Transport = transport;
         }
-
         private void Awake()
         {
             if (_manager != null)
@@ -53,7 +56,6 @@ namespace NetworkManagerTest
             allPlayers = new List<int>();
             DontDestroyOnLoad(this);
         }
-
         private void Update()
         {
             if (useLAN && !IsHost)
@@ -65,18 +67,38 @@ namespace NetworkManagerTest
                 }
             }
         }
+        private void OnDestroy()
+        {
+            StopNet();
+        }
 
-        public static void StartHost()
+        private void OnApplicationQuit()
+        {
+            StopNet();
+        }
+
+        public static void StartHost(ServerInfo serverInfo = null)
         {
             StopNet();
             ITransport.OnDataReceived += Receive;
-            Transport.Setup(Port, true, useDebug:_manager.debugLog);
+            if(serverInfo != null) _serverInfo = serverInfo;
+            else
+            {
+                _serverInfo = new ServerInfo()
+                {
+                    CurrentPlayers = 0,
+                    MaxPlayers = _manager.maxPlayers,
+                    Address = Transport.GetLocalIPAddress(),
+                    ServerName = _manager.serverName,
+                    GameMode = "Unknown",
+                };
+            }
+            Transport.Setup(Port, true, _serverInfo, _manager.debugLog);
             _manager._isHost = true;
             _manager._running = true;
             NetHostTest.StartHost();
             if (UseLan)
             {
-                Transport.SetServerInfo(new ServerInfo(){ServerName = _manager.ServerName, MaxPlayers = _manager.maxPlayers});
                 Transport.BroadcastServerInfo();
             }
         }
@@ -88,25 +110,14 @@ namespace NetworkManagerTest
             _manager._isHost = false;
             _manager._running = true;
             if (!_manager.useLAN)
-            {
                 NetClientTest.Connect(_manager.address);
-            }
             else
             {
-                Transport.StartServerDiscovery();
-                ITransport.OnLanServerUpdate += AddLanServer;
+                Transport.StartServerDiscovery(_manager.lanDiscoveryInterval);
+                _manager._discoveredServers.Clear();
             }
         }
-
-        private static void AddLanServer(ServerInfo point)
-        {
-            Debug.Log("Detected Server" + point.ToString());
-            _manager._discoveredServers.Add(point);
-        }
-        public static void ConnectTo(IPEndPoint endPoint)
-        {
-            ConnectTo(endPoint.Address.ToString());
-        }
+        
         public static void ConnectTo(string address)
         {
             StopNet();
@@ -115,27 +126,23 @@ namespace NetworkManagerTest
             _manager._isHost = false;
             NetClientTest.Connect(address);
         }
-
         public static void StopNet()
         {
             if (!_manager._running) return;
+            if (UseLan) StopLan();
             if (IsHost) NetHostTest.Stop();
             else NetClientTest.Disconnect();
             allPlayers.Clear();
             Messager.ClearHandlers();
             ITransport.OnDataReceived -= Receive;
-            if (UseLan) StopLan();
+            
             _manager._running = false;
         }
 
-        public static void StopLan()
+        public static int ConnectionId()
         {
-            if (!IsHost)
-            {
-                ITransport.OnLanServerUpdate -= AddLanServer;
-                Transport.StopServerDiscovery();
-            }
-            else Transport.StopServerBroadcast();
+            if (!IsHost) return NetClientTest.Connection.Id;
+            return -1;
         }
         public static void Send(NetMessage netMessage)
         {
@@ -143,7 +150,63 @@ namespace NetworkManagerTest
                 NetHostTest.Send(netMessage);
             else NetClientTest.Send(netMessage);
         }
+        
+        public static void StopLan()
+        {
+            if (!IsHost)
+            {
+                Transport.StopServerDiscovery();
+                _manager._discoveredServers.Clear();
+            }
+            else Transport.StopServerBroadcast();
+        }
+        public static List<ServerInfo> GetDiscoveredServers()
+        {
+            return _manager._discoveredServers;
+        }
 
+        public static ServerInfo GetServerInfo()
+        {
+            if(!_manager._running) return null;
+            return Transport.GetServerInfo();
+        }
+        public static ConnectionInfo GetConnectionInfo(int clientId = 0)
+        {
+            if(!_manager._running) return null;
+            return Transport.GetConnectionInfo(clientId);
+        }
+        public static ConnectionState? GetConnectionState(int clientId = 0)
+        {
+            if(!_manager._running) return null;
+            return Transport.GetConnectionState(clientId);
+        }
+
+        public static void SetServerInfo(ServerInfo serverInfo)
+        {
+            _serverInfo = serverInfo;
+            Transport.SetServerInfo(serverInfo);
+            if(IsHost) NetHostTest.UpdatePlayers(ConnectionId());
+        }
+        public static void SetServerName(string serverName)
+        {
+            if (_manager._running && IsHost)
+            {
+                _serverInfo.ServerName = serverName;
+                Transport.SetServerInfo(_serverInfo);
+            }
+        }
+
+        public static List<ConnectionInfo> GetClients()
+        {
+            if(!IsHost) return null;
+            List<ConnectionInfo> clients = new List<ConnectionInfo>();
+            for (int i = 0; i < allPlayers.Count - 1; i++)
+            {
+                ConnectionInfo client = Transport.GetConnectionInfo(i);
+                if(client != null) clients.Add(client);
+            }
+            return clients;
+        }
         private static void Receive(int id)
         {
             byte[] data = Transport.Receive();
@@ -151,14 +214,11 @@ namespace NetworkManagerTest
             if (data != null && data.Length != 0)
             {
                 NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
+                Debug.Log("Received: " + msg);
                 Messager.HandleMessage(msg);
             }
         }
 
-        public static List<ServerInfo> GetDiscoveredServers()
-        {
-            return _manager._discoveredServers;
-        }
     }
     public static class NetClientTest
     {
@@ -180,6 +240,7 @@ namespace NetworkManagerTest
         {
             if(Connection != null) Connection = new NetConnTest(connection.CurrentConnected, false);
             NetManagerTest.allPlayers = connection.AllConnected;
+            NetManagerTest.SetServerInfo(connection.ServerInfo);
         }
 
         public static void Send(NetMessage netMessage)
@@ -189,7 +250,7 @@ namespace NetworkManagerTest
     }
     public static class NetHostTest
     {
-        public static Dictionary<int, NetConnTest> Clients = new Dictionary<int, NetConnTest>();
+        public static ConcurrentDictionary<int, NetConnTest> Clients = new();
         private static readonly object Lock = new object();
         public static void StartHost()
         {
@@ -197,83 +258,81 @@ namespace NetworkManagerTest
             NetManagerTest.allPlayers.Add(-1);
             ITransport.OnClientConnected += OnClientConnected;
             ITransport.OnClientDisconnected += OnClientDisconnected;
+            Messager.RegisterHandler<ConnMessage>(OnConnMessage);
         }
         
         
+        private static void OnConnMessage(ConnMessage obj)
+        {
+            if(!obj.AllConnected.Count.Equals(NetManagerTest.allPlayers.Count))
+                UpdatePlayers(obj.CurrentConnected);
+        }
         private static void OnClientConnected(int id)
         {
-            lock (Lock) // Ensure thread safety
+            if (Clients.TryAdd(id, new NetConnTest(id, true)))
             {
-                if (Clients.TryAdd(id, new NetConnTest(id, true))) // Thread-safe add
-                {
-                    Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
-                    NetManagerTest.allPlayers.Add(id);
-                    UpdatePlayers(id);
-                }
+                Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
+                NetManagerTest.allPlayers.Add(id);
+                UpdatePlayers(id);
             }
         }
 
+        
         private static void OnClientDisconnected(int id)
         {
-            lock (Lock) // Ensure thread safety
+            if(Clients.TryRemove(id, out _))
             {
-                Clients.Remove(id);
                 Debug.Log($"Client {id} disconnected. Clients count: {Clients.Count}");
                 NetManagerTest.allPlayers.Remove(id);
                 UpdatePlayers(id);
             }
         }
-        private static void UpdatePlayers(int id)
+        
+        public static void UpdatePlayers(int id)
         {
-            NetMessage msg = new ConnMessage(id, NetManagerTest.allPlayers);
+            if (Clients.Count == 0) return;
+            NetMessage msg = new ConnMessage(id, NetManagerTest.allPlayers, NetManagerTest.ServerInfo);
             Send(msg);
         }
         public static void Stop()
         {
-            lock (Lock) // Ensure thread safety
+            foreach (var client in Clients.Values)
             {
-                foreach (KeyValuePair<int, NetConnTest> client in Clients)
-                {
-                    client.Value.Disconnect();
-                }
-
-                NetManagerTest.Transport.Stop();
-                ITransport.OnClientConnected -= OnClientConnected;
-                ITransport.OnClientDisconnected -= OnClientDisconnected;
-                Clients.Clear();
+                client.Disconnect();
             }
+
+            NetManagerTest.Transport.Stop();
+            ITransport.OnClientConnected -= OnClientConnected;
+            ITransport.OnClientDisconnected -= OnClientDisconnected;
+            Clients.Clear();
         }
 
         public static void Kick(int id)
         {
-            lock (Lock) // Ensure thread safety
+            if (Clients.TryGetValue(id, out NetConnTest client))
             {
-                if (Clients.TryGetValue(id, out NetConnTest client))
-                {
-                    client.Disconnect();
-                    Clients.Remove(id);
-                }
+                client.Disconnect();
             }
         }
 
         public static void Send(NetMessage netMessage)
         {
-
-            lock (Lock) // Ensure thread safety
+            if (netMessage.target == null)
             {
-                if (netMessage.target == null)
+                Debug.Log($"Sending all: {netMessage.GetType().Name}");
+                foreach (var client in Clients.Values)
                 {
-                    foreach (int client in Clients.Keys)
-                    {
-                        Clients[client].Send(netMessage);
-                    }
+                    client.Send(netMessage);
                 }
-                else
+            }
+            else
+            {
+                foreach (int targetId in netMessage.target)
                 {
-                    foreach (KeyValuePair<int, NetConnTest> client in Clients)
+                    if (Clients.TryGetValue(targetId, out NetConnTest client))
                     {
-                        if (netMessage.target.Contains(client.Key))
-                            client.Value.Send(netMessage);
+                        Debug.Log($"Sending to {targetId}: {netMessage.GetType().Name}");
+                        client.Send(netMessage);
                     }
                 }
             }
@@ -297,7 +356,11 @@ namespace NetworkManagerTest
         }
         public void Send(NetMessage netMessage)
         {
-            _transport.SendTo(Id,NetSerializer.Serialize(netMessage));
+            byte[] data = NetSerializer.Serialize(netMessage);
+            if(IsHost)
+                _transport.SendTo(Id, data);
+            else _transport.Send(data);
         }
     }
 }
+

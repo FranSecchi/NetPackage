@@ -159,6 +159,7 @@ namespace SerializerTest
                 _clients.Clear();
             }
             NetManager.StopNet();
+            if(_manager != null) GameObject.DestroyImmediate(_manager.gameObject);
             Messager.ClearHandlers();
             received = null;
         }
@@ -181,7 +182,7 @@ namespace SerializerTest
 
         private void TransportOnOnClientConnected(int id, ITransport server)
         {
-            NetMessage msg = new ConnMessage(id, NetManager.allPlayers);
+            NetMessage msg = new ConnMessage(id, NetManager.allPlayers, NetManager.ServerInfo);
             server.Send(NetSerializer.Serialize(msg));
         }
 

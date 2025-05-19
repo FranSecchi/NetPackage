@@ -33,6 +33,7 @@ namespace NetPackage.Network
         {
             Connection = new NetConn(connection.CurrentConnected, false);
             NetManager.allPlayers = connection.AllConnected;
+            NetManager.SetServerInfo(connection.ServerInfo);
         }
 
         public static void Send(NetMessage netMessage)

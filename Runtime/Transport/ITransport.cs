@@ -20,7 +20,8 @@ namespace NetPackage.Transport
 
     public class ServerInfo
     {
-        public IPEndPoint EndPoint { get; set; }
+        public string Address { get; set; }
+        public int Port { get; set; }
         public string ServerName { get; set; }
         public int CurrentPlayers { get; set; }
         public int MaxPlayers { get; set; }
@@ -32,19 +33,14 @@ namespace NetPackage.Transport
         {
             if (obj is ServerInfo other)
             {
-                return EndPoint.Equals(other.EndPoint);
+                return Address.Equals(other.Address) && Port.Equals(other.Port);
             }
             return false;
         }
 
-        public override int GetHashCode()
-        {
-            return EndPoint.GetHashCode();
-        }
-
         public override string ToString()
         {
-            return $"{ServerName} ({EndPoint})";
+            return $"{ServerName} ({Address} | {Port})";
         }
     }
 
@@ -52,12 +48,19 @@ namespace NetPackage.Transport
     {
         public int Id { get; set; }
         public ConnectionState State { get; set; }
-        public IPEndPoint RemoteEndPoint { get; set; }
         public int Ping { get; set; }
         public int BytesReceived { get; set; }
         public int BytesSent { get; set; }
         public DateTime ConnectedSince { get; set; }
         public float PacketLoss { get; set; }
+
+        public override string ToString()
+        {
+            var duration = DateTime.Now - ConnectedSince;
+            return $"Connection[Id={Id}, State={State}, " +
+                   $"Ping={Ping}ms, Bytes[Rx={BytesReceived}, Tx={BytesSent}], " +
+                   $"Connected={duration.TotalSeconds:F1}s, PacketLoss={PacketLoss:P2}]";
+        }
     }
 
     public interface ITransport
@@ -92,10 +95,9 @@ namespace NetPackage.Transport
         /// </summary>
         /// <param name="port">The port to use for communication</param>
         /// <param name="isServer">Whether this instance should act as a server</param>
-        /// <param name="maxPlayers">Number of maximum connections on server</param>
+        /// <param name="serverInfo">The server's information. If client, this is not used</param>
         /// <param name="useDebug">Whether to enable debug logging</param>
-        void Setup(int port, bool isServer, int maxPlayers = 10, bool useDebug = false);
-        void Setup(int port, ServerInfo serverInfo, bool useDebug = false);
+        void Setup(int port, bool isServer, ServerInfo serverInfo = null, bool useDebug = false);
 
         /// <summary>
         /// Starts the transport service
@@ -186,12 +188,13 @@ namespace NetPackage.Transport
         /// </summary>
         /// <param name="bytesPerSecond">The maximum number of bytes per second</param>
         void SetBandwidthLimit(int bytesPerSecond);
-        
+
         /// <summary>
         /// Starts the server discovery process
         /// </summary>
+        /// <param name="discoveryInterval"></param>
         /// <param name="discoveryPort">The port to use for discovery, or -1 to use the default</param>
-        void StartServerDiscovery(int discoveryPort = -1);
+        void StartServerDiscovery(float discoveryInterval, int discoveryPort = -1);
 
         /// <summary>
         /// Stops the server discovery process
@@ -252,5 +255,7 @@ namespace NetPackage.Transport
         {
             OnConnectionStateChanged?.Invoke(connectionInfo);
         }
+
+        string GetLocalIPAddress();
     }
 }

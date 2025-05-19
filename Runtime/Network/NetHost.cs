@@ -46,14 +46,14 @@ namespace NetPackage.Network
                 Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
                 NetManager.allPlayers.Add(id);
                 UpdatePlayers(id);
-                NetScene.Instance.SendObjects(id);
+                NetScene.Instance?.SendObjects(id);
             }
         }
 
-        private static void UpdatePlayers(int id)
+        public static void UpdatePlayers(int id)
         {
             if (Clients.Count == 0) return;
-            NetMessage msg = new ConnMessage(id, NetManager.allPlayers);
+            NetMessage msg = new ConnMessage(id, NetManager.allPlayers, NetManager.ServerInfo);
             Send(msg);
         }
 
@@ -82,9 +82,9 @@ namespace NetPackage.Network
         {
             if (netMessage.target == null)
             {
+                Debug.Log($"Sending all: {netMessage.GetType().Name}");
                 foreach (var client in Clients.Values)
                 {
-                    Debug.Log($"Sending all: {netMessage.GetType().Name}");
                     client.Send(netMessage);
                 }
             }
@@ -94,7 +94,7 @@ namespace NetPackage.Network
                 {
                     if (Clients.TryGetValue(targetId, out NetConn client))
                     {
-                        Debug.Log($"Sending to {targetId}: {netMessage.GetType().Name}");
+                        Debug.Log($"Sending to {targetId}: {netMessage}");
                         client.Send(netMessage);
                     }
                 }

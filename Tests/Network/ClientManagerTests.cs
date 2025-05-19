@@ -12,17 +12,19 @@ namespace NetworkManagerTest
     public class ClientManagerTests
     {
         private int _port;
+        private GameObject host;
+        private GameObject client;
         [SetUp]
         public void SetUp()
         {
-            NetManager _manager = new GameObject().AddComponent<NetManager>();
-            NetManager.SetTransport(new UDPSolution());
-            _manager.address = "localhost";
+            client = new GameObject();
+            client.AddComponent<NetManager>();
+            NetManager.DebugLog = true;
             
-            NetManagerTest _host = new GameObject().AddComponent<NetManagerTest>();
-            NetManagerTest.SetTransport(new UDPSolution());
+            host = new GameObject();
+            host.AddComponent<NetManagerTest>();
+            NetManagerTest.DebugLog = true;
             NetManagerTest.StartHost();
-            _host.address = "localhost";
         }
         [UnityTest]
         public IEnumerator TestStartClient()
@@ -85,9 +87,14 @@ namespace NetworkManagerTest
             NetManager.StartClient();
             yield return new WaitForSeconds(0.5f);
             
-            var serverInfo = NetManager.GetServerInfo();
+            var clientInfo = NetManager.GetServerInfo();
+            var serverInfo = NetManagerTest.GetServerInfo();
             Assert.IsNotNull(serverInfo, "Server info should not be null after connecting");
-            Assert.IsTrue(serverInfo.MaxPlayers > 0, "Server info should have valid max players");
+            Assert.IsNotNull(serverInfo.Address, "Server end should not be null after connecting");
+            Assert.IsNotNull(clientInfo.Address, "Client end should not be null after connecting");
+            Assert.AreEqual(clientInfo.Address, serverInfo.Address, $"EndPoint not matching {clientInfo.Address} | {serverInfo.Address}");
+            Assert.AreEqual(clientInfo.MaxPlayers, serverInfo.MaxPlayers, $"Max players not matching {clientInfo.MaxPlayers} | {serverInfo.MaxPlayers}");
+            Assert.AreEqual(clientInfo.ServerName, serverInfo.ServerName, $"Server name not matching {clientInfo.ServerName} | {serverInfo.ServerName}");
         }
 
         [UnityTest]
@@ -99,6 +106,7 @@ namespace NetworkManagerTest
             yield return new WaitForSeconds(0.5f);
             
             var connectionInfo = NetManager.GetConnectionInfo();
+            Debug.Log(connectionInfo);
             Assert.IsNotNull(connectionInfo, "Connection info should not be null after connecting");
             Assert.IsTrue(connectionInfo.Id == 0, "Connection info should have valid connection ID");
         }
@@ -112,6 +120,8 @@ namespace NetworkManagerTest
             yield return new WaitForSeconds(0.5f);
             
             var connectionState = NetManager.GetConnectionState();
+            var connectionInfo = NetManager.GetConnectionInfo();
+            Debug.Log(connectionInfo);
             Assert.IsNotNull(connectionState, "Connection state should not be null after connecting");
             Assert.AreEqual(ConnectionState.Connected, connectionState, "Connection state should be Connected");
         }
@@ -121,6 +131,8 @@ namespace NetworkManagerTest
         {
             NetManager.StopNet();
             NetManagerTest.StopNet();
+            GameObject.DestroyImmediate(host);
+            GameObject.DestroyImmediate(client);
         }
     }
 }

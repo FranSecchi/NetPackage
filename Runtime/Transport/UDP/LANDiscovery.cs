@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace NetPackage.Transport.UDP
@@ -16,8 +17,7 @@ namespace NetPackage.Transport.UDP
         private const int DiscoveryPort = 8888;
         private const string DiscoveryMessage = "NetPackage_Discovery";
         private const double ServerTimeoutSeconds = 5.0;
-
-        private Dictionary<IPEndPoint, (ServerInfo Info, DateTime LastSeenTime)> _knownServers = new Dictionary<IPEndPoint, (ServerInfo, DateTime)>();
+        private Dictionary<ServerInfo,DateTime> _knownServers = new Dictionary<ServerInfo, DateTime>();
 
         public event Action<ServerInfo> OnServerFound;
         public event Action<ServerInfo> OnServerLost;
@@ -56,7 +56,6 @@ namespace NetPackage.Transport.UDP
 
         private void DiscoveryLoop()
         {
-            DateTime lastTimeoutCheck = DateTime.UtcNow;
             while (_isRunning)
             {
                 try
@@ -70,13 +69,8 @@ namespace NetPackage.Transport.UDP
                         var serverInfo = ParseServerInfo(message, remoteEndPoint);
                         UpdateServerInfo(serverInfo);
                     }
-
-                    // Check for timed out servers every 100ms
-                    if ((DateTime.UtcNow - lastTimeoutCheck).TotalMilliseconds >= 100)
-                    {
-                        CheckForTimedOutServers();
-                        lastTimeoutCheck = DateTime.UtcNow;
-                    }
+                    CheckForTimedOutServers();
+                    Thread.Sleep(100);
                 }
                 catch (Exception e)
                 {
@@ -91,32 +85,37 @@ namespace NetPackage.Transport.UDP
         private void UpdateServerInfo(ServerInfo serverInfo)
         {
             DateTime currentTime = DateTime.UtcNow;
-            bool isNewServer = !_knownServers.ContainsKey(serverInfo.EndPoint);
-
-            _knownServers[serverInfo.EndPoint] = (serverInfo, currentTime);
-
+            
+            // Check if we already know this server
+            var existingServer = _knownServers.Keys.FirstOrDefault(s => s.Equals(serverInfo));
+            if (existingServer != null)
+            {
+                _knownServers[existingServer] = currentTime;
+            }
+            else
+            {
+                _knownServers[serverInfo] = currentTime;
+            }
             OnServerFound?.Invoke(serverInfo);
         }
 
         private void CheckForTimedOutServers()
         {
             DateTime currentTime = DateTime.UtcNow;
-            var timedOutServers = new List<IPEndPoint>();
-
+            var timedOutServers = new List<ServerInfo>();
+            
             foreach (var kvp in _knownServers)
             {
-                var timeSinceLastSeen = (currentTime - kvp.Value.LastSeenTime).TotalSeconds;
+                var timeSinceLastSeen = (currentTime - kvp.Value).TotalSeconds;
                 
                 if (timeSinceLastSeen > ServerTimeoutSeconds)
                 {
                     timedOutServers.Add(kvp.Key);
                 }
             }
-
-            foreach (var endPoint in timedOutServers)
+            foreach (var serverInfo in timedOutServers)
             {
-                var serverInfo = _knownServers[endPoint].Info;
-                _knownServers.Remove(endPoint);
+                _knownServers.Remove(serverInfo);
                 OnServerLost?.Invoke(serverInfo);
             }
         }
@@ -126,19 +125,20 @@ namespace NetPackage.Transport.UDP
             var parts = message.Split('|');
             var serverInfo = new ServerInfo
             {
-                EndPoint = endPoint,
                 ServerName = parts.Length > 1 ? parts[1] : "Unknown Server",
                 CurrentPlayers = parts.Length > 2 ? int.Parse(parts[2]) : 0,
                 MaxPlayers = parts.Length > 3 ? int.Parse(parts[3]) : 0,
                 GameMode = parts.Length > 4 ? parts[4] : "Unknown",
+                Address = parts.Length > 5 ? parts[5] : endPoint.Address.ToString(),
+                Port = parts.Length > 6 ? int.Parse(parts[6]) : endPoint.Port,
                 Ping = 0,
                 CustomData = new System.Collections.Generic.Dictionary<string, string>()
             };
 
             // Parse custom data if present
-            if (parts.Length > 5)
+            if (parts.Length > 7)
             {
-                for (int i = 5; i < parts.Length; i += 2)
+                for (int i = 7; i < parts.Length; i += 2)
                 {
                     if (i + 1 < parts.Length)
                     {

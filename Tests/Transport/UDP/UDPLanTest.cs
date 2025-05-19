@@ -12,11 +12,38 @@ namespace TransportTest
     public class UDPLanTest
     {
         private const int Port = 7777;
-        private List<ITransport> _servers = new List<ITransport>();
+        private List<ITransport> _servers;
         private ITransport _client;
         
         [UnitySetUp]
         public IEnumerator SetUp()
+        {
+            _servers = new List<ITransport>();
+            yield return null;
+        }
+
+        [UnityTearDown]
+        public IEnumerator TearDown()
+        {
+            if (_client != null)
+            {
+                _client.StopServerDiscovery();
+                _client.Stop();
+            }
+            
+            if (_servers != null)
+            {
+                foreach (var server in _servers)
+                {
+                    server.StopServerBroadcast();
+                    server.Stop();
+                }
+                _servers.Clear();
+            }
+            yield return null;
+        }
+
+        private IEnumerator SetupServersAndClient()
         {
             for (int i = 0; i < 3; i++)
             {
@@ -32,13 +59,14 @@ namespace TransportTest
             _client = new UDPSolution();
             _client.Setup(Port, false, useDebug:true);
             _client.Start();
-            _client.StartServerDiscovery();
+            _client.StartServerDiscovery(0.1f);
             yield return new WaitForSeconds(2f);
         }
 
         [UnityTest]
         public IEnumerator TestDiscoverServer()
         {
+            yield return SetupServersAndClient();
             yield return new WaitForSeconds(0.2f);
             Assert.IsNotEmpty(_client.GetDiscoveredServers(), "GetDiscoveredServers failed");
         }
@@ -46,6 +74,7 @@ namespace TransportTest
         [UnityTest] 
         public IEnumerator TestDiscoverMultipleServers()
         {
+            yield return SetupServersAndClient();
             yield return new WaitForSeconds(0.2f);
             List<ServerInfo> discoveredServers = _client.GetDiscoveredServers();
 
@@ -57,6 +86,8 @@ namespace TransportTest
         [UnityTest]
         public IEnumerator TestServerTimeout()
         {
+            yield return SetupServersAndClient();
+            
             // Wait for initial server discovery
             yield return new WaitForSeconds(2f);
             List<ServerInfo> initialServers = _client.GetDiscoveredServers();
@@ -81,19 +112,59 @@ namespace TransportTest
             // Verify the stopped server is not in the remaining servers
             foreach (var server in remainingServers)
             {
-                Assert.AreNotEqual(serverToStop.GetServerInfo().EndPoint, server.EndPoint, 
+                Assert.AreNotEqual(serverToStop.GetServerInfo(), server, 
                     "Stopped server is still in the discovered servers list");
             }
         }
 
-        [TearDown]
-        public void TearDown()
+        [UnityTest]
+        public IEnumerator TestServerInfoUpdate()
         {
-            _client.Stop();
-            foreach (var server in _servers)
+            yield return SetupServersAndClient();
+            
+            // Wait for initial server discovery
+            yield return new WaitForSeconds(2f);
+            List<ServerInfo> initialServers = _client.GetDiscoveredServers();
+            Assert.IsNotEmpty(initialServers, "No servers discovered initially");
+            Debug.Log($"Discovered servers: {string.Join(", ", initialServers)}");
+            
+            // Get the first server and its initial info
+            var server = _servers[0];
+            var initialServerInfo = server.GetServerInfo();
+            Debug.Log($"Initial server info: {initialServerInfo}");
+            
+            // Update server info
+            var newServerInfo = new ServerInfo
             {
-                server.Stop();
-            }
+                Address = initialServerInfo.Address,
+                Port = initialServerInfo.Port,
+                ServerName = "Updated Server Name",
+                CurrentPlayers = 5,
+                MaxPlayers = 10,
+                Ping = initialServerInfo.Ping,
+                GameMode = "New Game Mode",
+                CustomData = new Dictionary<string, string> { { "key", "value" } }
+            };
+            server.SetServerInfo(newServerInfo);
+            Debug.Log($"New server info: {server.GetServerInfo()}");
+            // Wait for the update to propagate
+            yield return new WaitForSeconds(5f);
+            
+            // Get updated server list
+            List<ServerInfo> updatedServers = _client.GetDiscoveredServers();
+            
+            // Find the updated server in the client's list
+            var updatedServerInfo = updatedServers.Find(s => s.Equals(initialServerInfo));
+            Assert.IsNotNull(updatedServerInfo, "Server not found in updated list");
+            Debug.Log($"Updated server info: {updatedServerInfo}");
+            
+            // Verify the info was updated
+            Assert.AreEqual(newServerInfo.ServerName, updatedServerInfo.ServerName, "Server name was not updated");
+            Assert.AreEqual(newServerInfo.CurrentPlayers, updatedServerInfo.CurrentPlayers, "Current players was not updated");
+            Assert.AreEqual(newServerInfo.MaxPlayers, updatedServerInfo.MaxPlayers, "Max players was not updated");
+            Assert.AreEqual(newServerInfo.GameMode, updatedServerInfo.GameMode, "Game mode was not updated");
+            Assert.IsTrue(updatedServerInfo.CustomData.ContainsKey("key"), "Custom data was not updated");
+            Assert.AreEqual("value", updatedServerInfo.CustomData["key"], "Custom data value was not updated");
         }
     }
 }

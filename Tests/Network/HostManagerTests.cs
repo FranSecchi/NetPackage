@@ -13,17 +13,19 @@ namespace NetworkManagerTest
     {
         private int _port;
         private System.Action<int> onClientConnectedHandler;
+        private GameObject host;
+        private GameObject client;
         [SetUp]
         public void SetUp()
         {
-            NetManager _manager = new GameObject().AddComponent<NetManager>();
-            NetManager.SetTransport(new UDPSolution());
-            _manager.address = "localhost";
+            host = new GameObject();
+            host.AddComponent<NetManager>();
+            NetManager.DebugLog = true;
             NetManager.StartHost();
             
-            NetManagerTest _client = new GameObject().AddComponent<NetManagerTest>();
-            NetManagerTest.SetTransport(new UDPSolution());
-            _client.address = "localhost";
+            client = new GameObject();
+            client.AddComponent<NetManagerTest>();
+            NetManagerTest.DebugLog = true;
         }
         [UnityTest]
         public IEnumerator TestStartServer()
@@ -146,6 +148,8 @@ namespace NetworkManagerTest
         {
             NetManagerTest.StopNet();
             NetManager.StopNet();
+            GameObject.DestroyImmediate(host);
+            GameObject.DestroyImmediate(client);
         }
     }
 }

@@ -15,6 +15,7 @@ namespace NetPackage.Network
         public NetPrefabRegistry NetPrefabs;
         private static NetManager _manager;
         private NetScene m_scene;
+        private static ServerInfo _serverInfo;
         public static ITransport Transport;
         public static int Port = 7777;
         public static List<int> allPlayers;
@@ -25,13 +26,14 @@ namespace NetPackage.Network
         [SerializeField] public int maxPlayers = 10;
         [SerializeField] public bool useLAN = false;
         [SerializeField] public bool debugLog = false;
-        [SerializeField] public float lanDiscoveryInterval = 1f;
+        [SerializeField] public float lanDiscoveryInterval = 0.1f;
         private float _lastLanDiscovery;
         private List<ServerInfo> _discoveredServers = new List<ServerInfo>();
         
         public static bool IsHost => _manager._isHost;
         public static string ServerName => _manager.serverName;
         public static int MaxPlayers => _manager.maxPlayers;
+        public static ServerInfo ServerInfo => _serverInfo;
         public static bool UseLan
         {
             get => _manager.useLAN;
@@ -39,8 +41,8 @@ namespace NetPackage.Network
         }
         public static bool DebugLog
         {
-            get => _manager.useLAN;
-            set => _manager.useLAN = value;
+            get => _manager.debugLog;
+            set => _manager.debugLog = value;
         }
         public string address = "localhost";
         public static void SetTransport(ITransport transport)
@@ -99,14 +101,25 @@ namespace NetPackage.Network
         {
             StopNet();
             ITransport.OnDataReceived += Receive;
-            if(serverInfo != null) Transport.Setup(Port, serverInfo, _manager.debugLog);
-            else Transport.Setup(Port, true, _manager.maxPlayers, _manager.debugLog);
+            if(serverInfo != null) _serverInfo = serverInfo;
+            else
+            {
+                _serverInfo = new ServerInfo()
+                {
+                    CurrentPlayers = 0,
+                    MaxPlayers = _manager.maxPlayers,
+                    Address = Transport.GetLocalIPAddress(),
+                    Port = Port,
+                    ServerName = _manager.serverName,
+                    GameMode = "Unknown",
+                };
+            }
+            Transport.Setup(Port, true, _serverInfo, _manager.debugLog);
             _manager._isHost = true;
             _manager._running = true;
             NetHost.StartHost();
             if (UseLan)
             {
-                Transport.SetServerInfo(new ServerInfo(){ServerName = _manager.serverName, MaxPlayers = _manager.maxPlayers});
                 Transport.BroadcastServerInfo();
             }
         }
@@ -114,28 +127,24 @@ namespace NetPackage.Network
         {
             StopNet();
             ITransport.OnDataReceived += Receive;
-            Transport.Setup(Port, false, _manager.maxPlayers, _manager.debugLog);
+            Transport.Setup(Port, false, useDebug:_manager.debugLog);
             _manager._isHost = false;
             _manager._running = true;
             if (!_manager.useLAN)
                 NetClient.Connect(_manager.address);
             else
             {
-                Transport.StartServerDiscovery();
+                Transport.StartServerDiscovery(_manager.lanDiscoveryInterval);
                 ITransport.OnLanServerUpdate += UpdateLanServers;
+                _manager._discoveredServers.Clear();
             }
         }
 
-
-        public static void ConnectTo(IPEndPoint endPoint)
-        {
-            ConnectTo(endPoint.Address.ToString());
-        }
         public static void ConnectTo(string address)
         {
             StopNet();
             ITransport.OnDataReceived += Receive;
-            Transport.Setup(Port, false, _manager.maxPlayers, _manager.useLAN);
+            Transport.Setup(Port, false, useDebug:_manager.debugLog);
             _manager._isHost = false;
             NetClient.Connect(address);
         }
@@ -201,6 +210,7 @@ namespace NetPackage.Network
             {
                 ITransport.OnLanServerUpdate -= UpdateLanServers;
                 Transport.StopServerDiscovery();
+                _manager._discoveredServers.Clear();
             }
             else Transport.StopServerBroadcast();
         }
@@ -227,18 +237,16 @@ namespace NetPackage.Network
 
         public static void SetServerInfo(ServerInfo serverInfo)
         {
-            if (_manager._running && IsHost)
-            {
-                Transport.SetServerInfo(serverInfo);
-            }
+            _serverInfo = serverInfo;
+            Transport.SetServerInfo(serverInfo);
+            if(IsHost) NetHost.UpdatePlayers(ConnectionId());
         }
         public static void SetServerName(string serverName)
         {
             if (_manager._running && IsHost)
             {
-                ServerInfo serverInfo = Transport.GetServerInfo();
-                serverInfo.ServerName = serverName;
-                Transport.SetServerInfo(serverInfo);
+                _serverInfo.ServerName = serverName;
+                Transport.SetServerInfo(_serverInfo);
             }
         }
 
@@ -265,10 +273,16 @@ namespace NetPackage.Network
             }
         }
 
-        private static void UpdateLanServers(ServerInfo point)
+        private static void UpdateLanServers(ServerInfo serverInfo)
         {
-            Debug.Log("Detected Server: " + point.EndPoint.ToString());
-            _manager._discoveredServers = Transport.GetDiscoveredServers();
+            var currentServers = Transport.GetDiscoveredServers();
+            
+            _manager._discoveredServers = new List<ServerInfo>(currentServers);
+            
+            if (_manager.debugLog)
+            {
+                Debug.Log($"Updated server list. Current servers: {string.Join(", ", _manager._discoveredServers)}");
+            }
         }
     }
 }

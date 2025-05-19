@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using UnityEngine;
 using static NetPackage.Transport.ITransport;
@@ -30,26 +31,26 @@ namespace NetPackage.Transport.UDP
             };
         }
 
-        public void Setup(int port, bool isServer, int maxPlayers = 10, bool useDebug = false)
+        public void Setup(int port, bool isServer, ServerInfo serverInfo = null, bool useDebug = false)
         {
             if(_isRunning) Disconnect();
             _aPeer = isServer ? new AHost(port) : new AClient(port);
-            _aPeer.MaxPlayers = maxPlayers;
-            _aPeer.UseDebug = useDebug;
+
+            if (isServer && serverInfo == null)
+            {
+                serverInfo = new ServerInfo()
+                {
+                    Address = GetLocalIPAddress(),
+                    Port = port,
+                    ServerName = "New_NetServer",
+                    MaxPlayers = 10
+                };
+            }
+            _serverInfo = serverInfo;
             IsHost = isServer;
             _useDebug = useDebug;
-            _serverInfo = new ServerInfo{CurrentPlayers = 0, MaxPlayers = maxPlayers, ServerName = "New_Server"};
-        }
-
-        public void Setup(int port, ServerInfo serverInfo, bool useDebug = false)
-        {
-            if(_isRunning) Disconnect();
-            _aPeer = new AHost(port);
-            _aPeer.MaxPlayers = serverInfo.MaxPlayers;
+            _aPeer.MaxPlayers = serverInfo?.MaxPlayers ?? 10;
             _aPeer.UseDebug = useDebug;
-            IsHost = true;
-            _useDebug = useDebug;
-            _serverInfo = serverInfo;
         }
 
         public void Start()
@@ -66,10 +67,10 @@ namespace NetPackage.Transport.UDP
             {
                 _pollingThread.Join();
             }
-            _aPeer.Stop();
-            
             _lanDiscovery?.StopDiscovery();
             _lanBroadcaster?.StopBroadcast();
+            _aPeer.Stop();
+            _lanServers.Clear();
         }
 
         public void Connect(string address)
@@ -135,10 +136,18 @@ namespace NetPackage.Transport.UDP
 
         public void SetServerInfo(ServerInfo serverInfo)
         {
-            _serverInfo = serverInfo;
-            if (IsHost)
+            if(serverInfo != null)
             {
-                _lanBroadcaster?.UpdateServerInfo(serverInfo);
+                if (serverInfo.Address == null)
+                {
+                    serverInfo.Address = _serverInfo.Address;
+                    serverInfo.Port = _serverInfo.Port;
+                }
+                _serverInfo = serverInfo;
+                if (IsHost)
+                {
+                    _lanBroadcaster?.SetServerInfo(_serverInfo);
+                }
             }
         }
         public ServerInfo GetServerInfo()
@@ -153,7 +162,7 @@ namespace NetPackage.Transport.UDP
             }
             if (IsHost)
             {
-                _lanBroadcaster?.UpdateServerInfo(_serverInfo);
+                _lanBroadcaster?.SetServerInfo(_serverInfo);
             }
         }
         
@@ -163,7 +172,7 @@ namespace NetPackage.Transport.UDP
             _aPeer?.SetBandwidthLimit(bytesPerSecond);
         }
 
-        public void StartServerDiscovery(int discoveryPort = -1)
+        public void StartServerDiscovery(float discoveryInterval, int discoveryPort = -1)
         {
             if (!IsHost)
             {
@@ -173,19 +182,19 @@ namespace NetPackage.Transport.UDP
                 {
                     if(_lanServers.Contains(serverInfo))
                     {
-                        SetServerInfo(serverInfo);
-                        if(_useDebug) Debug.Log($"Ping server at {serverInfo.EndPoint}");
+                        _lanServers[_lanServers.IndexOf(serverInfo)] = serverInfo;
+                        if(_useDebug) Debug.Log($"Ping server {serverInfo.ServerName} at {serverInfo.Address} | {serverInfo.Port}");
                     }
                     else
                     {
                         _lanServers.Add(serverInfo);
-                        if(_useDebug) Debug.Log($"Found new server at {serverInfo.EndPoint}");
+                        if(_useDebug) Debug.Log($"Found new server at {serverInfo.Address} | {serverInfo.Port}");
                     }
                     TriggerOnLanServersUpdate(serverInfo);
                 };
                 _lanDiscovery.OnServerLost += serverInfo =>
                 {
-                    if(_useDebug) Debug.Log($"Lost server at {serverInfo.EndPoint}");
+                    if(_useDebug) Debug.Log($"Lost server at {serverInfo.Address} | {serverInfo.Port}");
                     _lanServers.Remove(serverInfo);
                     TriggerOnLanServersUpdate(serverInfo);
                 };
@@ -199,7 +208,7 @@ namespace NetPackage.Transport.UDP
             {
                 _lanBroadcaster = new LANBroadcast();
                 _lanBroadcaster.StartBroadcast();
-                _lanBroadcaster.BroadcastServerInfo(_serverInfo);
+                _lanBroadcaster.SetServerInfo(_serverInfo);
             }
         }
         public void StopServerDiscovery()
@@ -211,7 +220,18 @@ namespace NetPackage.Transport.UDP
             _lanBroadcaster?.StopBroadcast();
         }
 
-
+        public string GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            throw new Exception("No network adapters with an IPv4 address in the system!");
+        }
         private void StartThread()
         {
             _pollingThread = new Thread(PollNetwork)

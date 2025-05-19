@@ -146,6 +146,7 @@ namespace NetPackage.Network
             ITransport.OnDataReceived += Receive;
             Transport.Setup(Port, false, useDebug:_manager.debugLog);
             _manager._isHost = false;
+            _manager._running = true;
             NetClient.Connect(address);
         }
         public static void StopNet()

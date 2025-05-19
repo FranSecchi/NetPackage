@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using NetPackage.Network;
 using System.Collections.Generic;
+using NetPackage.Transport;
 
 namespace NetPackage.Editor
 {
@@ -13,6 +14,7 @@ namespace NetPackage.Editor
         private double lastRefreshTime;
         private bool showDetailedInfo = false;
         private Dictionary<int, bool> clientFoldouts = new Dictionary<int, bool>();
+        private bool wasDebugEnabled = false;
 
         [MenuItem("Window/NetPackage/Network Debug")]
         public static void ShowWindow()
@@ -20,11 +22,44 @@ namespace NetPackage.Editor
             GetWindow<NetworkDebugWindow>("Network Debug");
         }
 
+
+
+        private void Update()
+        {
+            // Check if debug state changed
+            if (wasDebugEnabled != NetManager.DebugLog)
+            {
+                wasDebugEnabled = NetManager.DebugLog;
+                if (wasDebugEnabled)
+                {
+                    // If debug was enabled, show the window
+                    ShowWindow();
+                }
+            }
+
+            // Handle auto-refresh
+            if (autoRefresh && EditorApplication.timeSinceStartup - lastRefreshTime > refreshInterval)
+            {
+                Repaint();
+                lastRefreshTime = EditorApplication.timeSinceStartup;
+            }
+        }
+
         private void OnGUI()
         {
+            if (!Application.isPlaying)
+            {
+                EditorGUILayout.HelpBox("Network debug information is only available in Play Mode.", MessageType.Info);
+                return;
+            }
+
             if (!NetManager.DebugLog)
             {
                 EditorGUILayout.HelpBox("Debug logging is disabled in NetManager. Enable it to see network information.", MessageType.Warning);
+                if (GUILayout.Button("Enable Debug Logging"))
+                {
+                    if(Application.isPlaying) NetManager.DebugLog = true;
+                }
                 return;
             }
 
@@ -35,11 +70,6 @@ namespace NetPackage.Editor
             if (autoRefresh)
             {
                 refreshInterval = EditorGUILayout.Slider("Refresh Interval", refreshInterval, 0.1f, 5f);
-                if (EditorApplication.timeSinceStartup - lastRefreshTime > refreshInterval)
-                {
-                    Repaint();
-                    lastRefreshTime = EditorApplication.timeSinceStartup;
-                }
             }
             else if (GUILayout.Button("Refresh"))
             {
@@ -107,14 +137,15 @@ namespace NetPackage.Editor
                             if (clientFoldouts[client.Id])
                             {
                                 EditorGUI.indentLevel++;
-                                var connectionInfo = NetManager.GetConnectionInfo(client.Id);
+                                ConnectionInfo connectionInfo = NetManager.GetConnectionInfo(client.Id);
                                 if (connectionInfo != null)
                                 {
                                     EditorGUILayout.LabelField("Connection ID", connectionInfo.Id.ToString());
                                     EditorGUILayout.LabelField("State", connectionInfo.State.ToString());
-                                    EditorGUILayout.LabelField("Address", connectionInfo.Address ?? "Unknown");
-                                    EditorGUILayout.LabelField("Port", connectionInfo.Port.ToString());
-                                    EditorGUILayout.LabelField("Last Ping", $"{connectionInfo.LastPing}ms");
+                                    EditorGUILayout.LabelField("Bytes Received", connectionInfo.BytesReceived.ToString() ?? "Unknown");
+                                    EditorGUILayout.LabelField("Bytes Sent", connectionInfo.BytesSent.ToString());
+                                    EditorGUILayout.LabelField("Last Ping", $"{connectionInfo.Ping}ms");
+                                    EditorGUILayout.LabelField("Packet Loss", connectionInfo.PacketLoss.ToString());
                                     EditorGUILayout.LabelField("Connected Since", connectionInfo.ConnectedSince.ToString("HH:mm:ss"));
                                 }
                                 EditorGUI.indentLevel--;
@@ -138,9 +169,10 @@ namespace NetPackage.Editor
                 {
                     EditorGUILayout.LabelField("Connection ID", connectionInfo.Id.ToString());
                     EditorGUILayout.LabelField("State", connectionInfo.State.ToString());
-                    EditorGUILayout.LabelField("Address", connectionInfo.Address ?? "Unknown");
-                    EditorGUILayout.LabelField("Port", connectionInfo.Port.ToString());
-                    EditorGUILayout.LabelField("Last Ping", $"{connectionInfo.LastPing}ms");
+                    EditorGUILayout.LabelField("Bytes Received", connectionInfo.BytesReceived.ToString() ?? "Unknown");
+                    EditorGUILayout.LabelField("Bytes Sent", connectionInfo.BytesSent.ToString());
+                    EditorGUILayout.LabelField("Last Ping", $"{connectionInfo.Ping}ms");
+                    EditorGUILayout.LabelField("Packet Loss", connectionInfo.PacketLoss.ToString());
                     EditorGUILayout.LabelField("Connected Since", connectionInfo.ConnectedSince.ToString("HH:mm:ss"));
                 }
                 else

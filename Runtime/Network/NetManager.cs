@@ -41,7 +41,7 @@ namespace NetPackage.Network
         }
         public static bool DebugLog
         {
-            get => _manager.debugLog;
+            get => _manager?.debugLog ?? false;
             set => _manager.debugLog = value;
         }
         public string address = "localhost";

@@ -89,8 +89,9 @@ namespace SynchronizationTest
             host.Stop();
             NetManager.StopNet();
             clientIds.Clear();
-            
-            var objects = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            GameObject.Destroy(testObj.gameObject);
+            received = null;
+            var objects = GameObject.FindObjectsByType<NetManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (var obj in objects)
             {
                 GameObject.DestroyImmediate(obj.gameObject);

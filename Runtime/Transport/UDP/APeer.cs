@@ -115,7 +115,6 @@ namespace NetPackage.Transport.UDP
                     Ping = ping,
                     PacketLoss = packetLoss
                 };
-                Debug.Log("Added " + _connectionInfo[clientId] + " to " +clientId);
             }
             else
             {
@@ -125,7 +124,6 @@ namespace NetPackage.Transport.UDP
                 info.Ping = ping;
                 info.PacketLoss = packetLoss;
                 _connectionInfo[clientId] = info;
-                Debug.Log("Modified " + _connectionInfo[clientId] + " to " +clientId);
             }
         }
         public void Poll()

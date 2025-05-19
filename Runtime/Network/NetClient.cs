@@ -1,4 +1,5 @@
 using NetPackage.Messages;
+using UnityEngine.SceneManagement;
 
 namespace NetPackage.Network
 {
@@ -9,7 +10,8 @@ namespace NetPackage.Network
         {
             if (Connection != null) return;
             Messager.RegisterHandler<ConnMessage>(OnConnected);
-            Messager.RegisterHandler<SpawnMessage>(OnSpawned);
+            Messager.RegisterHandler<SpawnMessage>(OnSpawned);;
+            Messager.RegisterHandler<SceneLoadMessage>(OnSceneLoadMessage);
             NetManager.Transport.Start();
             NetManager.Transport.Connect(address);
         }
@@ -29,6 +31,16 @@ namespace NetPackage.Network
             Connection = null;
         }
 
+        public static void Send(NetMessage netMessage)
+        {
+            Connection?.Send(netMessage);
+        }
+
+        public static void LoadScene(string sceneName)
+        {
+            SceneLoadMessage msg = new SceneLoadMessage(sceneName, Connection.Id);
+            Send(msg);
+        }
         private static void OnConnected(ConnMessage connection)
         {
             Connection = new NetConn(connection.CurrentConnected, false);
@@ -36,10 +48,20 @@ namespace NetPackage.Network
             NetManager.SetServerInfo(connection.ServerInfo);
         }
 
-        public static void Send(NetMessage netMessage)
+        private static void OnSceneLoadMessage(SceneLoadMessage msg)
         {
-            Connection?.Send(netMessage);
+            if (!msg.isLoaded)
+            {
+                SceneManager.sceneLoaded += OnSceneLoaded;
+                SceneManager.LoadScene(msg.sceneName);
+            }
         }
-        
+        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+
+            SceneLoadMessage response = new SceneLoadMessage(scene.name, Connection.Id, true);
+            Send(response);
+        }
     }
 }

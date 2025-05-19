@@ -250,6 +250,12 @@ namespace NetPackage.Network
             }
         }
 
+        public static void LoadScene(string sceneName)
+        {
+            if (!_manager._running) return;
+            if(IsHost) NetHost.LoadScene(sceneName);
+            else NetClient.LoadScene(sceneName);
+        }
         public static List<ConnectionInfo> GetClients()
         {
             if(!IsHost) return null;

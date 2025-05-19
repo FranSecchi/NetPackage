@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using NetPackage.Messages;
 using NetPackage.Synchronization;
 using NetPackage.Transport;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace NetPackage.Network
 {
@@ -19,6 +21,7 @@ namespace NetPackage.Network
             Messager.RegisterHandler<SyncMessage>(OnSyncMessage);
             Messager.RegisterHandler<SpawnMessage>(OnSpawnMessage);
             Messager.RegisterHandler<ConnMessage>(OnConnMessage);
+            Messager.RegisterHandler<SceneLoadMessage>(OnSceneLoadMessage);
         }
 
         private static void OnConnMessage(ConnMessage obj)
@@ -100,6 +103,11 @@ namespace NetPackage.Network
                 }
             }
         }
+        public static void LoadScene(string sceneName)
+        {
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            SceneManager.LoadScene(sceneName);
+        }
         private static void OnSyncMessage(SyncMessage obj)
         {
             StateManager.SetSync(obj);
@@ -110,6 +118,22 @@ namespace NetPackage.Network
             //Validate
             NetScene.Instance.Spawn(msg);
         }
-        
+
+        private static void OnSceneLoadMessage(SceneLoadMessage msg)
+        {
+            if (msg.isLoaded)
+            {
+                NetScene.Instance?.SendObjects(msg.requesterId);
+            }
+            else NetManager.LoadScene(msg.sceneName);
+        }
+
+        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+
+            NetMessage msg = new SceneLoadMessage(scene.name, -1);
+            Send(msg);
+        }
     }
 }

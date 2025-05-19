@@ -154,6 +154,7 @@ namespace NetPackage.Network
         {
             foreach(var sceneObjects in sceneObjects)
             {
+                Debug.Log("Called");
                 GameObject obj = sceneObjects.Value.gameObject;
                 NetManager.EnqueueMainThread(() => {
                     NetObject netObj = obj.GetComponent<NetBehaviour>().NetObject;

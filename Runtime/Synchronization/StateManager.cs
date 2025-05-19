@@ -44,7 +44,6 @@ namespace NetPackage.Synchronization
             {
                 if (netObject.Value == null) continue;
                 
-                Debug.Log("in state: " + netObject.Key);
                 var changes = netObject.Value.Update();
                 if (changes.Count > 0)
                     Send(netObject.Key, changes);
@@ -55,7 +54,6 @@ namespace NetPackage.Synchronization
         {
             foreach (var change in changes)
             {
-                Debug.Log("syc msg sent");
                 SyncMessage msg = new SyncMessage(netObjectKey, change.Key, change.Value);
                 NetManager.Send(msg);
             }

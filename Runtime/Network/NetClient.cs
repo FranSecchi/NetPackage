@@ -53,7 +53,7 @@ namespace NetPackage.Network
             if (!msg.isLoaded)
             {
                 SceneManager.sceneLoaded += OnSceneLoaded;
-                SceneManager.LoadScene(msg.sceneName);
+                NetManager.EnqueueMainThread(()=>SceneManager.LoadScene(msg.sceneName));
             }
         }
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)

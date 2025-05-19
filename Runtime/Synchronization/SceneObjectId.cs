@@ -12,8 +12,8 @@ namespace NetPackage.Synchronization
         
         void Awake()
         {
-            // if (string.IsNullOrEmpty(sceneId))
-            // {
+            if (string.IsNullOrEmpty(sceneId))
+            {
 #if UNITY_EDITOR
                 if (!Application.isPlaying)
                 {
@@ -22,7 +22,7 @@ namespace NetPackage.Synchronization
                     Debug.Log($"Generated new ID for {gameObject.name}: {sceneId}");
                 }
 #endif
-            // }
+            }
         }
     }
 }

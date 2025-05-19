@@ -211,7 +211,7 @@ namespace NetPackage.Editor
                             EditorGUILayout.LabelField("Network ID: " + netObj.NetId.ToString());
                             EditorGUILayout.LabelField("Scene ID: " + netObj.SceneId.ToString());
                             EditorGUILayout.LabelField("Owner: " + netObj.OwnerId.ToString());
-                            EditorGUILayout.LabelField("Is Scene Object: "+ (netObj.SceneId.DefaultIfEmpty()));
+                            EditorGUILayout.LabelField("Is Scene Object: "+ (string.IsNullOrEmpty(netObj.SceneId) ? "(null)" : netObj.SceneId.ToString()));
                             EditorGUI.indentLevel--;
                         }
                     }

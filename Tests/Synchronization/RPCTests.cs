@@ -19,6 +19,8 @@ namespace SynchronizationTest
         private ITransport client;
         private TestRPCBehaviour testObj;
         private NetMessage received;
+        private const string TEST_SCENE_NAME = "TestScene2";
+        private const int CLIENT_ID = 0;
 
         [UnitySetUp]
         public IEnumerator SetUp()
@@ -27,8 +29,7 @@ namespace SynchronizationTest
             var manager = managerObj.AddComponent<NetManager>();
             NetManager.StartHost();
             
-            var obj = new GameObject();
-            testObj = obj.AddComponent<TestRPCBehaviour>();
+            yield return new WaitForSeconds(0.2f);
             
             client = new UDPSolution();
             client.Setup(NetManager.Port, false);
@@ -37,7 +38,8 @@ namespace SynchronizationTest
             yield return WaitValidate(typeof(SpawnMessage));
             Assert.IsTrue(received is SpawnMessage, "Client did not receive spawn message");
             client.Send(NetSerializer.Serialize(received));
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(0.5f);
+            testObj = GameObject.FindObjectsByType<TestRPCBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None)[0];
         }
 
         [UnityTest]
@@ -258,8 +260,18 @@ namespace SynchronizationTest
 
         private IEnumerator WaitConnection()
         {
+            yield return new WaitForSeconds(0.2f);
             client.Connect("localhost");
             yield return new WaitForSeconds(0.2f);
+            NetManager.LoadScene(TEST_SCENE_NAME);
+            yield return WaitValidate(typeof(SceneLoadMessage));
+            
+            SceneLoadMessage scnMsg = (SceneLoadMessage)received;
+            Assert.AreEqual(TEST_SCENE_NAME, scnMsg.sceneName, "Wrong scene name");
+            scnMsg.isLoaded = true; scnMsg.requesterId = CLIENT_ID;
+            NetMessage answerMsg = scnMsg;
+            client.Send(NetSerializer.Serialize(answerMsg));
+            yield return new WaitForSeconds(0.5f);
         }
 
         [TearDown]
@@ -306,111 +318,6 @@ namespace SynchronizationTest
             
             Assert.IsTrue(msg != null && msg.GetType() == expectedType, 
                 $"Expected message of type {expectedType.Name} but got {(msg == null ? "null" : msg.GetType().Name)}");
-        }
-    }
-
-    public class TestRPCBehaviour : NetBehaviour
-    {
-        public int lastReceivedValue;
-        public string lastReceivedMessage;
-        public bool serverToClientCalled;
-        public bool clientToServerCalled;
-        public bool targetModeAllCalled;
-        public int targetModeAllCallCount;
-        public bool targetModeSpecificCalled;
-        public int targetModeSpecificCallCount;
-        public bool targetModeOthersCalled;
-        public int targetModeOthersCallCount;
-        public ComplexData lastReceivedComplexData;
-
-        [MessagePackObject]
-        public class ComplexData
-        {
-            [Key(0)] public int Id { get; set; }
-            [Key(1)] public string Name { get; set; }
-            [Key(2)] public List<string> Tags { get; set; }
-            [Key(3)] public Dictionary<string, int> Stats { get; set; }
-        }
-
-        [NetRPC]
-        public void TestRPC(int value, string message)
-        {
-            lastReceivedValue = value;
-            lastReceivedMessage = message;
-        }
-
-        [NetRPC]
-        public void ComplexDataRPC(ComplexData data)
-        {
-            lastReceivedComplexData = data;
-        }
-
-        [NetRPC(Direction.ServerToClient)]
-        public void ServerToClientRPC()
-        {
-            serverToClientCalled = true;
-        }
-
-        [NetRPC(Direction.ClientToServer)]
-        public void ClientToServerRPC()
-        {
-            clientToServerCalled = true;
-        }
-
-        [NetRPC(Direction.Bidirectional, Send.All)]
-        public void TargetModeAllRPC()
-        {
-            targetModeAllCalled = true;
-            targetModeAllCallCount++;
-        }
-
-        [NetRPC(Direction.Bidirectional, Send.Specific)]
-        public void TargetModeSpecificRPC(List<int> targetId)
-        {
-            targetModeSpecificCalled = true;
-            targetModeSpecificCallCount++;
-        }
-
-        [NetRPC(Direction.Bidirectional, Send.Others)]
-        public void TargetModeOthersRPC()
-        {
-            targetModeOthersCalled = true;
-            targetModeOthersCallCount++;
-        }
-
-        public void CallTestRPC(int value, string message)
-        {
-            CallRPC("TestRPC", value, message);
-        }
-
-        public void CallServerToClientRPC()
-        {
-            CallRPC("ServerToClientRPC");
-        }
-
-        public void CallClientToServerRPC()
-        {
-            CallRPC("ClientToServerRPC");
-        }
-
-        public void CallTargetModeAllRPC()
-        {
-            CallRPC("TargetModeAllRPC");
-        }
-
-        public void CallTargetModeSpecificRPC(List<int> targetId)
-        {
-            CallRPC("TargetModeSpecificRPC", targetId);
-        }
-
-        public void CallTargetModeOthersRPC()
-        {
-            CallRPC("TargetModeOthersRPC");
-        }
-
-        public void CallComplexDataRPC(ComplexData data)
-        {
-            CallRPC("ComplexDataRPC", data);
         }
     }
 } 

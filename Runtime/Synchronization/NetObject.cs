@@ -19,7 +19,7 @@ namespace NetPackage.Synchronization
 
         // Changed logic: object is owned if the current connection is the owner
         public bool Owned => _ownerId == NetManager.ConnectionId();
-        public long SceneId { get; set; }
+        public string SceneId { get; set; }
 
         public NetObject(int netId, NetBehaviour behaviour, int ownerId = -1)
         {

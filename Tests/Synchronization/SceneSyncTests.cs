@@ -51,8 +51,8 @@ namespace SynchronizationTest
 
             // Verify that the scene was loaded in the host
             var hostObjects = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            Assert.AreEqual(hostObjects.Length, 1, "No NetBehaviour objects found in host scene");
-
+            Assert.Greater(hostObjects.Length, 0, "No NetBehaviour objects found in host scene");
+            Debug.Log($"Count; {hostObjects.Length} | {hostObjects[0].GetComponent<SceneObjectId>().sceneId} | {hostObjects[1].GetComponent<SceneObjectId>().sceneId}");
             // Wait for scene synchronization
             yield return WaitValidate(typeof(SceneLoadMessage));
             
@@ -61,21 +61,27 @@ namespace SynchronizationTest
             scnMsg.isLoaded = true; scnMsg.requesterId = CLIENT_ID;
             NetMessage answerMsg = scnMsg;
             client.Send(NetSerializer.Serialize(answerMsg));
+            yield return new WaitForSeconds(0.5f); // Wait for scene to load
             
             yield return WaitValidate(typeof(SpawnMessage));
             SpawnMessage spwMsg = (SpawnMessage)received;
+            yield return WaitValidate(typeof(SpawnMessage));
+            SpawnMessage spwMsg2 = (SpawnMessage)received;
 
             foreach (NetBehaviour hostObj in hostObjects)
             {
                 var hostNetObj = hostObj.NetObject;
                 Assert.IsNotNull(hostNetObj, "Host object missing NetObject component");
-
+                SpawnMessage spw = hostNetObj.NetId != spwMsg.netObjectId ? spwMsg2 : spwMsg;
+                
                 // Verify object properties are synchronized
-                Assert.AreEqual(hostObj.transform.position, spwMsg.position, "Object positions don't match");
-                Assert.AreEqual(hostNetObj.NetId, spwMsg.netObjectId, "Object NetId doesn't match");
+                Assert.AreEqual(hostObj.transform.position, spw.position, "Object positions don't match");
+                Assert.AreEqual(hostNetObj.NetId, spw.netObjectId, "Object NetId doesn't match");
+                Assert.AreEqual(hostNetObj.SceneId, spw.sceneId, "Object sceneId doesn't match");
+                received = spw;
+                client.Send(NetSerializer.Serialize(received));
+                yield return new WaitForSeconds(0.2f);
             }
-            client.Send(NetSerializer.Serialize(received));
-            yield return new WaitForSeconds(0.2f);
             
             TestObj testComponent = hostObjects[0];
             testComponent.Set(42, 100, "test");

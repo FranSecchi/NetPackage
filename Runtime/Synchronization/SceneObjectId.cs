@@ -1,4 +1,5 @@
 using System;
+using UnityEditor;
 using UnityEngine;
 
 namespace NetPackage.Synchronization
@@ -6,25 +7,22 @@ namespace NetPackage.Synchronization
     [ExecuteAlways]
     public class SceneObjectId : MonoBehaviour
     {
-        public long sceneId;
+        public string sceneId;
 
-
-        private void Awake()
+        
+        void Awake()
         {
-            if (sceneId == 0)
-            {
-                sceneId = BitConverter.ToInt64(Guid.NewGuid().ToByteArray(), 0);
-            }
-        }
-
+            // if (string.IsNullOrEmpty(sceneId))
+            // {
 #if UNITY_EDITOR
-        private void OnValidate()
-        {
-            if (sceneId == 0)
-            {
-                sceneId = BitConverter.ToInt64(Guid.NewGuid().ToByteArray(), 0);
-            }
-        }
+                if (!Application.isPlaying)
+                {
+                    sceneId = Guid.NewGuid().ToString();
+                    EditorUtility.SetDirty(this);
+                    Debug.Log($"Generated new ID for {gameObject.name}: {sceneId}");
+                }
 #endif
+            // }
+        }
     }
 }

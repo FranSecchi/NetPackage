@@ -11,7 +11,7 @@ namespace NetPackage.Network
         public static NetScene Instance;
         private Dictionary<string, GameObject> m_prefabs = new Dictionary<string, GameObject>();
         private Dictionary<int, NetObject> netObjects = new Dictionary<int, NetObject>();
-        private Dictionary<long, GameObject> sceneObjects = new Dictionary<long, GameObject>();
+        private Dictionary<string, GameObject> sceneObjects = new Dictionary<string, GameObject>();
         private int netObjectId = 0;
 
         public NetScene()
@@ -60,8 +60,8 @@ namespace NetPackage.Network
 
         public void RegisterSceneObject(NetBehaviour netBehaviour)
         {
-            long sceneId = netBehaviour.GetComponent<SceneObjectId>().sceneId;
-            if(!sceneObjects.ContainsKey(sceneId)) sceneObjects[sceneId] = netBehaviour.gameObject;
+            string sceneId = netBehaviour.GetComponent<SceneObjectId>().sceneId;
+            if(sceneId != null && !sceneObjects.ContainsKey(sceneId)) sceneObjects[sceneId] = netBehaviour.gameObject;
             if (!NetManager.IsHost) return;
             
             int id = netObjectId++;
@@ -71,7 +71,7 @@ namespace NetPackage.Network
         }
         public void Spawn(SpawnMessage msg)
         {
-            if (msg.sceneId >= 0)
+            if (msg.sceneId != "")
             {
                 if (NetManager.IsHost) NetManager.EnqueueMainThread(() => { ValidateSpawn(msg);});
                 else NetManager.EnqueueMainThread(() => { SpawnSceneObject(msg);});;
@@ -92,7 +92,7 @@ namespace NetPackage.Network
             
             netObj.OwnerId = msg.own ? msg.requesterId : NetManager.ConnectionId();
             msg.netObjectId = msg.netObjectId >= 0 ? msg.netObjectId : netObj.NetId;
-            netObj.SceneId = -1;
+            netObj.SceneId = "";
             Register(netObj);
             ValidateSpawn(msg);
             Debug.Log($"Spawned NetObject with ID {msg.netObjectId}, owned by {netObj.OwnerId}");

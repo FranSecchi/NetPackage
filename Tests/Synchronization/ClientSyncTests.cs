@@ -17,10 +17,10 @@ namespace SynchronizationTest
     {
         private NetPrefabRegistry prefabs;
         private ITransport host;
-        private TestObj testObj;
         private NetMessage received;
         private const int CLIENT_ID = 0;
         private List<int> clientIds = new List<int>();
+        private const string TEST_SCENE_NAME = "TestScene";
 
         [UnitySetUp]
         public IEnumerator SetUp()
@@ -35,52 +35,62 @@ namespace SynchronizationTest
 
             RegisterPrefab();
             
-            GameObject go = new GameObject().AddComponent<SceneObjectId>().gameObject;
-            testObj = go.AddComponent<TestObj>();
-            testObj.Set(10, 500, "init");
             yield return WaitConnection();
-            
+            NetMessage answerMsg =  new SceneLoadMessage(TEST_SCENE_NAME, -1);
+            host.Send(NetSerializer.Serialize(answerMsg));
+            yield return new WaitForSeconds(0.5f);
         }
 
         [UnityTest]
         public IEnumerator ReceiveStateUpdate()
         {
-            yield return WaitConnection();
-            
-            
+            var hostObjects = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Assert.Greater(hostObjects.Length, 0, "No NetBehaviour objects found in host scene");
+            foreach (NetBehaviour hostObj in hostObjects)
+            {
+                NetMessage msg = new SpawnMessage(-1, hostObj.gameObject.name, hostObj.transform.position, sceneId:hostObj.GetComponent<SceneObjectId>().sceneId);
+                host.Send(NetSerializer.Serialize(msg));
+                yield return new WaitForSeconds(0.2f);
+            }
             Dictionary<string, object> changes = new Dictionary<string, object> 
             { 
                 { "health", 75 },
                 { "id", 42 },
                 { "msg", "updated" }
             };
-            SendObjUpdate(testObj, changes);
+            SendObjUpdate(hostObjects[0], changes);
 
             yield return new WaitForSeconds(0.2f);
 
-            Assert.AreEqual(75, testObj.health, "Health not updated correctly");
-            Assert.AreEqual(42, testObj.id, "ID not updated correctly");
-            Assert.AreEqual("updated", testObj.msg, "Message not updated correctly");
+            Assert.AreEqual(75, hostObjects[0].health, "Health not updated correctly");
+            Assert.AreEqual(42, hostObjects[0].id, "ID not updated correctly");
+            Assert.AreEqual("updated", hostObjects[0].msg, "Message not updated correctly");
         }
 
 
         [UnityTest]
         public IEnumerator HandleOwnershipChange()
         {
-            yield return WaitConnection();
-
-            // Simulate ownership change message
-            NetMessage ownerMsg = new OwnershipMessage(testObj.NetObject.NetId, CLIENT_ID);
+            var hostObjects = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Assert.Greater(hostObjects.Length, 0, "No NetBehaviour objects found in host scene");
+            foreach (NetBehaviour hostObj in hostObjects)
+            {
+                NetMessage msg = new SpawnMessage(-1, hostObj.gameObject.name, hostObj.transform.position, sceneId:hostObj.GetComponent<SceneObjectId>().sceneId);
+                host.Send(NetSerializer.Serialize(msg));
+                yield return new WaitForSeconds(0.2f);
+            }
+            
+            NetMessage ownerMsg = new OwnershipMessage(hostObjects[0].NetObject.NetId, CLIENT_ID);
             host.Send(NetSerializer.Serialize(ownerMsg));
 
             // Wait for ownership to be updated
             float startTime = Time.time;
-            while (testObj.NetObject.OwnerId != CLIENT_ID && Time.time - startTime < 1f)
+            while (hostObjects[0].NetObject.OwnerId != CLIENT_ID && Time.time - startTime < 1f)
             {
                 yield return null;
             }
 
-            Assert.AreEqual(CLIENT_ID, testObj.NetObject.OwnerId, "Ownership not updated correctly");
+            Assert.AreEqual(CLIENT_ID, hostObjects[0].NetObject.OwnerId, "Ownership not updated correctly");
         }
 
         [TearDown]
@@ -89,7 +99,6 @@ namespace SynchronizationTest
             host.Stop();
             NetManager.StopNet();
             clientIds.Clear();
-            GameObject.Destroy(testObj.gameObject);
             received = null;
             var objects = GameObject.FindObjectsByType<NetManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (var obj in objects)
@@ -111,11 +120,6 @@ namespace SynchronizationTest
             NetMessage rcv = new ConnMessage(0, clientIds, new ServerInfo(){Address = "127.0.0.1", Port = NetManager.Port, MaxPlayers = 10});
             host.Send(NetSerializer.Serialize(rcv));
             yield return new WaitForSeconds(0.5f);
-            SpawnMessage spw = new SpawnMessage(-1, testObj.name, Vector3.one, sceneId:testObj.GetComponent<SceneObjectId>().sceneId);
-            spw.netObjectId = 0;
-            rcv = spw;
-            host.Send(NetSerializer.Serialize(rcv));
-            yield return WaitValidate(typeof(SpawnMessage));
         }
 
         private IEnumerator WaitValidate(Type expectedType)

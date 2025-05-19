@@ -12,9 +12,9 @@ namespace NetPackage.Messages
         [Key(3)]public int requesterId;
         [Key(4)]public bool own;
         [Key(5)]public int netObjectId;
-        [Key(6)]public long sceneId;
+        [Key(6)]public string sceneId;
         public SpawnMessage(){}
-        public SpawnMessage(int requesterId, string prefabName, Vector3 position, bool own = false, long sceneId = -1, List<int> target = null) : base(target)
+        public SpawnMessage(int requesterId, string prefabName, Vector3 position, bool own = false, string sceneId = "", List<int> target = null) : base(target)
         {
             this.requesterId = requesterId;
             this.prefabName = prefabName;

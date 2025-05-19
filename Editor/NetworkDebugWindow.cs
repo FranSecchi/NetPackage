@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using NetPackage.Network;
 using System.Collections.Generic;
+using System.Linq;
 using NetPackage.Transport;
 using NetPackage.Synchronization;
 
@@ -210,7 +211,7 @@ namespace NetPackage.Editor
                             EditorGUILayout.LabelField("Network ID: " + netObj.NetId.ToString());
                             EditorGUILayout.LabelField("Scene ID: " + netObj.SceneId.ToString());
                             EditorGUILayout.LabelField("Owner: " + netObj.OwnerId.ToString());
-                            EditorGUILayout.LabelField("Is Scene Object: "+ (netObj.SceneId > 0));
+                            EditorGUILayout.LabelField("Is Scene Object: "+ (netObj.SceneId.DefaultIfEmpty()));
                             EditorGUI.indentLevel--;
                         }
                     }

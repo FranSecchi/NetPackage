@@ -17,9 +17,9 @@ namespace SynchronizationTest
     {
         private NetPrefabRegistry prefabs;
         private ITransport client;
-        private GameObject testObj;
         private NetMessage received;
         private const int CLIENT_ID = 0;
+        private const string TEST_SCENE_NAME = "TestScene";
 
         [UnitySetUp]
         public IEnumerator SetUp()
@@ -28,7 +28,6 @@ namespace SynchronizationTest
             var manager = managerObj.AddComponent<NetManager>();
             NetManager.StartHost();
             
-            new GameObject().AddComponent<TestObj>().Set(10,500,"init");
             yield return new WaitForSeconds(0.2f);
             
             RegisterPrefab();
@@ -45,8 +44,9 @@ namespace SynchronizationTest
             yield return WaitConnection();
             
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            Assert.AreEqual(1, objs.Length, "Scene object not found");
-            
+            Assert.Greater(objs.Length, 0, "Object not spawned");
+            yield return WaitSpawnSync(objs);
+
             TestObj testComponent = objs[0];
             testComponent.Set(42, 100, "test");
             StateManager.SendUpdateStates();
@@ -64,7 +64,9 @@ namespace SynchronizationTest
             yield return WaitConnection();
             
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            Assert.AreEqual(1, objs.Length, "Scene object not found");
+            Assert.Greater(objs.Length, 0, "Object not spawned");
+            yield return WaitSpawnSync(objs);
+            
             var comp1 = objs[0];
             var comp2 = objs[0].gameObject.AddComponent<TestObj>();
             
@@ -92,7 +94,8 @@ namespace SynchronizationTest
             yield return WaitConnection();
 
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            Assert.AreEqual(1, objs.Length, "Scene object not found");
+            Assert.Greater(objs.Length, 0, "Object not spawned");
+            yield return WaitSpawnSync(objs);
             TestObj testComponent = objs[0];
             int initialHealth = testComponent.health;
 
@@ -116,7 +119,8 @@ namespace SynchronizationTest
             yield return WaitConnection();
 
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            Assert.AreEqual(1, objs.Length, "Scene object not found");
+            Assert.Greater(objs.Length, 0, "Object not spawned");
+            yield return WaitSpawnSync(objs);
             var comp1 = objs[0];
             var comp2 = objs[0].gameObject.AddComponent<TestObj>();
             
@@ -146,7 +150,8 @@ namespace SynchronizationTest
             yield return WaitConnection();
 
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            Assert.AreEqual(1, objs.Length, "Scene object not found");
+            Assert.Greater(objs.Length, 0, "Object not spawned");
+            yield return WaitSpawnSync(objs);
             var testComponent = objs[0];
 
             testComponent.NetObject.GiveOwner(CLIENT_ID);
@@ -164,6 +169,8 @@ namespace SynchronizationTest
             yield return WaitConnection();
 
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Assert.Greater(objs.Length, 0, "Object not spawned");
+            yield return WaitSpawnSync(objs);
             var testComponent = objs[0];
             testComponent.Set(999, 888, "test_before_disconnect");
 
@@ -173,7 +180,9 @@ namespace SynchronizationTest
             client = new UDPSolution();
             client.Setup(NetManager.Port, false);
             client.Start();
-            yield return WaitConnection();
+            yield return new WaitForSeconds(0.2f);
+            client.Connect("localhost");
+            yield return new WaitForSeconds(0.2f);
 
 
             Assert.AreEqual(888, testComponent.health, "Health not recovered after reconnect");
@@ -200,11 +209,34 @@ namespace SynchronizationTest
         {
             yield return new WaitForSeconds(0.2f);
             client.Connect("localhost");
-            yield return WaitValidate(typeof(SpawnMessage));
-            client.Send(NetSerializer.Serialize(received));
             yield return new WaitForSeconds(0.2f);
+            NetManager.LoadScene(TEST_SCENE_NAME);
+            yield return WaitValidate(typeof(SceneLoadMessage));
+            
+            SceneLoadMessage scnMsg = (SceneLoadMessage)received;
+            Assert.AreEqual(TEST_SCENE_NAME, scnMsg.sceneName, "Wrong scene name");
+            scnMsg.isLoaded = true; scnMsg.requesterId = CLIENT_ID;
+            NetMessage answerMsg = scnMsg;
+            client.Send(NetSerializer.Serialize(answerMsg));
+            yield return new WaitForSeconds(0.5f);
         }
 
+        private IEnumerator WaitSpawnSync(TestObj[] objs)
+        {
+            yield return WaitValidate(typeof(SpawnMessage));
+            SpawnMessage spwMsg = (SpawnMessage)received;
+            yield return WaitValidate(typeof(SpawnMessage));
+            SpawnMessage spwMsg2 = (SpawnMessage)received;
+            
+            foreach (NetBehaviour hostObj in objs)
+            {
+                var hostNetObj = hostObj.NetObject;
+                SpawnMessage spw = hostNetObj.NetId != spwMsg.netObjectId ? spwMsg2 : spwMsg;
+                received = spw;
+                client.Send(NetSerializer.Serialize(received));
+                yield return new WaitForSeconds(0.2f);
+            }
+        }
         private IEnumerator WaitValidate(Type expectedType)
         {
             byte[] data = null;

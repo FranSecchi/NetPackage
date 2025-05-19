@@ -16,6 +16,7 @@ namespace SynchronizationTest
     {
         private NetPrefabRegistry prefabs;
         private ITransport client;
+        private const string TEST_SCENE_NAME = "TestScene";
         private NetMessage received;
         private const int CLIENT_ID = 0;
 
@@ -27,7 +28,6 @@ namespace SynchronizationTest
             NetManager.StartHost();
             RegisterPrefab();
             
-            new GameObject().AddComponent<TestObj>().Set(10,50,"init");
             yield return new WaitForSeconds(0.2f);
             
             
@@ -41,6 +41,7 @@ namespace SynchronizationTest
         public IEnumerator SpawnSynchronizationTest()
         {
             yield return WaitConnection();
+            yield return WaitSpawnSync();
             
             Vector3 spawnPos = new Vector3(1, 2, 3);
             SpawnMessage hostSpawnMsg = new SpawnMessage(NetManager.ConnectionId(), "TestObj", spawnPos);
@@ -58,7 +59,7 @@ namespace SynchronizationTest
             Assert.AreEqual(spawnPos, spawnMsg.position, "Wrong spawn position");
             
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            Assert.Greater(objs.Length, 0, "Object not spawned");
+            Assert.Greater(objs.Length, 2, "Object not spawned");
             
             bool found = false;
             foreach (var obj in objs)
@@ -80,6 +81,7 @@ namespace SynchronizationTest
         public IEnumerator ClientSpawnRequestTest()
         {
             yield return WaitConnection();
+            yield return WaitSpawnSync();
             
             int initialCount = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
             
@@ -114,38 +116,21 @@ namespace SynchronizationTest
         public IEnumerator SceneObjectSpawnTest()
         {
             yield return WaitConnection();
+            yield return WaitSpawnSync();
             SpawnMessage spawnMsg = (SpawnMessage)received;
-            Assert.GreaterOrEqual(spawnMsg.sceneId, 0, "Scene ID not set");
             
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            ObjectState state = StateManager.GetState(objs[0].NetObject.NetId);
-            Assert.NotNull(state, "Scene object state not registered");
-            Assert.AreEqual(objs[0].name, spawnMsg.prefabName, "Wrong prefab name");
-            Assert.AreEqual(objs[0].transform.position, spawnMsg.position, $"Wrong position {spawnMsg.position}");
-        }
-        [UnityTest]
-        public IEnumerator MultipleSceneObjectSpawnTest()
-        {
-            TestObj obj1 = new GameObject().AddComponent<TestObj>();
-            obj1.Set(2,28,"second");
-            yield return new WaitForSeconds(0.2f);
-            yield return WaitConnection();
-            SpawnMessage spawnMsg = (SpawnMessage)received;
-            Assert.GreaterOrEqual(spawnMsg.sceneId, 0, "Scene ID not set");
-            
-            var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            ObjectState state = StateManager.GetState(objs[0].NetObject.NetId);
-            Assert.NotNull(state, "Scene object state not registered");
-            Assert.AreEqual(objs[0].name, spawnMsg.prefabName, "Wrong prefab name");
-            Assert.AreEqual(objs[0].transform.position, spawnMsg.position, $"Wrong position {spawnMsg.position}");
-            Debug.Log(objs.Length);
-            if (objs[0] == obj1)
+            foreach (var obj in objs)
             {
-                objs[0] = objs[1];
+                Assert.IsNotEmpty(spawnMsg.sceneId, "Scene ID not set");
+                if(obj.NetID != spawnMsg.netObjectId) continue;
+                ObjectState state = StateManager.GetState(obj.NetObject.NetId);
+                Assert.NotNull(state, "Scene object state not registered");
+                Assert.AreEqual(obj.name, spawnMsg.prefabName, "Wrong prefab name");
+                Assert.AreEqual(obj.transform.position, spawnMsg.position, $"Wrong position {spawnMsg.position}");
             }
-            Assert.AreNotEqual(objs[0].GetComponent<SceneObjectId>().sceneId, obj1.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID {obj1.GetComponent<SceneObjectId>().sceneId}");
         }
-
+        
         [UnityTearDown]
         public IEnumerator TearDown()
         {
@@ -167,11 +152,36 @@ namespace SynchronizationTest
         {
             yield return new WaitForSeconds(0.2f);
             client.Connect("localhost");
-            yield return WaitValidate(typeof(SpawnMessage));
-            client.Send(NetSerializer.Serialize(received));
             yield return new WaitForSeconds(0.2f);
+            NetManager.LoadScene(TEST_SCENE_NAME);
+            yield return WaitValidate(typeof(SceneLoadMessage));
+            
+            SceneLoadMessage scnMsg = (SceneLoadMessage)received;
+            Assert.AreEqual(TEST_SCENE_NAME, scnMsg.sceneName, "Wrong scene name");
+            scnMsg.isLoaded = true; scnMsg.requesterId = CLIENT_ID;
+            NetMessage answerMsg = scnMsg;
+            client.Send(NetSerializer.Serialize(answerMsg));
+            yield return new WaitForSeconds(0.5f);
         }
 
+        private IEnumerator WaitSpawnSync()
+        {
+            var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Assert.Greater(objs.Length, 0, "Object not spawned");
+            yield return WaitValidate(typeof(SpawnMessage));
+            SpawnMessage spwMsg = (SpawnMessage)received;
+            yield return WaitValidate(typeof(SpawnMessage));
+            SpawnMessage spwMsg2 = (SpawnMessage)received;
+            
+            foreach (NetBehaviour hostObj in objs)
+            {
+                var hostNetObj = hostObj.NetObject;
+                SpawnMessage spw = hostNetObj.NetId != spwMsg.netObjectId ? spwMsg2 : spwMsg;
+                received = spw;
+                client.Send(NetSerializer.Serialize(received));
+                yield return new WaitForSeconds(0.2f);
+            }
+        }
         private IEnumerator WaitValidate(Type expectedType)
         {
             byte[] data = null;

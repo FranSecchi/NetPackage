@@ -82,6 +82,8 @@ namespace SynchronizationTest
             yield return WaitValidate(typeof(SyncMessage));
             syncMsg = (SyncMessage)received;
             Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message for second component");
+            
+            Assert.AreEqual(comp1.GetComponent<SceneObjectId>().sceneId, comp2.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().sceneId}");
         }
 
         [UnityTest]

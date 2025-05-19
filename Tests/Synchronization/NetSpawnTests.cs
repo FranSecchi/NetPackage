@@ -123,6 +123,28 @@ namespace SynchronizationTest
             Assert.AreEqual(objs[0].name, spawnMsg.prefabName, "Wrong prefab name");
             Assert.AreEqual(objs[0].transform.position, spawnMsg.position, $"Wrong position {spawnMsg.position}");
         }
+        [UnityTest]
+        public IEnumerator MultipleSceneObjectSpawnTest()
+        {
+            TestObj obj1 = new GameObject().AddComponent<TestObj>();
+            obj1.Set(2,28,"second");
+            yield return new WaitForSeconds(0.2f);
+            yield return WaitConnection();
+            SpawnMessage spawnMsg = (SpawnMessage)received;
+            Assert.GreaterOrEqual(spawnMsg.sceneId, 0, "Scene ID not set");
+            
+            var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            ObjectState state = StateManager.GetState(objs[0].NetObject.NetId);
+            Assert.NotNull(state, "Scene object state not registered");
+            Assert.AreEqual(objs[0].name, spawnMsg.prefabName, "Wrong prefab name");
+            Assert.AreEqual(objs[0].transform.position, spawnMsg.position, $"Wrong position {spawnMsg.position}");
+            Debug.Log(objs.Length);
+            if (objs[0] == obj1)
+            {
+                objs[0] = objs[1];
+            }
+            Assert.AreNotEqual(objs[0].GetComponent<SceneObjectId>().sceneId, obj1.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID {obj1.GetComponent<SceneObjectId>().sceneId}");
+        }
 
         [UnityTearDown]
         public IEnumerator TearDown()

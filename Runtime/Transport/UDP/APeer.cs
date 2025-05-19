@@ -82,7 +82,6 @@ namespace NetPackage.Transport.UDP
         
         public void OnNetworkLatencyUpdate(NetPeer peer, int latency)
         {
-            if(UseDebug) Debug.Log($"Latency update for peer {peer.Id}: {latency}ms"); 
             UpdateConnectionInfo(peer.Id, ConnectionState.Connected, latency);
         }
 

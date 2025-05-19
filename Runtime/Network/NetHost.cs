@@ -85,7 +85,7 @@ namespace NetPackage.Network
         {
             if (netMessage.target == null)
             {
-                Debug.Log($"Sending all: {netMessage}");
+                if(NetManager.DebugLog) Debug.Log($"Sending all: {netMessage}");
                 foreach (var client in Clients.Values)
                 {
                     client.Send(netMessage);
@@ -97,7 +97,7 @@ namespace NetPackage.Network
                 {
                     if (Clients.TryGetValue(targetId, out NetConn client))
                     {
-                        Debug.Log($"Sending to {targetId}: {netMessage}");
+                        if(NetManager.DebugLog) Debug.Log($"Sending to {targetId}: {netMessage}");
                         client.Send(netMessage);
                     }
                 }

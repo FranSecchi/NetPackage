@@ -1,5 +1,6 @@
 using NetPackage.Messages;
 using NetPackage.Synchronization;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace NetPackage.Network
@@ -40,6 +41,7 @@ namespace NetPackage.Network
 
         public static void Send(NetMessage netMessage)
         {
+            if(NetManager.DebugLog) Debug.Log($"Sending: {netMessage}");
             Connection?.Send(netMessage);
         }
 

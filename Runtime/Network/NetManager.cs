@@ -25,7 +25,7 @@ namespace NetPackage.Network
         [SerializeField] public string serverName = "Net_Server";
         [SerializeField] public int maxPlayers = 10;
         [SerializeField] public bool useLAN = false;
-        [SerializeField] public bool debugLog = false;
+        [SerializeField] public bool debugLog;
         [SerializeField] public float lanDiscoveryInterval = 0.1f;
         private float _lastLanDiscovery;
         private List<ServerInfo> _discoveredServers = new List<ServerInfo>();

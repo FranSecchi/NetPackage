@@ -19,11 +19,10 @@ namespace NetworkManagerTest
         {
             host = new GameObject();
             host.AddComponent<NetManager>();
-            NetManager.DebugLog = true;
             NetManager.StartHost();
             
             client = new UDPSolution();
-            client.Setup(NetManager.Port, false, useDebug:true);
+            client.Setup(NetManager.Port, false);
             client.Start();
         }
         [UnityTest]

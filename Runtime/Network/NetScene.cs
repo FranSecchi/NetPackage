@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using NetPackage.Messages;
 using NetPackage.Synchronization;
@@ -65,6 +66,7 @@ namespace NetPackage.Network
             
             int id = netObjectId++;
             NetObject netObj = new NetObject(id, netBehaviour);
+            netObj.SceneId = sceneId;
             Register(netObj);
         }
         public void Spawn(SpawnMessage msg)
@@ -90,6 +92,7 @@ namespace NetPackage.Network
             
             netObj.OwnerId = msg.own ? msg.requesterId : NetManager.ConnectionId();
             msg.netObjectId = msg.netObjectId >= 0 ? msg.netObjectId : netObj.NetId;
+            netObj.SceneId = -1;
             Register(netObj);
             ValidateSpawn(msg);
             Debug.Log($"Spawned NetObject with ID {msg.netObjectId}, owned by {netObj.OwnerId}");
@@ -182,6 +185,11 @@ namespace NetPackage.Network
             Instance.netObjects.Clear();
             Instance.sceneObjects.Clear();
             Instance = null;
+        }
+
+        public List<NetObject> GetAllNetObjects()
+        {
+            return new List<NetObject>(netObjects.Values);
         }
     }
 }

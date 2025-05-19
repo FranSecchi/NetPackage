@@ -23,10 +23,9 @@ namespace NetworkManagerTest
         {
             client = new GameObject();
             client.AddComponent<NetManager>();
-            NetManager.DebugLog = true;
 
             host = new UDPSolution();
-            host.Setup(NetManager.Port, true, useDebug:true);
+            host.Setup(NetManager.Port, true);
             host.Start();
             clientIds.Add(-1);
         }

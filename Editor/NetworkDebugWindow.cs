@@ -3,6 +3,7 @@ using UnityEditor;
 using NetPackage.Network;
 using System.Collections.Generic;
 using NetPackage.Transport;
+using NetPackage.Synchronization;
 
 namespace NetPackage.Editor
 {
@@ -13,7 +14,9 @@ namespace NetPackage.Editor
         private float refreshInterval = 1f;
         private double lastRefreshTime;
         private bool showDetailedInfo = false;
+        private bool showNetObjects = false;
         private Dictionary<int, bool> clientFoldouts = new Dictionary<int, bool>();
+        private Dictionary<int, bool> netObjectFoldouts = new Dictionary<int, bool>();
         private bool wasDebugEnabled = false;
 
         [MenuItem("Window/NetPackage/Network Debug")]
@@ -21,8 +24,6 @@ namespace NetPackage.Editor
         {
             GetWindow<NetworkDebugWindow>("Network Debug");
         }
-
-
 
         private void Update()
         {
@@ -181,6 +182,45 @@ namespace NetPackage.Editor
                 }
                 EditorGUI.indentLevel--;
             }
+
+            EditorGUILayout.Space();
+
+            // Network Objects Information
+            EditorGUILayout.LabelField("Network Objects", EditorStyles.boldLabel);
+            EditorGUI.indentLevel++;
+            showNetObjects = EditorGUILayout.Foldout(showNetObjects, "Network Objects List", true);
+            if (showNetObjects)
+            {
+                var netObjects = NetScene.Instance.GetAllNetObjects();
+                if (netObjects != null && netObjects.Count > 0)
+                {
+                    foreach (var netObj in netObjects)
+                    {
+                        if (!netObjectFoldouts.ContainsKey(netObj.NetId))
+                        {
+                            netObjectFoldouts[netObj.NetId] = false;
+                        }
+
+                        netObjectFoldouts[netObj.NetId] = EditorGUILayout.Foldout(netObjectFoldouts[netObj.NetId], 
+                            $"NetObject {netObj.NetId} - {netObj.SceneId}", true);
+                        
+                        if (netObjectFoldouts[netObj.NetId])
+                        {
+                            EditorGUI.indentLevel++;
+                            EditorGUILayout.LabelField("Network ID: " + netObj.NetId.ToString());
+                            EditorGUILayout.LabelField("Scene ID: " + netObj.SceneId.ToString());
+                            EditorGUILayout.LabelField("Owner: " + netObj.OwnerId.ToString());
+                            EditorGUILayout.LabelField("Is Scene Object: "+ (netObj.SceneId > 0));
+                            EditorGUI.indentLevel--;
+                        }
+                    }
+                }
+                else
+                {
+                    EditorGUILayout.LabelField("No network objects found");
+                }
+            }
+            EditorGUI.indentLevel--;
 
             EditorGUILayout.EndScrollView();
             EditorGUILayout.EndVertical();

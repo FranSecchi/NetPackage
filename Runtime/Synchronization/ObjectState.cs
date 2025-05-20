@@ -108,7 +108,8 @@ namespace NetPackage.Synchronization
             foreach (var change in changes)
             {
                 FieldInfo field = _trackedSyncVars[obj].Keys.FirstOrDefault(f => f.Name == change.Key);
-                if (field != null)
+                
+                if (field != null && field.GetValue(obj) != change.Value)
                 {
                     field.SetValue(obj, change.Value);
                 }

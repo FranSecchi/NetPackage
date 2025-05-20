@@ -164,7 +164,7 @@ namespace NetPackage.Network
                     if (netObj == null) Debug.Log("NetObject IS NULL");
                 
                     SpawnMessage msg = new SpawnMessage(
-                        NetManager.ConnectionId(),
+                        netObj.OwnerId,
                         obj.name,
                         obj.transform.position,
                         own: true,

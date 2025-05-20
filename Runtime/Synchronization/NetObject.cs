@@ -39,12 +39,8 @@ namespace NetPackage.Synchronization
             if (!NetManager.allPlayers.Contains(ownerId)) return;
             _ownerId = ownerId;
             
-            if (NetManager.IsHost)
-            {
-                NetMessage msg = new OwnershipMessage(NetId, ownerId);
-                Debug.Log("Sent ownership message");
-                NetManager.Send(msg);
-            }
+            NetMessage msg = new OwnershipMessage(NetId, ownerId);
+            NetManager.Send(msg);
         }
 
 

@@ -61,6 +61,8 @@ namespace NetPackage.Transport.UDP
         {
             if (!Peer.TryGetPeerById(id, out NetPeer peer)) return;
             peer.Send(data, DeliveryMethod.Sequenced);
+            if(_connectionInfo[id]==null)
+                UpdateConnectionInfo(id, ConnectionState.Connected);
             _connectionInfo[id].BytesSent += data.Length;
             if(UseDebug) Debug.Log($"[SERVER] Sent message to client {id}");
         }

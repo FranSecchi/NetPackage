@@ -38,6 +38,8 @@ namespace NetPackage.Transport.UDP
             {
                 if(peer.ConnectionState == LiteNetLib.ConnectionState.Connected)
                 {
+                    if(_connectionInfo[peer.Id]==null)
+                        UpdateConnectionInfo(peer.Id, ConnectionState.Connected);
                     _connectionInfo[peer.Id].BytesSent += data.Length;
                     peer.Send(data, DeliveryMethod.Sequenced);
                 }

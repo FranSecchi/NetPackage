@@ -72,7 +72,10 @@ namespace NetPackage.Editor
             for (int i = 0; i < messageTypeFilters.Length; i++)
             {
                 var type = (DebugQueue.MessageType)i;
-                messageTypeFilters[i] = EditorGUILayout.Toggle(type.ToString(), messageTypeFilters[i], GUILayout.Width(80));
+                EditorGUILayout.BeginHorizontal(GUILayout.Width(100));
+                messageTypeFilters[i] = EditorGUILayout.Toggle(messageTypeFilters[i], GUILayout.Width(20));
+                EditorGUILayout.LabelField(type.ToString(), GUILayout.Width(70));
+                EditorGUILayout.EndHorizontal();
             }
             EditorGUILayout.EndHorizontal();
 

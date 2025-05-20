@@ -5,7 +5,7 @@ namespace NetPackage.Synchronization
 {
     public class NetTransform : NetBehaviour
     {
-        [Sync] private Vector3 _postition;
+        [Sync] private Vector3 _position;
         [Sync] private float _rotationX;
         [Sync] private float _rotationY;
         [Sync] private float _rotationZ;
@@ -14,7 +14,7 @@ namespace NetPackage.Synchronization
 
         protected override void OnNetSpawn()
         {
-            _postition = transform.position;
+            _position = transform.position;
             _rotationX = transform.rotation.x;
             _rotationY = transform.rotation.y;
             _rotationZ = transform.rotation.z;
@@ -24,9 +24,21 @@ namespace NetPackage.Synchronization
 
         private void Update()
         {
-            transform.position = _postition;
-            transform.rotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
-            transform.localScale = _scale;
+            if (!isOwned)
+            {
+                transform.position = _position;
+                transform.rotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
+                transform.localScale = _scale;
+            }
+            else
+            {
+                _position = transform.position;
+                _rotationX = transform.rotation.x;
+                _rotationY = transform.rotation.y;
+                _rotationZ = transform.rotation.z;
+                _rotationW = transform.rotation.w;
+                _scale = transform.localScale;
+            }
         }
     }
 }

@@ -113,6 +113,7 @@ namespace NetPackage.Transport.UDP
         {
             if (!_connectionInfo.ContainsKey(clientId))
             {
+                Debug.Log("New connection info: " + clientId);
                 _connectionInfo[clientId] = new ConnectionInfo
                 {
                     Id = clientId,

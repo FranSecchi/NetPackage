@@ -1,4 +1,5 @@
 using System;
+using NetPackage.Network;
 using UnityEngine;
 
 namespace NetPackage.Synchronization
@@ -26,6 +27,7 @@ namespace NetPackage.Synchronization
         {
             if (!isOwned)
             {
+                DebugQueue.AddMessage($"Transform set: {_position} | {gameObject.name}");
                 transform.position = _position;
                 transform.rotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
                 transform.localScale = _scale;
@@ -38,6 +40,7 @@ namespace NetPackage.Synchronization
                 _rotationZ = transform.rotation.z;
                 _rotationW = transform.rotation.w;
                 _scale = transform.localScale;
+                DebugQueue.AddMessage($"Transform: {_position} | {gameObject.name}");
             }
         }
     }

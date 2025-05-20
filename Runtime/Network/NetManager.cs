@@ -147,6 +147,7 @@ namespace NetPackage.Network
             Transport.Setup(Port, false, useDebug:_manager.debugLog);
             _manager._isHost = false;
             _manager._running = true;
+            NetScene.Init();
             NetClient.Connect(address);
         }
         public static void StopNet()

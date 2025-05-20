@@ -37,7 +37,10 @@ namespace NetPackage.Transport.UDP
             foreach (var peer in peers)
             {
                 if(peer.ConnectionState == LiteNetLib.ConnectionState.Connected)
+                {
+                    _connectionInfo[peer.Id].BytesSent += data.Length;
                     peer.Send(data, DeliveryMethod.Sequenced);
+                }
             }
             if(UseDebug) Debug.Log("[SERVER] Sent message to all clients");
         }

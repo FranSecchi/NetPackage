@@ -15,7 +15,7 @@ namespace NetPackage.Transport.UDP
         protected ServerInfo _serverInfo;
         protected readonly int Port;
         private readonly ConcurrentQueue<byte[]> _packetQueue = new ConcurrentQueue<byte[]>();
-        private Dictionary<int, ConnectionInfo> _connectionInfo;
+        protected Dictionary<int, ConnectionInfo> _connectionInfo;
         protected int _bandwidthLimit;
 
         protected APeer(int port)
@@ -60,6 +60,7 @@ namespace NetPackage.Transport.UDP
         public void SendTo(int id, byte[] data)
         {
             if (!Peer.TryGetPeerById(id, out NetPeer peer)) return;
+            _connectionInfo[peer.Id].BytesSent += data.Length;
             peer.Send(data, DeliveryMethod.Sequenced);
             if(UseDebug) Debug.Log($"[SERVER] Sent message to client {id}");
         }
@@ -77,7 +78,9 @@ namespace NetPackage.Transport.UDP
         public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
         {
             if(UseDebug) Debug.Log("Data received from peer " + peer.Address + "|" + peer.Port + ":" + peer.Id);
-            _packetQueue.Enqueue(reader.GetRemainingBytes());
+            byte[] data = reader.GetRemainingBytes();
+            _packetQueue.Enqueue(data);
+            _connectionInfo[peer.Id].BytesReceived += data.Length;
             TriggerOnDataReceived(peer.Id);
             reader.Recycle();
         }

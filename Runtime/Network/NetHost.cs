@@ -15,6 +15,8 @@ namespace NetPackage.Network
         {
             NetManager.Transport.Start();
             NetManager.allPlayers.Add(-1);
+            NetScene.Init();
+            RPCManager.Init();
             ITransport.OnClientConnected += OnClientConnected;;
             ITransport.OnClientDisconnected += OnClientDisconnected;
             Messager.RegisterHandler<SyncMessage>(OnSyncMessage);

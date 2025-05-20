@@ -11,6 +11,8 @@ namespace NetPackage.Network
         public static void Connect(string address)
         {
             if (Connection != null) return;
+            NetScene.Init();
+            RPCManager.Init();
             Messager.RegisterHandler<ConnMessage>(OnConnected);
             Messager.RegisterHandler<SpawnMessage>(OnSpawned);
             Messager.RegisterHandler<SyncMessage>(OnSync);

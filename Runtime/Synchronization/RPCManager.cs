@@ -12,7 +12,11 @@ namespace NetPackage.Synchronization
     {
         private static Dictionary<int, List<object>> _rpcTargets = new();
         private static Dictionary<int, Dictionary<string, List<MethodInfo>>> _rpcMethods = new();
-        
+
+        public static void Init()
+        {
+            Messager.RegisterHandler<RPCMessage>(CallRPC);
+        }
         public static void Register(int netId, object target)
         {
             if (!_rpcTargets.ContainsKey(netId))
@@ -73,7 +77,7 @@ namespace NetPackage.Synchronization
             }
         }
 
-        public static void CallRPC(RPCMessage message)
+        private static void CallRPC(RPCMessage message)
         {
             CallRPC(message.ObjectId, message.MethodName, message.Parameters);
         }

@@ -56,7 +56,6 @@ namespace NetPackage.Network
             Transport ??= new UDPSolution();
             allPlayers = new List<int>();
             if(NetPrefabs != null) NetScene.RegisterPrefabs(NetPrefabs.prefabs);
-            Messager.RegisterHandler<RPCMessage>(RPCManager.CallRPC);
             DontDestroyOnLoad(this);
         }
 
@@ -115,7 +114,6 @@ namespace NetPackage.Network
             Transport.Setup(Port, true, _serverInfo, _manager.debugLog);
             _manager._isHost = true;
             _manager._running = true;
-            NetScene.Init();
             NetHost.StartHost();
             if (UseLan)
             {
@@ -129,7 +127,6 @@ namespace NetPackage.Network
             Transport.Setup(Port, false, useDebug:_manager.debugLog);
             _manager._isHost = false;
             _manager._running = true;
-            NetScene.Init();
             if (!_manager.useLAN)
                 NetClient.Connect(_manager.address);
             else
@@ -147,7 +144,6 @@ namespace NetPackage.Network
             Transport.Setup(Port, false, useDebug:_manager.debugLog);
             _manager._isHost = false;
             _manager._running = true;
-            NetScene.Init();
             NetClient.Connect(address);
         }
         public static void StopNet()

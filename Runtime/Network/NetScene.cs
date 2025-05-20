@@ -146,9 +146,15 @@ namespace NetPackage.Network
         {
             if (NetManager.IsHost && msg.netObjectId >= 0) return;
             GameObject obj = m_prefabs[msg.prefabName];
+            if(obj == null) DebugQueue.AddMessage($"Spawning null prefab: {msg.prefabName}", DebugQueue.MessageType.Error);
             
             GameObject instance = GameObject.Instantiate(obj, msg.position, Quaternion.identity);
             NetObject netObj = instance.GetComponent<NetBehaviour>().NetObject;
+            if (netObj == null)
+            {
+                DebugQueue.AddMessage($"Spawning null netObject: {msg.prefabName}", DebugQueue.MessageType.Error);
+                return;
+            }
             
             netObj.OwnerId = msg.owner;
             msg.netObjectId = msg.netObjectId >= 0 ? msg.netObjectId : netObj.NetId;

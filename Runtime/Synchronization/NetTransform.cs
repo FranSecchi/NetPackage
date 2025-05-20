@@ -12,6 +12,16 @@ namespace NetPackage.Synchronization
         [Sync] private float _rotationW;
         [Sync] private Vector3 _scale;
 
+        protected override void OnNetSpawn()
+        {
+            _postition = transform.position;
+            _rotationX = transform.rotation.x;
+            _rotationY = transform.rotation.y;
+            _rotationZ = transform.rotation.z;
+            _rotationW = transform.rotation.w;
+            _scale = transform.localScale;
+        }
+
         private void Update()
         {
             _postition = transform.position;

@@ -79,7 +79,13 @@ namespace NetPackage.Synchronization
 
         private static void CallRPC(RPCMessage message)
         {
-            CallRPC(message.ObjectId, message.MethodName, message.Parameters);
+            if(NetManager.IsHost)
+            {
+                if(message.target == null || message.target.Contains(-1)) 
+                    CallRPC(message.ObjectId, message.MethodName, message.Parameters);
+                NetManager.Send(message);
+            }
+            else CallRPC(message.ObjectId, message.MethodName, message.Parameters);
         }
 
         private static void CallRPC(int netId, string methodName, object[] parameters)
@@ -179,7 +185,7 @@ namespace NetPackage.Synchronization
                             targetIds.Remove(NetManager.ConnectionId());
                             break;
                         case Send.All:
-                            CallRPC(netId, methodName, parameters);
+                            // CallRPC(netId, methodName, parameters);
                             break;
                     }
                 }

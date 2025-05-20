@@ -49,7 +49,7 @@ namespace NetPackage.Network
                 Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
                 NetManager.allPlayers.Add(id);
                 UpdatePlayers(id);
-                NetScene.SendScene(id);
+                //NetScene.SendScene(id);
             }
         }
 

@@ -69,7 +69,7 @@ namespace SynchronizationTest
             
             
             RPCMessage rpcMsg = (RPCMessage)received;
-            Assert.AreEqual(100, rpcMsg.Parameters[0], "Client did not receive correct value from server RPC");
+            Assert.AreEqual(100, rpcMsg.Parameters[0], "Client did not receive correct value from server RPC " + rpcMsg);
             Assert.AreEqual("server_test", rpcMsg.Parameters[1], "Client did not receive correct message from server RPC");
         }
 

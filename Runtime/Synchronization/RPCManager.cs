@@ -83,6 +83,9 @@ namespace NetPackage.Synchronization
             {
                 if(message.target == null || message.target.Contains(-1)) 
                     CallRPC(message.ObjectId, message.MethodName, message.Parameters);
+                List<int> targets = new List<int>();
+                if (message.target != null) targets.Remove(message.SenderID); 
+                message.target = targets;
                 NetManager.Send(message);
             }
             else CallRPC(message.ObjectId, message.MethodName, message.Parameters);
@@ -192,6 +195,7 @@ namespace NetPackage.Synchronization
             }
             DebugQueue.AddRPC(methodName, netId, NetManager.ConnectionId());
             var message = new RPCMessage(NetManager.ConnectionId(), netId, methodName, targetIds, parameters);
+            Debug.Log("called: " + message);
             NetManager.Send(message);
         }
     }

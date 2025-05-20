@@ -39,7 +39,7 @@ namespace NetPackage.Transport.UDP
             {
                 if(peer.ConnectionState == LiteNetLib.ConnectionState.Connected)
                 {
-                    if(!_connectionInfo.ContainsKey(0))
+                    if(!_connectionInfo.ContainsKey(peer.Id))
                         UpdateConnectionInfo(peer.Id, ConnectionState.Connected);
                     _connectionInfo[peer.Id].BytesSent += data.Length;
                     peer.Send(data, DeliveryMethod.Sequenced);

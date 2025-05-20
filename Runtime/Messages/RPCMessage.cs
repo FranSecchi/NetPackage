@@ -19,5 +19,10 @@ namespace NetPackage.Messages
             this.MethodName = methodName;
             this.Parameters = parameters;
         }
+
+        public override string ToString()
+        {
+            return $"RPCMessage(SenderID: {SenderID}, ObjectId: {ObjectId}, Method: {MethodName}, Parameters: {string.Join(", ", Parameters ?? new object[0])})";
+        }
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NetPackage.Network;
 using NetPackage.Messages;
 using UnityEngine;
@@ -76,6 +77,9 @@ namespace NetPackage.Synchronization
             {
                 state.SetChange(syncMessage.ObjectID, syncMessage.ComponentId, syncMessage.changedValues);
             }
-        }
+            else DebugQueue.AddMessage(
+                $"Not SetSync: {syncMessage.ObjectID} Objects: {string.Join(", ", snapshot.Select(kv => $"{kv.Key}: {kv.Value}"))}",
+                DebugQueue.MessageType.Error
+            );}
     }
 }

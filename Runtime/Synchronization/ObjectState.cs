@@ -39,7 +39,7 @@ namespace NetPackage.Synchronization
                     break;
                 }
             }
-
+            
             if (hasSyncFields)
             {
                 if (!_trackedSyncVars.ContainsKey(obj))
@@ -48,6 +48,7 @@ namespace NetPackage.Synchronization
                     int id = _nextId++;
                     _objectIds[id] = obj;
                     DebugQueue.AddMessage($"Object with ID {netId}, component {obj.GetType().Name} with ID {id}", DebugQueue.MessageType.State);
+                    DebugQueue.AddMessage($"Object {((NetBehaviour)obj).gameObject.name}", DebugQueue.MessageType.State);
                 }
                 foreach (FieldInfo field in fields)
                 {

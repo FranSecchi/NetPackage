@@ -61,11 +61,8 @@ namespace NetPackage.Network
 
         private static void OnSceneLoadMessage(SceneLoadMessage msg)
         {
-            if (!msg.isLoaded)
-            {
-                SceneManager.sceneLoaded += OnSceneLoaded;
-                NetManager.EnqueueMainThread(()=>SceneManager.LoadScene(msg.sceneName));
-            }
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            NetManager.EnqueueMainThread(()=>SceneManager.LoadScene(msg.sceneName));
         }
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {

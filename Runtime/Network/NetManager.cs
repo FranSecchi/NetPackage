@@ -174,9 +174,9 @@ namespace NetPackage.Network
             else NetClient.Send(netMessage);
         }
         
-        public static void Spawn(GameObject prefab, Vector3 position, Quaternion rotation = default, bool ownsPrefab = false)
+        public static void Spawn(GameObject prefab, Vector3 position, Quaternion rotation = default, int owner = -1)
         {
-            SpawnMessage spm = new SpawnMessage(ConnectionId(), prefab.name, position, ownsPrefab);
+            SpawnMessage spm = new SpawnMessage(ConnectionId(), prefab.name, position, owner);
             spm.requesterId = ConnectionId();
             if (IsHost)
             {

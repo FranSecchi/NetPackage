@@ -86,7 +86,7 @@ namespace SynchronizationTest
             int initialCount = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
             
             Vector3 spawnPos = new Vector3(4, 5, 6);
-            NetMessage clientSpawnMsg = new SpawnMessage(CLIENT_ID, "TestObj", spawnPos, own: true);
+            NetMessage clientSpawnMsg = new SpawnMessage(CLIENT_ID, "TestObj", spawnPos, CLIENT_ID);
             client.Send(NetSerializer.Serialize(clientSpawnMsg));
             yield return new WaitForSeconds(0.5f);
             
@@ -102,11 +102,18 @@ namespace SynchronizationTest
                 {
                     found = true;
                     Assert.NotNull(obj.NetObject, "NetObject not assigned");
+                    Assert.IsFalse(obj.isOwned, "Object not owned");
+                    Assert.IsFalse(obj.NetObject.Owned, "Object not owned");
                     Assert.AreEqual(CLIENT_ID, obj.NetObject.OwnerId, "Wrong owner assigned");
                     
                     ObjectState state = StateManager.GetState(obj.NetObject.NetId);
                     Assert.NotNull(state, "Object state not registered");
-                    break;
+                }
+                else
+                {
+                    Assert.IsTrue(obj.isOwned, "Object not owned");
+                    Assert.IsTrue(obj.NetObject.Owned, "Object not owned");
+                    Assert.AreEqual(NetManager.ConnectionId(), obj.NetObject.OwnerId, "Object not owned");
                 }
             }
             Assert.IsTrue(found, "Spawned object not found at correct position");

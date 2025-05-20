@@ -70,7 +70,7 @@ namespace SynchronizationTest
             yield return WaitSpawnSync(objs);
             
             Vector3 spawnPos = new Vector3(4, 5, 6);
-            NetMessage clientSpawnMsg = new SpawnMessage(CLIENT_ID, "TestObj", spawnPos, own: true);
+            NetMessage clientSpawnMsg = new SpawnMessage(CLIENT_ID, "TestObj", spawnPos, CLIENT_ID);
             client.Send(NetSerializer.Serialize(clientSpawnMsg));
             yield return new WaitForSeconds(0.5f);
             
@@ -87,6 +87,9 @@ namespace SynchronizationTest
                 }
             }
             Assert.NotNull(spawnedObj, "Spawned object not found");
+            Assert.IsFalse(spawnedObj.isOwned, "Object not owned");
+            Assert.IsFalse(spawnedObj.NetObject.Owned, "Object not owned");
+            Assert.AreEqual(CLIENT_ID, spawnedObj.NetObject.OwnerId, "Object not owned");
             
             NetMessage clientDestroyMsg = new DestroyMessage(spawnedObj.NetObject.NetId, CLIENT_ID);
             client.Send(NetSerializer.Serialize(clientDestroyMsg));

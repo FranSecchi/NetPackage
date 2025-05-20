@@ -26,7 +26,8 @@ namespace NetPackage.Network
             var netObj = GetNetObject(msg.netObjectId);
             if (netObj != null)
             {
-                netObj.GiveOwner(msg.newOwnerId);
+                if(NetManager.IsHost) netObj.GiveOwner(msg.newOwnerId);
+                else netObj.OwnerId = msg.newOwnerId;
             }
         }
 
@@ -73,8 +74,8 @@ namespace NetPackage.Network
         {
             if (msg.sceneId != "")
             {
-                if (NetManager.IsHost) NetManager.EnqueueMainThread(() => { ValidateSpawn(msg);});
-                else NetManager.EnqueueMainThread(() => { SpawnSceneObject(msg);});;
+                if (!NetManager.IsHost) NetManager.EnqueueMainThread(() => { SpawnSceneObject(msg);}); // Host spawns a scene object
+                else NetManager.EnqueueMainThread(() => { ValidateSpawn(msg);}); // Host validates scene object spawned
             }
             else
             {
@@ -82,31 +83,13 @@ namespace NetPackage.Network
             }
         }
 
-        private void SpawnImmediate(SpawnMessage msg)
-        {
-            if (NetManager.IsHost && msg.netObjectId >= 0) return;
-            GameObject obj = m_prefabs[msg.prefabName];
-            
-            GameObject instance = GameObject.Instantiate(obj, msg.position, Quaternion.identity);
-            NetObject netObj = instance.GetComponent<NetBehaviour>().NetObject;
-            
-            netObj.OwnerId = msg.own ? msg.requesterId : NetManager.ConnectionId();
-            msg.netObjectId = msg.netObjectId >= 0 ? msg.netObjectId : netObj.NetId;
-            netObj.SceneId = "";
-            Register(netObj);
-            ValidateSpawn(msg);
-            Debug.Log($"Spawned NetObject with ID {msg.netObjectId}, owned by {netObj.OwnerId}");
-            msg.target = null;
-            if(NetManager.IsHost)
-                NetHost.Send(msg);
-        }
-
         private void SpawnSceneObject(SpawnMessage msg)
         {
             if (sceneObjects.TryGetValue(msg.sceneId, out GameObject obj))
             {
+                Debug.Log($"Spawning scene {msg}");
                 NetBehaviour netBehaviour = obj.GetComponent<NetBehaviour>();
-                NetObject netObj = new NetObject(msg.netObjectId, netBehaviour, msg.own ? msg.requesterId : -1);
+                NetObject netObj = new NetObject(msg.netObjectId, netBehaviour, msg.owner);
                 Register(netObj);
                 obj.transform.position = msg.position;
                 NetManager.Send(msg);
@@ -119,6 +102,25 @@ namespace NetPackage.Network
         {
             Debug.Log("Validated spawn: "+msg.netObjectId);
             GetNetObject(msg.netObjectId)?.Enable();
+        }
+
+        private void SpawnImmediate(SpawnMessage msg)
+        {
+            if (NetManager.IsHost && msg.netObjectId >= 0) return;
+            GameObject obj = m_prefabs[msg.prefabName];
+            
+            GameObject instance = GameObject.Instantiate(obj, msg.position, Quaternion.identity);
+            NetObject netObj = instance.GetComponent<NetBehaviour>().NetObject;
+            
+            netObj.OwnerId = msg.owner;
+            msg.netObjectId = msg.netObjectId >= 0 ? msg.netObjectId : netObj.NetId;
+            netObj.SceneId = "";
+            Register(netObj);
+            ValidateSpawn(msg);
+            Debug.Log($"Spawned NetObject with ID {msg.netObjectId}, owned by {netObj.OwnerId}");
+            msg.target = null;
+            if(NetManager.IsHost)
+                NetHost.Send(msg);
         }
 
         public void Destroy(int objectId)
@@ -161,13 +163,13 @@ namespace NetPackage.Network
                 GameObject obj = sceneObjects.Value.gameObject;
                 NetManager.EnqueueMainThread(() => {
                     NetObject netObj = obj.GetComponent<NetBehaviour>().NetObject;
-                    if (netObj == null) Debug.Log("NetObject IS NULL");
+                    if (netObj == null) return;
                 
                     SpawnMessage msg = new SpawnMessage(
-                        netObj.OwnerId,
+                        NetManager.ConnectionId(),
                         obj.name,
                         obj.transform.position,
-                        own: true,
+                        owner: netObj.OwnerId,
                         sceneId: sceneObjects.Key,
                         target: new List<int>{id});
                     msg.netObjectId = netObj.NetId;

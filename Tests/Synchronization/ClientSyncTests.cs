@@ -80,6 +80,13 @@ namespace SynchronizationTest
                 yield return new WaitForSeconds(0.2f);
             }
             
+            foreach (var obj in hostObjects)
+            {
+                Assert.IsFalse(obj.isOwned, "Object not owned");
+                Assert.IsFalse(obj.NetObject.Owned, "Object not owned");
+                Assert.AreEqual(-1, obj.NetObject.OwnerId, "Wrong owner assigned");
+            }
+            
             NetMessage ownerMsg = new OwnershipMessage(hostObjects[0].NetObject.NetId, CLIENT_ID);
             host.Send(NetSerializer.Serialize(ownerMsg));
 
@@ -89,8 +96,10 @@ namespace SynchronizationTest
             {
                 yield return null;
             }
-
-            Assert.AreEqual(CLIENT_ID, hostObjects[0].NetObject.OwnerId, "Ownership not updated correctly");
+            var obj1 = hostObjects[0];
+            Assert.IsFalse(obj1.isOwned, "Ownership not updated correctly");
+            Assert.IsFalse(obj1.NetObject.Owned, "Ownership not updated correctly");
+            Assert.AreEqual(CLIENT_ID, obj1.NetObject.OwnerId, "Ownership not updated correctly");
         }
 
         [TearDown]

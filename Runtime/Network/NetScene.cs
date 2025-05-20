@@ -87,7 +87,9 @@ namespace NetPackage.Network
 
         public static void RegisterPrefabs(List<GameObject> prefabs)
         {
-            Debug.Log($"Registering {prefabs.Count} prefabs in NetScene instance");
+            if (NetManager.DebugLog) 
+                DebugQueue.AddMessage($"Registering {prefabs.Count} prefabs in NetScene instance");
+
             foreach (var prefab in prefabs)
             {
                 // prefab.GetComponent<NetBehaviour>().registered = true;
@@ -123,7 +125,6 @@ namespace NetPackage.Network
         {
             if (sceneObjects.TryGetValue(msg.sceneId, out GameObject obj))
             {
-                Debug.Log($"Spawning scene {msg}");
                 NetBehaviour netBehaviour = obj.GetComponent<NetBehaviour>();
                 NetObject netObj = new NetObject(msg.netObjectId, netBehaviour, msg.owner);
                 Register(netObj);
@@ -131,12 +132,13 @@ namespace NetPackage.Network
                 NetManager.Send(msg);
                 ValidateSpawn(msg);
             }
-            else Debug.LogWarning($"A spawn request of a not found scene object has been received. Scene Id: {msg.sceneId} Requested by {msg.requesterId}");
+            else DebugQueue.AddMessage($"A spawn request of a not found scene object has been received. Scene Id: {msg.sceneId} Requested by {msg.requesterId}", DebugQueue.MessageType.Error);
         }
 
         private static void ValidateSpawn(SpawnMessage msg)
         {
-            Debug.Log("Validated spawn: "+msg.netObjectId);
+            if (NetManager.DebugLog) 
+                DebugQueue.AddMessage("Validated spawn: "+msg.netObjectId);
             GetNetObject(msg.netObjectId)?.Enable();
         }
 
@@ -153,7 +155,8 @@ namespace NetPackage.Network
             netObj.SceneId = "";
             Register(netObj);
             ValidateSpawn(msg);
-            Debug.Log($"Spawned NetObject with ID {msg.netObjectId}, owned by {netObj.OwnerId}");
+            DebugQueue.AddMessage($"Spawned NetObject with ID {msg.netObjectId}, owned by {netObj.OwnerId}", DebugQueue.MessageType.Network);
+
             msg.target = null;
             if(NetManager.IsHost)
                 NetHost.Send(msg);

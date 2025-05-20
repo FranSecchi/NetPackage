@@ -42,7 +42,7 @@ namespace NetPackage.Network
 
         public static void Send(NetMessage netMessage)
         {
-            if(NetManager.DebugLog) Debug.Log($"Sending: {netMessage}");
+            if(NetManager.DebugLog) DebugQueue.AddNetworkMessage(netMessage, false);
             Connection?.Send(netMessage);
         }
         private static void OnConnected(ConnMessage connection)

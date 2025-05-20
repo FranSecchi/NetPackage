@@ -271,7 +271,7 @@ namespace NetPackage.Network
             if (data != null && data.Length != 0)
             {
                 NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
-                Debug.Log("Received: " + msg);
+                if (DebugLog) DebugQueue.AddNetworkMessage(msg);
                 Messager.HandleMessage(msg);
             }
         }
@@ -281,11 +281,9 @@ namespace NetPackage.Network
             var currentServers = Transport.GetDiscoveredServers();
             
             _manager._discoveredServers = new List<ServerInfo>(currentServers);
-            
-            if (_manager.debugLog)
-            {
-                Debug.Log($"Updated server list. Current servers: {string.Join(", ", _manager._discoveredServers)}");
-            }
+            if (DebugLog) 
+                DebugQueue.AddMessage($"Updated server list. Current servers: {string.Join(", ", _manager._discoveredServers)}");
+
         }
     }
 }

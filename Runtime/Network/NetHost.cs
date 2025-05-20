@@ -35,7 +35,7 @@ namespace NetPackage.Network
         {
             if(Clients.TryRemove(id, out _))
             {
-                Debug.Log($"Client {id} disconnected. Clients count: {Clients.Count}");
+                DebugQueue.AddMessage($"Client {id} disconnected. Clients count: {Clients.Count}", DebugQueue.MessageType.Network);
                 NetManager.allPlayers.Remove(id);
                 UpdatePlayers(id);
             }
@@ -46,7 +46,7 @@ namespace NetPackage.Network
         {
             if (Clients.TryAdd(id, new NetConn(id, true)))
             {
-                Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
+                DebugQueue.AddMessage($"Client {id} connected. Clients count: {Clients.Count}", DebugQueue.MessageType.Network);
                 NetManager.allPlayers.Add(id);
                 UpdatePlayers(id);
                 //NetScene.SendScene(id);
@@ -85,9 +85,9 @@ namespace NetPackage.Network
         {
             if (netMessage.target == null)
             {
-                if(NetManager.DebugLog) Debug.Log($"Sending all: {netMessage}");
                 foreach (var client in Clients.Values)
                 {
+                    if (NetManager.DebugLog) DebugQueue.AddNetworkMessage(netMessage, false);
                     client.Send(netMessage);
                 }
             }
@@ -97,7 +97,7 @@ namespace NetPackage.Network
                 {
                     if (Clients.TryGetValue(targetId, out NetConn client))
                     {
-                        if(NetManager.DebugLog) Debug.Log($"Sending to {targetId}: {netMessage}");
+                        if (NetManager.DebugLog) DebugQueue.AddNetworkMessage(netMessage, false);
                         client.Send(netMessage);
                     }
                 }

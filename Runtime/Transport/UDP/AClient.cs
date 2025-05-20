@@ -1,4 +1,5 @@
 using LiteNetLib;
+using NetPackage.Network;
 using UnityEngine;
 
 namespace NetPackage.Transport.UDP
@@ -11,13 +12,13 @@ namespace NetPackage.Transport.UDP
 
         public override void Connect(string address)
         {
-            if(UseDebug) Debug.Log($"Connecting to: {address}:{Port}");
+            DebugQueue.AddMessage($"Connecting to: {address}:{Port}");
             Peer.Connect(address, Port, "Net_Key");
         }
 
         public override void Kick(int id)
         {
-            if(UseDebug) Debug.Log("[CLIENT] Kicked from host");
+            DebugQueue.AddMessage("[CLIENT] Kicked from host", DebugQueue.MessageType.Warning);
             Peer.DisconnectPeer(Peer.FirstPeer);
         }
 
@@ -34,25 +35,25 @@ namespace NetPackage.Transport.UDP
                 UpdateConnectionInfo(0, ConnectionState.Connected);
             _connectionInfo[0].BytesSent += data.Length;
             Peer.FirstPeer.Send(data, DeliveryMethod.Sequenced);
-            if(UseDebug) Debug.Log("[CLIENT] Sent message to host");
+            DebugQueue.AddMessage("[CLIENT] Sent message to host");
         }
 
         public override void OnConnectionRequest(ConnectionRequest request)
         {
-            Debug.LogWarning("[CLIENT] Connection request received. Clients should not receive requests");
+            DebugQueue.AddMessage("[CLIENT] Connection request received. Clients should not receive requests", DebugQueue.MessageType.Warning);
         }
 
 
         public override void OnPeerConnected(NetPeer peer)
         {
-            if(UseDebug) Debug.Log($"[CLIENT] Connected to server: "+ peer.Address + ":" + peer.Port);
+            DebugQueue.AddMessage($"[CLIENT] Connected to server: "+ peer.Address + ":" + peer.Port);
             ITransport.TriggerOnClientConnected(peer.Id);
             UpdateConnectionInfo(peer.Id, ConnectionState.Connected, peer.Ping);
         }
         
         public override void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
-            if(UseDebug) Debug.Log($"Disconnected from server. Reason: {disconnectInfo.Reason}");
+            DebugQueue.AddMessage($"Disconnected from server. Reason: {disconnectInfo.Reason}", DebugQueue.MessageType.Warning);
             UpdateConnectionInfo(peer.Id, ConnectionState.Disconnected, peer.Ping);
         }
     }

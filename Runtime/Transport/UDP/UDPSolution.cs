@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using NetPackage.Network;
 using UnityEngine;
 using static NetPackage.Transport.ITransport;
 
@@ -72,7 +73,7 @@ namespace NetPackage.Transport.UDP
         {
             if(IsHost)
             {
-                if(_useDebug) Debug.Log("[SERVER] Cannot connect to a client as a server.");
+                DebugQueue.AddMessage("[SERVER] Cannot connect to a client as a server.", DebugQueue.MessageType.Warning);
                 return;
             }
 
@@ -88,7 +89,7 @@ namespace NetPackage.Transport.UDP
         {
             if (!IsHost) 
             {
-                if(_useDebug) Debug.Log("[Client] Client cannot kick other clients.");
+                DebugQueue.AddMessage("[Client] Client cannot kick other clients.", DebugQueue.MessageType.Warning);
                 return;
             }
 
@@ -103,7 +104,7 @@ namespace NetPackage.Transport.UDP
         {
             if (!IsHost) 
             {
-                if(_useDebug) Debug.Log("[Client] Client cannot send data to other clients. Use ITransport.Send instead.");
+                DebugQueue.AddMessage("[Client] Client cannot send data to other clients. Use ITransport.Send instead.", DebugQueue.MessageType.Warning);
                 return;
             }
             _aPeer.SendTo(id, data);
@@ -179,18 +180,17 @@ namespace NetPackage.Transport.UDP
                     if(_lanServers.Contains(serverInfo))
                     {
                         _lanServers[_lanServers.IndexOf(serverInfo)] = serverInfo;
-                        if(_useDebug) Debug.Log($"Ping server {serverInfo.ServerName} at {serverInfo.Address} | {serverInfo.Port}");
                     }
                     else
                     {
                         _lanServers.Add(serverInfo);
-                        if(_useDebug) Debug.Log($"Found new server at {serverInfo.Address} | {serverInfo.Port}");
+                        DebugQueue.AddMessage($"Found new server at {serverInfo.Address} | {serverInfo.Port}");
                     }
                     TriggerOnLanServersUpdate(serverInfo);
                 };
                 _lanDiscovery.OnServerLost += serverInfo =>
                 {
-                    if(_useDebug) Debug.Log($"Lost server at {serverInfo.Address} | {serverInfo.Port}");
+                    DebugQueue.AddMessage($"Lost server at {serverInfo.Address} | {serverInfo.Port}");
                     _lanServers.Remove(serverInfo);
                     TriggerOnLanServersUpdate(serverInfo);
                 };

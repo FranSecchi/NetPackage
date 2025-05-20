@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
+using NetPackage.Network;
 using UnityEngine;
 using static NetPackage.Transport.ITransport;
+using NetManager = LiteNetLib.NetManager;
 
 namespace NetPackage.Transport.UDP
 {
@@ -53,7 +55,8 @@ namespace NetPackage.Transport.UDP
 
         public void Disconnect()
         {
-            if(UseDebug) Debug.Log($"All Peers disconnected");
+            DebugQueue.AddMessage($"All Peers disconnected");
+
             Peer.DisconnectAll();
         }
 
@@ -64,7 +67,7 @@ namespace NetPackage.Transport.UDP
             if(!_connectionInfo.ContainsKey(0))
                 UpdateConnectionInfo(id, ConnectionState.Connected);
             _connectionInfo[id].BytesSent += data.Length;
-            if(UseDebug) Debug.Log($"[SERVER] Sent message to client {id}");
+            DebugQueue.AddMessage($"[SERVER] Sent message to client {id}");
         }
 
         public byte[] Receive()
@@ -79,7 +82,7 @@ namespace NetPackage.Transport.UDP
 
         public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
         {
-            if(UseDebug) Debug.Log("Data received from peer " + peer.Address + "|" + peer.Port + ":" + peer.Id);
+            DebugQueue.AddMessage("Data received from peer " + peer.Address + "|" + peer.Port + ":" + peer.Id);
             byte[] data = reader.GetRemainingBytes();
             _packetQueue.Enqueue(data);
             _connectionInfo[peer.Id].BytesReceived += data.Length;
@@ -98,24 +101,23 @@ namespace NetPackage.Transport.UDP
 
         public void OnNetworkError(IPEndPoint endPoint, SocketError socketError)
         {
-            if(UseDebug) Debug.LogError($"Network error: {socketError} from {endPoint}");
-                // Find the client ID associated with this endpoint
-                foreach (NetPeer peer in Peer.ConnectedPeerList)
+            if(UseDebug)             
+                DebugQueue.AddMessage($"Network error: {socketError} from {endPoint}", DebugQueue.MessageType.Error);
+            // Find the client ID associated with this endpoint
+            foreach (NetPeer peer in Peer.ConnectedPeerList)
+            {
+                if (peer.Address.Equals(endPoint.Address))
                 {
-                    if (peer.Address.Equals(endPoint.Address))
-                    {
-                        UpdateConnectionInfo(peer.Id, ConnectionState.Disconnected);
-                        break;
-                    }
+                    UpdateConnectionInfo(peer.Id, ConnectionState.Disconnected);
+                    break;
                 }
-            
+            }
         }
 
         protected void UpdateConnectionInfo(int clientId, ConnectionState state, int ping = 0, float packetLoss = 0)
         {
             if (!_connectionInfo.ContainsKey(clientId))
             {
-                Debug.Log("New connection info: " + clientId);
                 _connectionInfo[clientId] = new ConnectionInfo
                 {
                     Id = clientId,

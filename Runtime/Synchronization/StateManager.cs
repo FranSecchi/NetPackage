@@ -13,7 +13,6 @@ namespace NetPackage.Synchronization
         {
             if (state == null)
             {
-                Debug.LogWarning("State null");
                 return;
             }
             snapshot[netId] = state;

@@ -11,19 +11,32 @@ namespace NetPackage.Editor
     public class NetworkDebugWindow : EditorWindow
     {
         private Vector2 scrollPosition;
+        private Vector2 messageScrollPosition;
         private bool autoRefresh = true;
         private float refreshInterval = 1f;
         private double lastRefreshTime;
         private bool showDetailedInfo = false;
         private bool showNetObjects = false;
+        private bool showMessages = false;
         private Dictionary<int, bool> clientFoldouts = new Dictionary<int, bool>();
         private Dictionary<int, bool> netObjectFoldouts = new Dictionary<int, bool>();
         private bool wasDebugEnabled = false;
+        private bool[] messageTypeFilters;
+        private string messageSearchText = "";
 
         [MenuItem("Window/NetPackage/Network Debug")]
         public static void ShowWindow()
         {
             GetWindow<NetworkDebugWindow>("Network Debug");
+        }
+
+        private void OnEnable()
+        {
+            messageTypeFilters = new bool[System.Enum.GetValues(typeof(DebugQueue.MessageType)).Length];
+            for (int i = 0; i < messageTypeFilters.Length; i++)
+            {
+                messageTypeFilters[i] = true;
+            }
         }
 
         private void Update()
@@ -45,6 +58,69 @@ namespace NetPackage.Editor
                 Repaint();
                 lastRefreshTime = EditorApplication.timeSinceStartup;
             }
+        }
+
+        private void DrawMessageLog()
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Message Log", EditorStyles.boldLabel);
+            EditorGUI.indentLevel++;
+
+            // Message filters
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Filter:", GUILayout.Width(50));
+            for (int i = 0; i < messageTypeFilters.Length; i++)
+            {
+                var type = (DebugQueue.MessageType)i;
+                messageTypeFilters[i] = EditorGUILayout.Toggle(type.ToString(), messageTypeFilters[i], GUILayout.Width(80));
+            }
+            EditorGUILayout.EndHorizontal();
+
+            // Search box
+            messageSearchText = EditorGUILayout.TextField("Search", messageSearchText);
+
+            // Clear button
+            if (GUILayout.Button("Clear Messages"))
+            {
+                DebugQueue.ClearMessages();
+            }
+
+            messageScrollPosition = EditorGUILayout.BeginScrollView(messageScrollPosition, GUILayout.Height(200));
+
+            var messages = DebugQueue.GetMessages();
+            var filteredMessages = messages.Where(m => 
+                messageTypeFilters[(int)m.Type] && 
+                (string.IsNullOrEmpty(messageSearchText) || m.Message.ToLower().Contains(messageSearchText.ToLower()))
+            ).ToList();
+
+            foreach (var message in filteredMessages)
+            {
+                Color originalColor = GUI.color;
+                switch (message.Type)
+                {
+                    case DebugQueue.MessageType.Error:
+                        GUI.color = Color.red;
+                        break;
+                    case DebugQueue.MessageType.Warning:
+                        GUI.color = Color.yellow;
+                        break;
+                    case DebugQueue.MessageType.Network:
+                        GUI.color = Color.cyan;
+                        break;
+                    case DebugQueue.MessageType.RPC:
+                        GUI.color = Color.green;
+                        break;
+                    case DebugQueue.MessageType.State:
+                        GUI.color = Color.magenta;
+                        break;
+                }
+
+                EditorGUILayout.LabelField($"[{message.Timestamp:F2}s] {message.Message}");
+                GUI.color = originalColor;
+            }
+
+            EditorGUILayout.EndScrollView();
+            EditorGUI.indentLevel--;
         }
 
         private void OnGUI()
@@ -222,6 +298,13 @@ namespace NetPackage.Editor
                 }
             }
             EditorGUI.indentLevel--;
+
+            // Add Message Log section
+            showMessages = EditorGUILayout.Foldout(showMessages, "Message Log", true);
+            if (showMessages)
+            {
+                DrawMessageLog();
+            }
 
             EditorGUILayout.EndScrollView();
             EditorGUILayout.EndVertical();

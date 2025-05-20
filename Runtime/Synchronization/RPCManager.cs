@@ -92,13 +92,13 @@ namespace NetPackage.Synchronization
         {
             if (!_rpcTargets.ContainsKey(netId))
             {
-                Debug.LogWarning($"No RPC targets found for netId {netId}");
+                DebugQueue.AddMessage($"No RPC targets found for netId {netId}", DebugQueue.MessageType.Error);
                 return;
             }
 
             if (!_rpcMethods[netId].ContainsKey(methodName))
             {
-                Debug.LogWarning($"No RPC method {methodName} found for netId {netId}");
+                DebugQueue.AddMessage($"No RPC method {methodName} found for netId {netId}", DebugQueue.MessageType.Error);
                 return;
             }
             
@@ -132,8 +132,8 @@ namespace NetPackage.Synchronization
                     }
                 }
                 catch (Exception e)
-                {
-                    Debug.LogError($"Error invoking RPC {methodName}: {e}");
+                {   
+                    DebugQueue.AddMessage($"Error invoking RPC {methodName}: {e}", DebugQueue.MessageType.Error);
                 }
             }
         }
@@ -142,13 +142,13 @@ namespace NetPackage.Synchronization
         {
             if (!_rpcTargets.ContainsKey(netId))
             {
-                Debug.LogWarning($"No RPC targets found for netId {netId}");
+                DebugQueue.AddMessage($"No RPC targets found for netId {netId}", DebugQueue.MessageType.Error);
                 return;
             }
 
             if (!_rpcMethods[netId].ContainsKey(methodName))
             {
-                Debug.LogWarning($"No RPC method {methodName} found for netId {netId}");
+                DebugQueue.AddMessage($"No RPC method {methodName} found for netId {netId}", DebugQueue.MessageType.Error);
                 return;
             }
             List<int> targetIds = null;
@@ -160,12 +160,12 @@ namespace NetPackage.Synchronization
                 {
                     if (rpcAttr.Direction == Direction.ServerToClient && !NetManager.IsHost)
                     {
-                        Debug.LogWarning($"Cannot send RPC {methodName} - it is server-to-client only");
+                        DebugQueue.AddMessage($"Cannot send RPC {methodName} - it is server-to-client only", DebugQueue.MessageType.Error);
                         return;
                     }
                     if (rpcAttr.Direction == Direction.ClientToServer && NetManager.IsHost)
                     {
-                        Debug.LogWarning($"Cannot send RPC {methodName} - it is client-to-server only");
+                        DebugQueue.AddMessage($"Cannot send RPC {methodName} - it is client-to-server only", DebugQueue.MessageType.Error);
                         return;
                     }
                     
@@ -174,8 +174,7 @@ namespace NetPackage.Synchronization
                         case Send.Specific:
                             if (parameters[^1].GetType() != typeof(List<int>))
                             {
-                                Debug.LogWarning(
-                                    $"Cannot send RPC {methodName} - the last parameter should be the target clients as a List<int> and is {parameters[^1].GetType()}");
+                                DebugQueue.AddMessage($"Cannot send RPC {methodName} - the last parameter should be the target clients as a List<int> and is {parameters[^1].GetType()}", DebugQueue.MessageType.Error);
                                 return;
                             }
                             targetIds = (List<int>)parameters[^1];
@@ -191,6 +190,7 @@ namespace NetPackage.Synchronization
                     }
                 }
             }
+            DebugQueue.AddRPC(methodName, netId, NetManager.ConnectionId());
             var message = new RPCMessage(NetManager.ConnectionId(), netId, methodName, targetIds, parameters);
             NetManager.Send(message);
         }

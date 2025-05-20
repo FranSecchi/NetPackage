@@ -21,7 +21,6 @@ namespace NetPackage.Synchronization
                 {
                     sceneId = Guid.NewGuid().ToString();
                     EditorUtility.SetDirty(this);
-                    Debug.Log($"[SceneObjectId] Assigned new ID to {gameObject.name}: {sceneId}");
                 }
             }
         }

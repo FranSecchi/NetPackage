@@ -72,7 +72,7 @@ namespace NetPackage.Synchronization
                 return;
             }
             if(gameObject.activeSelf) gameObject.SetActive(false);
-            NetScene.Instance?.RegisterSceneObject(this);
+            NetScene.RegisterSceneObject(this);
         }
         public void SetNetObject(NetObject obj)
         {

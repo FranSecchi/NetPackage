@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using NetPackage.Messages;
 using NetPackage.Synchronization;
 using NetPackage.Transport;
@@ -49,7 +48,7 @@ namespace NetPackage.Network
                 Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
                 NetManager.allPlayers.Add(id);
                 UpdatePlayers(id);
-                NetScene.Instance?.SendObjects(id);
+                NetScene.SendObjects(id);
             }
         }
 
@@ -116,14 +115,14 @@ namespace NetPackage.Network
         private static void OnSpawnMessage(SpawnMessage msg)
         {
             //Validate
-            NetScene.Instance.Spawn(msg);
+            NetScene.Spawn(msg);
         }
 
         private static void OnSceneLoadMessage(SceneLoadMessage msg)
         {
             if (msg.isLoaded)
             {
-                NetScene.Instance?.SendObjects(msg.requesterId);
+                NetScene.SendObjects(msg.requesterId);
             }
             // else NetManager.LoadScene(msg.sceneName);
         }

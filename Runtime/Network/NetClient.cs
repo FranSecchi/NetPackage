@@ -28,9 +28,9 @@ namespace NetPackage.Network
         {
             if (obj.requesterId == Connection.Id)
             {
-                NetScene.Instance.Reconciliate(obj);
+                NetScene.Reconciliate(obj);
             }
-            else NetScene.Instance.Spawn(obj);
+            else NetScene.Spawn(obj);
         }
 
         public static void Disconnect()

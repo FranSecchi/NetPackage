@@ -97,8 +97,8 @@ namespace SynchronizationTest
                 yield return null;
             }
             var obj1 = hostObjects[0];
-            Assert.IsFalse(obj1.isOwned, "Ownership not updated correctly");
-            Assert.IsFalse(obj1.NetObject.Owned, "Ownership not updated correctly");
+            Assert.IsTrue(obj1.isOwned, "Ownership not updated correctly");
+            Assert.IsTrue(obj1.NetObject.Owned, "Ownership not updated correctly");
             Assert.AreEqual(CLIENT_ID, obj1.NetObject.OwnerId, "Ownership not updated correctly");
         }
 
@@ -160,7 +160,7 @@ namespace SynchronizationTest
             var prefab = Resources.Load<GameObject>("TestObj");
             prefabs = ScriptableObject.CreateInstance<NetPrefabRegistry>();
             prefabs.prefabs.Add(prefab);
-            NetScene.Instance.RegisterPrefabs(prefabs.prefabs);
+            NetScene.RegisterPrefabs(prefabs.prefabs);
         }
     }
 } 

@@ -266,7 +266,7 @@ namespace SynchronizationTest
             var prefab = Resources.Load<GameObject>("TestObj");
             prefabs = ScriptableObject.CreateInstance<NetPrefabRegistry>();
             prefabs.prefabs.Add(prefab);
-            NetScene.Instance.RegisterPrefabs(prefabs.prefabs);
+            NetScene.RegisterPrefabs(prefabs.prefabs);
         }
     }
 } 

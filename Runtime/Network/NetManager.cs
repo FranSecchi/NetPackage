@@ -14,7 +14,6 @@ namespace NetPackage.Network
     {
         public NetPrefabRegistry NetPrefabs;
         private static NetManager _manager;
-        private NetScene m_scene;
         private static ServerInfo _serverInfo;
         public static ITransport Transport;
         public static int Port = 7777;
@@ -56,8 +55,8 @@ namespace NetPackage.Network
             else _manager = this;
             Transport ??= new UDPSolution();
             allPlayers = new List<int>();
-            if (m_scene == null) m_scene = new NetScene();
-            if(NetPrefabs != null) NetScene.Instance.RegisterPrefabs(NetPrefabs.prefabs);
+            NetScene.Init();
+            if(NetPrefabs != null) NetScene.RegisterPrefabs(NetPrefabs.prefabs);
             Messager.RegisterHandler<RPCMessage>(RPCManager.CallRPC);
             DontDestroyOnLoad(this);
         }
@@ -180,7 +179,7 @@ namespace NetPackage.Network
             spm.requesterId = ConnectionId();
             if (IsHost)
             {
-                NetScene.Instance.Spawn(spm);
+                NetScene.Spawn(spm);
             }
             else
             {
@@ -190,13 +189,13 @@ namespace NetPackage.Network
 
         public static void Destroy(int netObjectId)
         {
-            var netObj = NetScene.Instance.GetNetObject(netObjectId);
+            var netObj = NetScene.GetNetObject(netObjectId);
             if (netObj != null && (netObj.Owned || IsHost))
             {
                 DestroyMessage msg = new DestroyMessage(netObjectId, ConnectionId());
                 if (IsHost)
                 {
-                    NetScene.Instance.Destroy(netObjectId);
+                    NetScene.Destroy(netObjectId);
                     NetHost.Send(msg);
                 }
                 else

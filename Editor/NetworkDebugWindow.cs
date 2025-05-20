@@ -192,7 +192,7 @@ namespace NetPackage.Editor
             showNetObjects = EditorGUILayout.Foldout(showNetObjects, "Network Objects List", true);
             if (showNetObjects)
             {
-                var netObjects = NetScene.Instance.GetAllNetObjects();
+                var netObjects = NetScene.GetAllNetObjects();
                 if (netObjects != null && netObjects.Count > 0)
                 {
                     foreach (var netObj in netObjects)

@@ -111,7 +111,7 @@ namespace SynchronizationTest
             
             Vector3 spawnPos = new Vector3(1, 2, 3);
             SpawnMessage hostSpawnMsg = new SpawnMessage(NetManager.ConnectionId(), "TestObj", spawnPos);
-            NetScene.Instance.Spawn(hostSpawnMsg);
+            NetScene.Spawn(hostSpawnMsg);
             
             yield return WaitValidate(typeof(SpawnMessage));
             client.Send(NetSerializer.Serialize(received));
@@ -217,7 +217,7 @@ namespace SynchronizationTest
             var prefab = Resources.Load<GameObject>("TestObj");
             prefabs = ScriptableObject.CreateInstance<NetPrefabRegistry>();
             prefabs.prefabs.Add(prefab);
-            NetScene.Instance.RegisterPrefabs(prefabs.prefabs);
+            NetScene.RegisterPrefabs(prefabs.prefabs);
         }
     }
 } 

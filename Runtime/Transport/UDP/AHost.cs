@@ -6,7 +6,6 @@ namespace NetPackage.Transport.UDP
 {
     public class AHost : APeer
     {
-        private int _connected;
         public AHost(int port) : base(port)
         {
         }
@@ -45,10 +44,10 @@ namespace NetPackage.Transport.UDP
         public override void OnConnectionRequest(ConnectionRequest request)
         {
             if(UseDebug) Debug.Log($"[SERVER] Requested connection from {request.RemoteEndPoint}.");
-            if(_connected < MaxPlayers)
+            if(_serverInfo.CurrentPlayers < MaxPlayers)
             {
                 request.AcceptIfKey("Net_Key");
-                _connected++;
+                _serverInfo.CurrentPlayers++;
             }
             else if(UseDebug) Debug.Log($"[SERVER] Requested connection denied from {request.RemoteEndPoint}. Max players: {MaxPlayers}");
         }
@@ -64,7 +63,7 @@ namespace NetPackage.Transport.UDP
         public override void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
             if(UseDebug) Debug.Log($"Client disconnected. Reason: {disconnectInfo.Reason}");
-            _connected--;
+            _serverInfo.CurrentPlayers--;
             ITransport.TriggerOnClientDisconnected(peer.Id);
             UpdateConnectionInfo(peer.Id, ConnectionState.Disconnected, peer.Ping);
         }

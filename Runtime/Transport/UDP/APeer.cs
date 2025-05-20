@@ -12,6 +12,7 @@ namespace NetPackage.Transport.UDP
     public abstract class APeer : INetEventListener
     {
         protected readonly NetManager Peer;
+        protected ServerInfo _serverInfo;
         protected readonly int Port;
         private readonly ConcurrentQueue<byte[]> _packetQueue = new ConcurrentQueue<byte[]>();
         private Dictionary<int, ConnectionInfo> _connectionInfo;
@@ -24,6 +25,7 @@ namespace NetPackage.Transport.UDP
             Port = port;
         }
 
+        public ServerInfo ServerInfo { get; set; }
         public bool UseDebug { get; set; }
         public Dictionary<int, ConnectionInfo> ConnectionInfo  => _connectionInfo;
         public int MaxPlayers { get; set; }

@@ -19,13 +19,12 @@ namespace NetPackage.Transport.UDP
         private LANDiscovery _lanDiscovery;
         private LANBroadcast _lanBroadcaster;
         private List<ServerInfo> _lanServers;
-        private ServerInfo _serverInfo;
         private int _bandwidthLimit;
 
         public UDPSolution()
         {
             _lanServers = new List<ServerInfo>();
-            _serverInfo = new ServerInfo
+            _aPeer.ServerInfo = new ServerInfo
             {
                 CustomData = new Dictionary<string, string>()
             };
@@ -46,7 +45,7 @@ namespace NetPackage.Transport.UDP
                     MaxPlayers = 10
                 };
             }
-            _serverInfo = serverInfo;
+            _aPeer.ServerInfo = serverInfo;
             IsHost = isServer;
             _useDebug = useDebug;
             _aPeer.MaxPlayers = serverInfo?.MaxPlayers ?? 10;
@@ -136,33 +135,34 @@ namespace NetPackage.Transport.UDP
 
         public void SetServerInfo(ServerInfo serverInfo)
         {
-            if(serverInfo != null)
+            if (serverInfo != null)
             {
+                ServerInfo info = _aPeer.ServerInfo;
                 if (serverInfo.Address == null)
                 {
-                    serverInfo.Address = _serverInfo.Address;
-                    serverInfo.Port = _serverInfo.Port;
+                    serverInfo.Address = info.Address;
+                    serverInfo.Port = info.Port;
                 }
-                _serverInfo = serverInfo;
+                _aPeer.ServerInfo = serverInfo;
                 if (IsHost)
                 {
-                    _lanBroadcaster?.SetServerInfo(_serverInfo);
+                    _lanBroadcaster?.SetServerInfo(_aPeer.ServerInfo);
                 }
             }
         }
         public ServerInfo GetServerInfo()
         {
-            return _serverInfo;
+            return _aPeer.ServerInfo;
         }
         public void UpdateServerInfo(Dictionary<string, string> customData)
         {
             foreach (var kvp in customData)
             {
-                _serverInfo.CustomData[kvp.Key] = kvp.Value;
+                _aPeer.ServerInfo.CustomData[kvp.Key] = kvp.Value;
             }
             if (IsHost)
             {
-                _lanBroadcaster?.SetServerInfo(_serverInfo);
+                _lanBroadcaster?.SetServerInfo(_aPeer.ServerInfo);
             }
         }
         
@@ -208,7 +208,7 @@ namespace NetPackage.Transport.UDP
             {
                 _lanBroadcaster = new LANBroadcast();
                 _lanBroadcaster.StartBroadcast();
-                _lanBroadcaster.SetServerInfo(_serverInfo);
+                _lanBroadcaster.SetServerInfo(_aPeer.ServerInfo);
             }
         }
         public void StopServerDiscovery()

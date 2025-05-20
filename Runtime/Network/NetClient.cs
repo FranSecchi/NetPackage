@@ -16,7 +16,6 @@ namespace NetPackage.Network
             Messager.RegisterHandler<ConnMessage>(OnConnected);
             Messager.RegisterHandler<SpawnMessage>(OnSpawned);
             Messager.RegisterHandler<SyncMessage>(OnSync);
-            Messager.RegisterHandler<SceneLoadMessage>(OnSceneLoadMessage);
             NetManager.Transport.Start();
             NetManager.Transport.Connect(address);
         }
@@ -46,12 +45,6 @@ namespace NetPackage.Network
             if(NetManager.DebugLog) Debug.Log($"Sending: {netMessage}");
             Connection?.Send(netMessage);
         }
-
-        public static void LoadScene(string sceneName)
-        {
-            SceneLoadMessage msg = new SceneLoadMessage(sceneName, Connection.Id);
-            Send(msg);
-        }
         private static void OnConnected(ConnMessage connection)
         {
             Connection = new NetConn(connection.CurrentConnected, false);
@@ -59,21 +52,5 @@ namespace NetPackage.Network
             NetManager.SetServerInfo(connection.ServerInfo);
         }
 
-        private static void OnSceneLoadMessage(SceneLoadMessage msg)
-        {
-            SceneManager.sceneLoaded += OnSceneLoaded;
-            NetManager.EnqueueMainThread(() =>
-            {
-                if(SceneManager.GetActiveScene().name != msg.sceneName)
-                    SceneManager.LoadScene(msg.sceneName);
-            });
-        }
-        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-
-            SceneLoadMessage response = new SceneLoadMessage(scene.name, Connection.Id, true);
-            Send(response);
-        }
     }
 }

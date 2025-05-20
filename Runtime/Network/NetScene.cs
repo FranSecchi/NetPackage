@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NetPackage.Messages;
 using NetPackage.Synchronization;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace NetPackage.Network
 {
@@ -12,13 +13,50 @@ namespace NetPackage.Network
         private static Dictionary<int, NetObject> netObjects = new Dictionary<int, NetObject>();
         private static Dictionary<string, GameObject> sceneObjects = new Dictionary<string, GameObject>();
         private static int netObjectId = 0;
-
+        private static string sceneName = "";
         public static void Init()
         {
             netObjectId = 0;
             Messager.RegisterHandler<OwnershipMessage>(OnOwnership);
             Messager.RegisterHandler<DestroyMessage>(OnDestroyMessage);
+            Messager.RegisterHandler<SceneLoadMessage>(OnSceneLoadMessage);
+            sceneName = SceneManager.GetActiveScene().name;
         }
+
+        public static void LoadScene(string name)
+        {
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            SceneManager.LoadScene(name);
+        }
+        public static void SendScene(int id)
+        {
+            NetMessage msg = new SceneLoadMessage(sceneName, -1, true);
+            NetManager.Send(msg);
+        }
+        private static void OnSceneLoadMessage(SceneLoadMessage msg)
+        {
+            if (NetManager.IsHost)
+            {
+                if (msg.isLoaded)
+                {
+                    SendObjects(msg.requesterId);
+                }
+                // else NetManager.LoadScene(msg.sceneName);
+            }
+            else if(sceneName != msg.sceneName)
+            {
+                SceneManager.sceneLoaded += OnSceneLoaded;
+                NetManager.EnqueueMainThread(() => SceneManager.LoadScene(msg.sceneName));
+            }
+        }
+        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            sceneName = scene.name;
+            SceneLoadMessage msg = new SceneLoadMessage(scene.name, NetManager.ConnectionId(), true);
+            NetManager.Send(msg);
+        }
+
         private static void OnOwnership(OwnershipMessage msg)
         {
             var netObj = GetNetObject(msg.netObjectId);

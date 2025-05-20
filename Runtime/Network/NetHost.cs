@@ -22,7 +22,6 @@ namespace NetPackage.Network
             Messager.RegisterHandler<SyncMessage>(OnSyncMessage);
             Messager.RegisterHandler<SpawnMessage>(OnSpawnMessage);
             Messager.RegisterHandler<ConnMessage>(OnConnMessage);
-            Messager.RegisterHandler<SceneLoadMessage>(OnSceneLoadMessage);
         }
 
         private static void OnConnMessage(ConnMessage obj)
@@ -50,8 +49,7 @@ namespace NetPackage.Network
                 Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
                 NetManager.allPlayers.Add(id);
                 UpdatePlayers(id);
-                NetMessage msg = new SceneLoadMessage(SceneManager.GetActiveScene().name, -1, true);
-                Send(msg);
+                NetScene.SendScene(id);
             }
         }
 
@@ -105,11 +103,6 @@ namespace NetPackage.Network
                 }
             }
         }
-        public static void LoadScene(string sceneName)
-        {
-            SceneManager.sceneLoaded += OnSceneLoaded;
-            SceneManager.LoadScene(sceneName);
-        }
         private static void OnSyncMessage(SyncMessage obj)
         {
             StateManager.SetSync(obj);
@@ -121,21 +114,5 @@ namespace NetPackage.Network
             NetScene.Spawn(msg);
         }
 
-        private static void OnSceneLoadMessage(SceneLoadMessage msg)
-        {
-            if (msg.isLoaded)
-            {
-                NetScene.SendObjects(msg.requesterId);
-            }
-            // else NetManager.LoadScene(msg.sceneName);
-        }
-
-        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-
-            NetMessage msg = new SceneLoadMessage(scene.name, -1);
-            Send(msg);
-        }
     }
 }

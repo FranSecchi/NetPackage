@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using NetPackage.Network;
 using UnityEngine;
 
 namespace NetPackage.Synchronization
@@ -75,7 +76,7 @@ namespace NetPackage.Synchronization
 
                     if (!Equals(oldValue, newValue))
                     {
-                        Debug.Log($"SyncVar {field.Name} changed from {oldValue} to {newValue}");
+                        DebugQueue.AddMessage($"SyncVar {field.Name} changed from {oldValue} to {newValue}");
                         changes[field.Name] = newValue;
                         if (!updates.ContainsKey(obj.Value))
                         {

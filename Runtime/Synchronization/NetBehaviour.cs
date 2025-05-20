@@ -37,7 +37,7 @@ namespace NetPackage.Synchronization
         {
             if (NetObject != null)
             {
-                StateManager.Unregister(NetObject.NetId);
+                StateManager.Unregister(NetObject.NetId, this);
                 RPCManager.Unregister(NetObject.NetId, this);
             }
             OnNetDisable();

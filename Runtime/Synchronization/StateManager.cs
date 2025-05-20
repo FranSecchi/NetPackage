@@ -12,13 +12,13 @@ namespace NetPackage.Synchronization
         private static Dictionary<int, ObjectState> snapshot = new();
         public static void Register(int netId, ObjectState state)
         {
-            DebugQueue.AddMessage("Register " + netId, DebugQueue.MessageType.State);
 
             if (state == null)
             {
                 return;
             }
             snapshot[netId] = state;
+            DebugQueue.AddMessage("Register " + netId + " Count: " + snapshot.Count, DebugQueue.MessageType.State);
         }
         public static void Register(int netId, object obj)
         {
@@ -32,6 +32,15 @@ namespace NetPackage.Synchronization
                 DebugQueue.AddMessage("Not Registered :" + obj.GetType(), DebugQueue.MessageType.State);
 
         }
+        public static void Unregister(int netId, object obj)
+        {
+            if (snapshot.TryGetValue(netId, out ObjectState state))
+            {
+                state.Unregister(obj);
+                
+            }
+        }
+
         public static void Unregister(int netId)
         {
             snapshot.Remove(netId);

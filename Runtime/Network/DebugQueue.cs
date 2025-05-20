@@ -1,5 +1,5 @@
+using System;
 using System.Collections.Generic;
-using UnityEngine;
 using NetPackage.Messages;
 
 namespace NetPackage.Network
@@ -13,13 +13,13 @@ namespace NetPackage.Network
         {
             public string Message { get; }
             public MessageType Type { get; }
-            public float Timestamp { get; }
+            public DateTime Timestamp { get; }
 
             public DebugMessage(string message, MessageType type)
             {
                 Message = message;
                 Type = type;
-                Timestamp = Time.time;
+                Timestamp = DateTime.Now;
             }
         }
 

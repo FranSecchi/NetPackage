@@ -24,7 +24,7 @@ namespace NetPackage.Synchronization
         public NetObject(int netId, NetBehaviour behaviour, int ownerId = -1)
         {
             NetId = netId;
-            _ownerId = ownerId == -1 ? NetManager.ConnectionId() : ownerId;
+            _ownerId = ownerId;
             _behaviours = behaviour.GetComponents<NetBehaviour>().ToList();
 
             foreach (var b in _behaviours)

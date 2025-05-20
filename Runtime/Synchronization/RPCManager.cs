@@ -179,13 +179,14 @@ namespace NetPackage.Synchronization
                                 return;
                             }
                             targetIds = (List<int>)parameters[^1];
+                            if(NetManager.IsHost && targetIds.Contains(-1)) CallRPC(netId, methodName, parameters);
                             break;
                         case Send.Others:
                             targetIds = new List<int>(NetManager.allPlayers);
                             targetIds.Remove(NetManager.ConnectionId());
                             break;
                         case Send.All:
-                            // CallRPC(netId, methodName, parameters);
+                            if(NetManager.IsHost) CallRPC(netId, methodName, parameters);
                             break;
                     }
                 }

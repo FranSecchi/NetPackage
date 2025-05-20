@@ -30,7 +30,7 @@ namespace NetPackage.Transport.UDP
         
         public override void Send(byte[] data)
         {
-            if(_connectionInfo[0]==null)
+            if(!_connectionInfo.ContainsKey(0))
                 UpdateConnectionInfo(0, ConnectionState.Connected);
             _connectionInfo[0].BytesSent += data.Length;
             Peer.FirstPeer.Send(data, DeliveryMethod.Sequenced);

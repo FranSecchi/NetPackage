@@ -25,7 +25,7 @@ namespace NetPackage.Synchronization
             _objectIds = new();
             _nextId = 0;
         }
-        public void Register(object obj)
+        public void Register(int netId, object obj)
         {
             Type type = obj.GetType();
             FieldInfo[] fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -47,7 +47,7 @@ namespace NetPackage.Synchronization
                     _trackedSyncVars[obj] = new Dictionary<FieldInfo, object>();
                     int id = _nextId++;
                     _objectIds[id] = obj;
-                    DebugQueue.AddMessage($"Registered component {obj.GetType().Name} with ID {id}", DebugQueue.MessageType.State);
+                    DebugQueue.AddMessage($"Object with ID {netId}, component {obj.GetType().Name} with ID {id}", DebugQueue.MessageType.State);
                 }
                 foreach (FieldInfo field in fields)
                 {
@@ -61,6 +61,7 @@ namespace NetPackage.Synchronization
         //Dictionary of changed objects this frame with its changes
         public Dictionary<int, Dictionary<string, object>> Update()
         {
+
             Dictionary<int, Dictionary<string, object>> allChanges = new();
             Dictionary<object, Dictionary<FieldInfo, object>> updates = new();
             foreach (var obj in _objectIds)
@@ -106,6 +107,8 @@ namespace NetPackage.Synchronization
         public void SetChange(int netId, int id, Dictionary<string, object> changes)
         {
             if(!_objectIds.ContainsKey(id)) DebugQueue.AddMessage($"No object {netId} with component {id} found", DebugQueue.MessageType.Warning);
+            
+            DebugQueue.AddMessage($"SyncVar Update called: {netId} | {id}", DebugQueue.MessageType.State);
             object obj = _objectIds[id];
             foreach (var change in changes)
             {

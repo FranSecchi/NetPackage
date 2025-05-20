@@ -21,8 +21,7 @@ namespace NetPackage.Synchronization
         {
             if (snapshot.TryGetValue(netId, out ObjectState state))
             {
-                DebugQueue.AddMessage($"Object with ID {netId} registered to state", DebugQueue.MessageType.State);
-                state.Register(obj);
+                state.Register(netId, obj);
             }
         }
         public static void Unregister(int netId)
@@ -65,6 +64,7 @@ namespace NetPackage.Synchronization
 
         public static void SetSync(SyncMessage syncMessage)
         {
+            DebugQueue.AddMessage("Message setsync " + syncMessage, DebugQueue.MessageType.State);
             if (snapshot.TryGetValue(syncMessage.ObjectID, out ObjectState state))
             {
                 state.SetChange(syncMessage.ObjectID, syncMessage.ComponentId, syncMessage.changedValues);

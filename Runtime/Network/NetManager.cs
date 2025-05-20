@@ -25,6 +25,8 @@ namespace NetPackage.Network
         [SerializeField] public int maxPlayers = 10;
         [SerializeField] public bool useLAN = false;
         [SerializeField] public float lanDiscoveryInterval = 0.1f;
+        [SerializeField] public float stateUpdateInterval = 0.05f; // 20 updates per second by default
+        private float _lastStateUpdate;
         private float _lastLanDiscovery;
         private List<ServerInfo> _discoveredServers = new List<ServerInfo>();
         
@@ -50,6 +52,7 @@ namespace NetPackage.Network
             Transport ??= new UDPSolution();
             allPlayers = new List<int>();
             if(NetPrefabs != null) NetScene.RegisterPrefabs(NetPrefabs.prefabs);
+            _running = false;
             DontDestroyOnLoad(this);
         }
 
@@ -69,6 +72,16 @@ namespace NetPackage.Network
                 {
                     var action = mainThreadActions.Dequeue();
                     action?.Invoke();
+                }
+            }
+            
+            if (_running)
+            {
+                float currentTime = Time.time;
+                if (currentTime - _lastStateUpdate >= stateUpdateInterval)
+                {
+                    StateManager.SendUpdateStates();
+                    _lastStateUpdate = currentTime;
                 }
             }
         }
@@ -160,6 +173,7 @@ namespace NetPackage.Network
         }
         public static void Send(NetMessage netMessage)
         {
+            if (!_manager._running) return;
             if(IsHost)
                 NetHost.Send(netMessage);
             else NetClient.Send(netMessage);
@@ -167,6 +181,7 @@ namespace NetPackage.Network
         
         public static void Spawn(GameObject prefab, Vector3 position, Quaternion rotation = default, int owner = -1)
         {
+            if (!_manager._running) return;
             SpawnMessage spm = new SpawnMessage(ConnectionId(), prefab.name, position, owner);
             spm.requesterId = ConnectionId();
             if (IsHost)
@@ -181,6 +196,7 @@ namespace NetPackage.Network
 
         public static void Destroy(int netObjectId)
         {
+            if (!_manager._running) return;
             var netObj = NetScene.GetNetObject(netObjectId);
             if (netObj != null && (netObj.Owned || IsHost))
             {

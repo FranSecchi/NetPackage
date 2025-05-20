@@ -47,7 +47,7 @@ namespace NetPackage.Synchronization
                     _trackedSyncVars[obj] = new Dictionary<FieldInfo, object>();
                     int id = _nextId++;
                     _objectIds[id] = obj;
-                    // Debug.Log($"Registered component {obj.GetType().Name} with ID {id}");
+                    DebugQueue.AddMessage($"Registered component {obj.GetType().Name} with ID {id}");
                 }
                 foreach (FieldInfo field in fields)
                 {

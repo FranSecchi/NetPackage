@@ -21,6 +21,10 @@ namespace NetPackage.Transport.UDP
         protected APeer(int port)
         {
             Peer = new NetManager(this);
+            _serverInfo = new ServerInfo
+            {
+                CustomData = new Dictionary<string, string>()
+            };
             _connectionInfo = new Dictionary<int, ConnectionInfo>();
             Port = port;
         }

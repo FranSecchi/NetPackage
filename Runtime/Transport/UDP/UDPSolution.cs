@@ -24,10 +24,6 @@ namespace NetPackage.Transport.UDP
         public UDPSolution()
         {
             _lanServers = new List<ServerInfo>();
-            _aPeer.ServerInfo = new ServerInfo
-            {
-                CustomData = new Dictionary<string, string>()
-            };
         }
 
         public void Setup(int port, bool isServer, ServerInfo serverInfo = null, bool useDebug = false)

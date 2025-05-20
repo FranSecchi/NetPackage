@@ -39,8 +39,6 @@ namespace NetPackage.Network
                 Debug.Log($"Client {id} disconnected. Clients count: {Clients.Count}");
                 NetManager.allPlayers.Remove(id);
                 UpdatePlayers(id);
-                NetMessage msg = new SceneLoadMessage(SceneManager.GetActiveScene().name, -1, true);
-                Send(msg);
             }
         }
 
@@ -52,7 +50,8 @@ namespace NetPackage.Network
                 Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
                 NetManager.allPlayers.Add(id);
                 UpdatePlayers(id);
-                NetScene.SendObjects(id);
+                NetMessage msg = new SceneLoadMessage(SceneManager.GetActiveScene().name, -1, true);
+                Send(msg);
             }
         }
 

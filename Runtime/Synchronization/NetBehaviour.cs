@@ -65,11 +65,14 @@ namespace NetPackage.Synchronization
         {
             if (registered) return;
             registered = true;
-            if (gameObject.TryGetComponent<NetBehaviour>(out var obj) && obj.NetObject != null)
+            var behaviours = gameObject.GetComponents<NetBehaviour>();
+            foreach (var behaviour in behaviours)
             {
-                NetObject = obj.NetObject;
-                NetObject.Register(this);
-                return;
+                if (behaviour.NetObject != null)
+                {
+                    NetObject = behaviour.NetObject;
+                    NetObject.Register(this);
+                }
             }
             if(gameObject.activeSelf) gameObject.SetActive(false);
             NetScene.RegisterSceneObject(this);

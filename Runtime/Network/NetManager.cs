@@ -24,7 +24,6 @@ namespace NetPackage.Network
         [SerializeField] public string serverName = "Net_Server";
         [SerializeField] public int maxPlayers = 10;
         [SerializeField] public bool useLAN = false;
-        [SerializeField] public bool debugLog;
         [SerializeField] public float lanDiscoveryInterval = 0.1f;
         private float _lastLanDiscovery;
         private List<ServerInfo> _discoveredServers = new List<ServerInfo>();
@@ -37,11 +36,6 @@ namespace NetPackage.Network
         {
             get => _manager.useLAN;
             set => _manager.useLAN = value;
-        }
-        public static bool DebugLog
-        {
-            get => _manager?.debugLog ?? false;
-            set => _manager.debugLog = value;
         }
         public string address = "localhost";
         public static void SetTransport(ITransport transport)
@@ -111,7 +105,7 @@ namespace NetPackage.Network
                     GameMode = "Unknown",
                 };
             }
-            Transport.Setup(Port, true, _serverInfo, _manager.debugLog);
+            Transport.Setup(Port, true, _serverInfo);
             _manager._isHost = true;
             _manager._running = true;
             NetHost.StartHost();
@@ -124,7 +118,7 @@ namespace NetPackage.Network
         {
             StopNet();
             ITransport.OnDataReceived += Receive;
-            Transport.Setup(Port, false, useDebug:_manager.debugLog);
+            Transport.Setup(Port, false);
             _manager._isHost = false;
             _manager._running = true;
             if (!_manager.useLAN)
@@ -141,7 +135,7 @@ namespace NetPackage.Network
         {
             StopNet();
             ITransport.OnDataReceived += Receive;
-            Transport.Setup(Port, false, useDebug:_manager.debugLog);
+            Transport.Setup(Port, false);
             _manager._isHost = false;
             _manager._running = true;
             NetClient.Connect(address);
@@ -271,7 +265,7 @@ namespace NetPackage.Network
             if (data != null && data.Length != 0)
             {
                 NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
-                if (DebugLog) DebugQueue.AddNetworkMessage(msg);
+                DebugQueue.AddNetworkMessage(msg);
                 Messager.HandleMessage(msg);
             }
         }
@@ -281,8 +275,7 @@ namespace NetPackage.Network
             var currentServers = Transport.GetDiscoveredServers();
             
             _manager._discoveredServers = new List<ServerInfo>(currentServers);
-            if (DebugLog) 
-                DebugQueue.AddMessage($"Updated server list. Current servers: {string.Join(", ", _manager._discoveredServers)}");
+            DebugQueue.AddMessage($"Updated server list. Current servers: {string.Join(", ", _manager._discoveredServers)}");
 
         }
     }

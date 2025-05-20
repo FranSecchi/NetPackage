@@ -56,9 +56,9 @@ namespace NetPackage.Network
             AddMessage($"[RPC] {rpcName} on object {objectId} from {senderId}", MessageType.RPC);
         }
 
-        public static void AddStateChange(int objectId, string stateName)
+        public static void AddStateChange(int objectId, int componentId, string stateName, object change)
         {
-            AddMessage($"[State] Object {objectId} state changed to {stateName}", MessageType.State);
+            AddMessage($"[State] Object {objectId}, component {componentId} changed {stateName} to {change}", MessageType.State);
         }
 
         public static List<DebugMessage> GetMessages()

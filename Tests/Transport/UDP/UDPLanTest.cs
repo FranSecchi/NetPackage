@@ -48,7 +48,7 @@ namespace TransportTest
             for (int i = 0; i < 3; i++)
             {
                 ITransport server = new UDPSolution();
-                server.Setup(Port + i, true, useDebug:true);
+                server.Setup(Port + i, true);
                 server.Start();
                 server.SetServerInfo(new ServerInfo(){ServerName = "Name"});
                 server.BroadcastServerInfo();
@@ -57,7 +57,7 @@ namespace TransportTest
             }
             
             _client = new UDPSolution();
-            _client.Setup(Port, false, useDebug:true);
+            _client.Setup(Port, false);
             _client.Start();
             _client.StartServerDiscovery(0.1f);
             yield return new WaitForSeconds(2f);

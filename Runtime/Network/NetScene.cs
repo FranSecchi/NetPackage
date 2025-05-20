@@ -87,8 +87,7 @@ namespace NetPackage.Network
 
         public static void RegisterPrefabs(List<GameObject> prefabs)
         {
-            if (NetManager.DebugLog) 
-                DebugQueue.AddMessage($"Registering {prefabs.Count} prefabs in NetScene instance");
+            DebugQueue.AddMessage($"Registering {prefabs.Count} prefabs in NetScene instance");
 
             foreach (var prefab in prefabs)
             {
@@ -137,8 +136,7 @@ namespace NetPackage.Network
 
         private static void ValidateSpawn(SpawnMessage msg)
         {
-            if (NetManager.DebugLog) 
-                DebugQueue.AddMessage("Validated spawn: "+msg.netObjectId);
+            DebugQueue.AddMessage("Validated spawn: "+msg.netObjectId);
             GetNetObject(msg.netObjectId)?.Enable();
         }
 

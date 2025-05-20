@@ -97,7 +97,7 @@ namespace NetPackage.Transport
         /// <param name="isServer">Whether this instance should act as a server</param>
         /// <param name="serverInfo">The server's information. If client, this is not used</param>
         /// <param name="useDebug">Whether to enable debug logging</param>
-        void Setup(int port, bool isServer, ServerInfo serverInfo = null, bool useDebug = false);
+        void Setup(int port, bool isServer, ServerInfo serverInfo = null);
 
         /// <summary>
         /// Starts the transport service

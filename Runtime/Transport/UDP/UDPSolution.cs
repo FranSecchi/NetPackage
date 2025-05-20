@@ -16,7 +16,6 @@ namespace NetPackage.Transport.UDP
         private bool _isRunning;
         
         public bool IsHost;
-        private bool _useDebug;
         private LANDiscovery _lanDiscovery;
         private LANBroadcast _lanBroadcaster;
         private List<ServerInfo> _lanServers;
@@ -27,7 +26,7 @@ namespace NetPackage.Transport.UDP
             _lanServers = new List<ServerInfo>();
         }
 
-        public void Setup(int port, bool isServer, ServerInfo serverInfo = null, bool useDebug = false)
+        public void Setup(int port, bool isServer, ServerInfo serverInfo = null)
         {
             if(_isRunning) Disconnect();
             _aPeer = isServer ? new AHost(port) : new AClient(port);
@@ -44,9 +43,7 @@ namespace NetPackage.Transport.UDP
             }
             _aPeer.ServerInfo = serverInfo;
             IsHost = isServer;
-            _useDebug = useDebug;
             _aPeer.MaxPlayers = serverInfo?.MaxPlayers ?? 10;
-            _aPeer.UseDebug = useDebug;
         }
 
         public void Start()

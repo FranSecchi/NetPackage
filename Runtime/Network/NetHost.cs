@@ -87,7 +87,7 @@ namespace NetPackage.Network
             {
                 foreach (var client in Clients.Values)
                 {
-                    if (NetManager.DebugLog) DebugQueue.AddNetworkMessage(netMessage, false);
+                    DebugQueue.AddNetworkMessage(netMessage, false);
                     client.Send(netMessage);
                 }
             }
@@ -97,7 +97,7 @@ namespace NetPackage.Network
                 {
                     if (Clients.TryGetValue(targetId, out NetConn client))
                     {
-                        if (NetManager.DebugLog) DebugQueue.AddNetworkMessage(netMessage, false);
+                        DebugQueue.AddNetworkMessage(netMessage, false);
                         client.Send(netMessage);
                     }
                 }

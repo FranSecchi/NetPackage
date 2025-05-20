@@ -69,7 +69,7 @@ namespace NetworkManagerTest
             {
                 ITransport client = new UDPSolution();
                 clients.Add(client);
-                client.Setup(NetManager.Port, false, useDebug:true);
+                client.Setup(NetManager.Port, false);
                 client.Start();
                 client.Connect("localhost");
                 yield return new WaitForSeconds(0.2f);

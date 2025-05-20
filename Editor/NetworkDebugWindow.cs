@@ -20,9 +20,15 @@ namespace NetPackage.Editor
         private bool showMessages = false;
         private Dictionary<int, bool> clientFoldouts = new Dictionary<int, bool>();
         private Dictionary<int, bool> netObjectFoldouts = new Dictionary<int, bool>();
-        private bool wasDebugEnabled = false;
         private bool[] messageTypeFilters;
         private string messageSearchText = "";
+
+        // Last known state fields
+        private static ServerInfo lastKnownServerInfo;
+        private static List<ConnectionInfo> lastKnownClients;
+        private static List<NetObject> lastKnownNetObjects;
+        private static bool lastKnownIsHost;
+        private static ConnectionState? lastKnownConnectionState;
 
         [MenuItem("Window/NetPackage/Network Debug")]
         public static void ShowWindow()
@@ -41,16 +47,7 @@ namespace NetPackage.Editor
 
         private void Update()
         {
-            // Check if debug state changed
-            if (wasDebugEnabled != NetManager.DebugLog)
-            {
-                wasDebugEnabled = NetManager.DebugLog;
-                if (wasDebugEnabled)
-                {
-                    // If debug was enabled, show the window
-                    ShowWindow();
-                }
-            }
+            if (!Application.isPlaying) return;
 
             // Handle auto-refresh
             if (autoRefresh && EditorApplication.timeSinceStartup - lastRefreshTime > refreshInterval)
@@ -58,6 +55,72 @@ namespace NetPackage.Editor
                 Repaint();
                 lastRefreshTime = EditorApplication.timeSinceStartup;
             }
+
+            // Update last known state
+            if (Application.isPlaying)
+            {
+                UpdateLastKnownState();
+            }
+        }
+
+        private void UpdateLastKnownState()
+        {
+            try
+            {
+                var newServerInfo = NetManager.GetServerInfo();
+                if (newServerInfo != null)
+                {
+                    lastKnownServerInfo = newServerInfo;
+                }
+            }
+            catch (System.Exception) { }
+
+            try
+            {
+                lastKnownIsHost = NetManager.IsHost;
+            }
+            catch (System.Exception) { }
+
+            try
+            {
+                var newState = NetManager.GetConnectionState();
+                if (newState.HasValue)
+                {
+                    lastKnownConnectionState = newState;
+                }
+            }
+            catch (System.Exception) { }
+
+            try
+            {
+                if (NetManager.IsHost)
+                {
+                    var newClients = NetManager.GetClients();
+                    if (newClients != null)
+                    {
+                        lastKnownClients = newClients;
+                    }
+                }
+            }
+            catch (System.Exception) { }
+
+            try
+            {
+                var newNetObjects = NetScene.GetAllNetObjects();
+                if (newNetObjects != null && newNetObjects.Count > 0)
+                {
+                    // Create a new list to store the objects
+                    lastKnownNetObjects = new List<NetObject>();
+                    foreach (var netObj in newNetObjects)
+                    {
+                        if (netObj != null)
+                        {
+                            lastKnownNetObjects.Add(netObj);
+                        }
+                    }
+                }
+            }
+            catch (System.Exception) { }
         }
 
         private void DrawMessageLog()
@@ -126,181 +189,215 @@ namespace NetPackage.Editor
             EditorGUI.indentLevel--;
         }
 
+        private void DrawConnectionStatus()
+        {
+            EditorGUILayout.LabelField("Connection Status", EditorStyles.boldLabel);
+            EditorGUI.indentLevel++;
+            try
+            {
+                bool isHost = Application.isPlaying ? NetManager.IsHost : lastKnownIsHost;
+                ConnectionState? state = Application.isPlaying ? NetManager.GetConnectionState() : lastKnownConnectionState;
+                
+                EditorGUILayout.LabelField("Is Host", isHost.ToString());
+                EditorGUILayout.LabelField("Running", state?.ToString() ?? "Not Connected");
+            }
+            catch (System.Exception)
+            {
+                EditorGUILayout.LabelField("Status", "Unable to retrieve connection status");
+            }
+            EditorGUI.indentLevel--;
+        }
+
+        private void DrawServerInformation()
+        {
+            EditorGUILayout.LabelField("Server Information", EditorStyles.boldLabel);
+            EditorGUI.indentLevel++;
+            try
+            {
+                var serverInfo = Application.isPlaying ? NetManager.GetServerInfo() : lastKnownServerInfo;
+                if (serverInfo != null)
+                {
+                    EditorGUILayout.LabelField("Server Name", serverInfo.ServerName);
+                    EditorGUILayout.LabelField("Address", serverInfo.Address);
+                    EditorGUILayout.LabelField("Port", serverInfo.Port.ToString());
+                    EditorGUILayout.LabelField("Current Players", serverInfo.CurrentPlayers.ToString());
+                    EditorGUILayout.LabelField("Max Players", serverInfo.MaxPlayers.ToString());
+                    EditorGUILayout.LabelField("Game Mode", serverInfo.GameMode);
+                }
+                else
+                {
+                    EditorGUILayout.LabelField("No server information available");
+                }
+            }
+            catch (System.Exception)
+            {
+                EditorGUILayout.LabelField("Unable to retrieve server information");
+            }
+            EditorGUI.indentLevel--;
+        }
+
+        private void DrawClientInformation()
+        {
+            try
+            {
+                bool isHost = Application.isPlaying ? NetManager.IsHost : lastKnownIsHost;
+                if (isHost)
+                {
+                    EditorGUILayout.LabelField("Connected Clients", EditorStyles.boldLabel);
+                    EditorGUI.indentLevel++;
+                    var clients = Application.isPlaying ? NetManager.GetClients() : lastKnownClients;
+                    if (clients != null && clients.Count > 0)
+                    {
+                        foreach (var client in clients)
+                        {
+                            EditorGUILayout.LabelField($"Client {client.Id}", $"State: {client.State}");
+                        }
+
+                        EditorGUILayout.Space();
+                        showDetailedInfo = EditorGUILayout.Foldout(showDetailedInfo, "Detailed Connection Information", true);
+                        if (showDetailedInfo)
+                        {
+                            EditorGUI.indentLevel++;
+                            foreach (var client in clients)
+                            {
+                                if (!clientFoldouts.ContainsKey(client.Id))
+                                {
+                                    clientFoldouts[client.Id] = false;
+                                }
+
+                                clientFoldouts[client.Id] = EditorGUILayout.Foldout(clientFoldouts[client.Id], $"Client {client.Id} Details", true);
+                                if (clientFoldouts[client.Id])
+                                {
+                                    EditorGUI.indentLevel++;
+                                    ConnectionInfo connectionInfo = Application.isPlaying ? NetManager.GetConnectionInfo(client.Id) : client;
+                                    if (connectionInfo != null)
+                                    {
+                                        EditorGUILayout.LabelField("Connection ID", connectionInfo.Id.ToString());
+                                        EditorGUILayout.LabelField("State", connectionInfo.State.ToString());
+                                        EditorGUILayout.LabelField("Bytes Received", connectionInfo.BytesReceived.ToString() ?? "Unknown");
+                                        EditorGUILayout.LabelField("Bytes Sent", connectionInfo.BytesSent.ToString());
+                                        EditorGUILayout.LabelField("Last Ping", $"{connectionInfo.Ping}ms");
+                                        EditorGUILayout.LabelField("Packet Loss", connectionInfo.PacketLoss.ToString());
+                                        EditorGUILayout.LabelField("Connected Since", connectionInfo.ConnectedSince.ToString("HH:mm:ss"));
+                                    }
+                                    EditorGUI.indentLevel--;
+                                }
+                            }
+                            EditorGUI.indentLevel--;
+                        }
+                    }
+                    else
+                    {
+                        EditorGUILayout.LabelField("No clients connected");
+                    }
+                    EditorGUI.indentLevel--;
+                }
+                else
+                {
+                    EditorGUILayout.LabelField("Client Information", EditorStyles.boldLabel);
+                    EditorGUI.indentLevel++;
+                    var connectionInfo = Application.isPlaying ? NetManager.GetConnectionInfo() : (lastKnownClients?.FirstOrDefault());
+                    if (connectionInfo != null)
+                    {
+                        EditorGUILayout.LabelField("Connection ID", connectionInfo.Id.ToString());
+                        EditorGUILayout.LabelField("State", connectionInfo.State.ToString());
+                        EditorGUILayout.LabelField("Bytes Received", connectionInfo.BytesReceived.ToString() ?? "Unknown");
+                        EditorGUILayout.LabelField("Bytes Sent", connectionInfo.BytesSent.ToString());
+                        EditorGUILayout.LabelField("Last Ping", $"{connectionInfo.Ping}ms");
+                        EditorGUILayout.LabelField("Packet Loss", connectionInfo.PacketLoss.ToString());
+                        EditorGUILayout.LabelField("Connected Since", connectionInfo.ConnectedSince.ToString("HH:mm:ss"));
+                    }
+                    else
+                    {
+                        EditorGUILayout.LabelField("Not connected");
+                    }
+                    EditorGUI.indentLevel--;
+                }
+            }
+            catch (System.Exception)
+            {
+                EditorGUILayout.LabelField("Unable to retrieve client information");
+            }
+        }
+
+        private void DrawNetworkObjects()
+        {
+            EditorGUILayout.LabelField("Network Objects", EditorStyles.boldLabel);
+            EditorGUI.indentLevel++;
+            try
+            {
+                showNetObjects = EditorGUILayout.Foldout(showNetObjects, "Network Objects List", true);
+                if (showNetObjects)
+                {
+                    var netObjects = Application.isPlaying ? NetScene.GetAllNetObjects() : lastKnownNetObjects;
+                    if (netObjects != null && netObjects.Count > 0)
+                    {
+                        foreach (var netObj in netObjects)
+                        {
+                            if (!netObjectFoldouts.ContainsKey(netObj.NetId))
+                            {
+                                netObjectFoldouts[netObj.NetId] = false;
+                            }
+
+                            netObjectFoldouts[netObj.NetId] = EditorGUILayout.Foldout(netObjectFoldouts[netObj.NetId], 
+                                $"NetObject {netObj.NetId} - {netObj.SceneId}", true);
+                            
+                            if (netObjectFoldouts[netObj.NetId])
+                            {
+                                EditorGUI.indentLevel++;
+                                EditorGUILayout.LabelField("Network ID: " + netObj.NetId.ToString());
+                                EditorGUILayout.LabelField("Scene ID: " + (string.IsNullOrEmpty(netObj.SceneId) ? "(null)" : netObj.SceneId.ToString()));
+                                EditorGUILayout.LabelField("Owner: " + netObj.OwnerId.ToString());
+                                EditorGUILayout.LabelField("Is Scene Object: "+ !string.IsNullOrEmpty(netObj.SceneId));
+                                EditorGUI.indentLevel--;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        EditorGUILayout.LabelField("No network objects found");
+                    }
+                }
+            }
+            catch (System.Exception)
+            {
+                EditorGUILayout.LabelField("Unable to retrieve network objects");
+            }
+            EditorGUI.indentLevel--;
+        }
+
         private void OnGUI()
         {
-            if (!Application.isPlaying)
-            {
-                EditorGUILayout.HelpBox("Network debug information is only available in Play Mode.", MessageType.Info);
-                return;
-            }
-
-            if (!NetManager.DebugLog)
-            {
-                EditorGUILayout.HelpBox("Debug logging is disabled in NetManager. Enable it to see network information.", MessageType.Warning);
-                if (GUILayout.Button("Enable Debug Logging"))
-                {
-                    if(Application.isPlaying) NetManager.DebugLog = true;
-                }
-                return;
-            }
-
             EditorGUILayout.BeginVertical();
 
-            // Auto-refresh toggle
-            autoRefresh = EditorGUILayout.Toggle("Auto Refresh", autoRefresh);
-            if (autoRefresh)
+            if (!Application.isPlaying)
             {
-                refreshInterval = EditorGUILayout.Slider("Refresh Interval", refreshInterval, 0.1f, 5f);
+                EditorGUILayout.HelpBox("Showing last known state from previous play session.", MessageType.Info);
             }
-            else if (GUILayout.Button("Refresh"))
+
+            // Auto-refresh toggle (only in play mode)
+            if (Application.isPlaying)
             {
-                Repaint();
+                autoRefresh = EditorGUILayout.Toggle("Auto Refresh", autoRefresh);
+                if (autoRefresh)
+                {
+                    refreshInterval = EditorGUILayout.Slider("Refresh Interval", refreshInterval, 0.1f, 5f);
+                }
+                else if (GUILayout.Button("Refresh"))
+                {
+                    Repaint();
+                }
             }
 
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
 
-            // Connection Status
-            EditorGUILayout.LabelField("Connection Status", EditorStyles.boldLabel);
-            EditorGUI.indentLevel++;
-            EditorGUILayout.LabelField("Is Host", NetManager.IsHost.ToString());
-            EditorGUILayout.LabelField("Running", NetManager.GetConnectionState()?.ToString() ?? "Not Connected");
-            EditorGUI.indentLevel--;
-
+            DrawConnectionStatus();
             EditorGUILayout.Space();
-
-            // Server Information
-            EditorGUILayout.LabelField("Server Information", EditorStyles.boldLabel);
-            EditorGUI.indentLevel++;
-            var serverInfo = NetManager.GetServerInfo();
-            if (serverInfo != null)
-            {
-                EditorGUILayout.LabelField("Server Name", serverInfo.ServerName);
-                EditorGUILayout.LabelField("Address", serverInfo.Address);
-                EditorGUILayout.LabelField("Port", serverInfo.Port.ToString());
-                EditorGUILayout.LabelField("Current Players", serverInfo.CurrentPlayers.ToString());
-                EditorGUILayout.LabelField("Max Players", serverInfo.MaxPlayers.ToString());
-                EditorGUILayout.LabelField("Game Mode", serverInfo.GameMode);
-            }
-            else
-            {
-                EditorGUILayout.LabelField("No server information available");
-            }
-            EditorGUI.indentLevel--;
-
+            DrawServerInformation();
             EditorGUILayout.Space();
-
-            // Client Information
-            if (NetManager.IsHost)
-            {
-                EditorGUILayout.LabelField("Connected Clients", EditorStyles.boldLabel);
-                EditorGUI.indentLevel++;
-                var clients = NetManager.GetClients();
-                if (clients != null && clients.Count > 0)
-                {
-                    foreach (var client in clients)
-                    {
-                        EditorGUILayout.LabelField($"Client {client.Id}", $"State: {client.State}");
-                    }
-
-                    EditorGUILayout.Space();
-                    showDetailedInfo = EditorGUILayout.Foldout(showDetailedInfo, "Detailed Connection Information", true);
-                    if (showDetailedInfo)
-                    {
-                        EditorGUI.indentLevel++;
-                        foreach (var client in clients)
-                        {
-                            if (!clientFoldouts.ContainsKey(client.Id))
-                            {
-                                clientFoldouts[client.Id] = false;
-                            }
-
-                            clientFoldouts[client.Id] = EditorGUILayout.Foldout(clientFoldouts[client.Id], $"Client {client.Id} Details", true);
-                            if (clientFoldouts[client.Id])
-                            {
-                                EditorGUI.indentLevel++;
-                                ConnectionInfo connectionInfo = NetManager.GetConnectionInfo(client.Id);
-                                if (connectionInfo != null)
-                                {
-                                    EditorGUILayout.LabelField("Connection ID", connectionInfo.Id.ToString());
-                                    EditorGUILayout.LabelField("State", connectionInfo.State.ToString());
-                                    EditorGUILayout.LabelField("Bytes Received", connectionInfo.BytesReceived.ToString() ?? "Unknown");
-                                    EditorGUILayout.LabelField("Bytes Sent", connectionInfo.BytesSent.ToString());
-                                    EditorGUILayout.LabelField("Last Ping", $"{connectionInfo.Ping}ms");
-                                    EditorGUILayout.LabelField("Packet Loss", connectionInfo.PacketLoss.ToString());
-                                    EditorGUILayout.LabelField("Connected Since", connectionInfo.ConnectedSince.ToString("HH:mm:ss"));
-                                }
-                                EditorGUI.indentLevel--;
-                            }
-                        }
-                        EditorGUI.indentLevel--;
-                    }
-                }
-                else
-                {
-                    EditorGUILayout.LabelField("No clients connected");
-                }
-                EditorGUI.indentLevel--;
-            }
-            else
-            {
-                EditorGUILayout.LabelField("Client Information", EditorStyles.boldLabel);
-                EditorGUI.indentLevel++;
-                var connectionInfo = NetManager.GetConnectionInfo();
-                if (connectionInfo != null)
-                {
-                    EditorGUILayout.LabelField("Connection ID", connectionInfo.Id.ToString());
-                    EditorGUILayout.LabelField("State", connectionInfo.State.ToString());
-                    EditorGUILayout.LabelField("Bytes Received", connectionInfo.BytesReceived.ToString() ?? "Unknown");
-                    EditorGUILayout.LabelField("Bytes Sent", connectionInfo.BytesSent.ToString());
-                    EditorGUILayout.LabelField("Last Ping", $"{connectionInfo.Ping}ms");
-                    EditorGUILayout.LabelField("Packet Loss", connectionInfo.PacketLoss.ToString());
-                    EditorGUILayout.LabelField("Connected Since", connectionInfo.ConnectedSince.ToString("HH:mm:ss"));
-                }
-                else
-                {
-                    EditorGUILayout.LabelField("Not connected");
-                }
-                EditorGUI.indentLevel--;
-            }
-
+            DrawClientInformation();
             EditorGUILayout.Space();
-
-            // Network Objects Information
-            EditorGUILayout.LabelField("Network Objects", EditorStyles.boldLabel);
-            EditorGUI.indentLevel++;
-            showNetObjects = EditorGUILayout.Foldout(showNetObjects, "Network Objects List", true);
-            if (showNetObjects)
-            {
-                var netObjects = NetScene.GetAllNetObjects();
-                if (netObjects != null && netObjects.Count > 0)
-                {
-                    foreach (var netObj in netObjects)
-                    {
-                        if (!netObjectFoldouts.ContainsKey(netObj.NetId))
-                        {
-                            netObjectFoldouts[netObj.NetId] = false;
-                        }
-
-                        netObjectFoldouts[netObj.NetId] = EditorGUILayout.Foldout(netObjectFoldouts[netObj.NetId], 
-                            $"NetObject {netObj.NetId} - {netObj.SceneId}", true);
-                        
-                        if (netObjectFoldouts[netObj.NetId])
-                        {
-                            EditorGUI.indentLevel++;
-                            EditorGUILayout.LabelField("Network ID: " + netObj.NetId.ToString());
-                            EditorGUILayout.LabelField("Scene ID: " + (string.IsNullOrEmpty(netObj.SceneId) ? "(null)" : netObj.SceneId.ToString()));
-                            EditorGUILayout.LabelField("Owner: " + netObj.OwnerId.ToString());
-                            EditorGUILayout.LabelField("Is Scene Object: "+ string.IsNullOrEmpty(netObj.SceneId));
-                            EditorGUI.indentLevel--;
-                        }
-                    }
-                }
-                else
-                {
-                    EditorGUILayout.LabelField("No network objects found");
-                }
-            }
-            EditorGUI.indentLevel--;
+            DrawNetworkObjects();
 
             // Add Message Log section
             showMessages = EditorGUILayout.Foldout(showMessages, "Message Log", true);

@@ -8,6 +8,7 @@ using NetPackage.Messages;
 using NetPackage.Synchronization;
 using NetPackage.Transport;
 using NetPackage.Transport.UDP;
+using NUnit.Framework.Internal;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -19,7 +20,7 @@ namespace SynchronizationTest
         private ITransport client;
         private NetMessage received;
         private const int CLIENT_ID = 0;
-        private const string TEST_SCENE_NAME = "TestScene";
+        private string TEST_SCENE_NAME = "TestScene";
 
         [UnitySetUp]
         public IEnumerator SetUp()
@@ -68,7 +69,7 @@ namespace SynchronizationTest
             yield return WaitSpawnSync(objs);
             
             var comp1 = objs[0];
-            var comp2 = objs[0].gameObject.AddComponent<TestObj>();
+            var comp2 = objs[1];
             
             yield return new WaitForSeconds(0.2f);
             
@@ -85,9 +86,103 @@ namespace SynchronizationTest
             syncMsg = (SyncMessage)received;
             Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message for second component");
             
-            Assert.AreEqual(comp1.GetComponent<SceneObjectId>().sceneId, comp2.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().sceneId}");
+            Assert.AreNotEqual(comp1.GetComponent<SceneObjectId>().sceneId, comp2.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().sceneId}");
         }
 
+        [UnityTest]
+        public IEnumerator SendMultipleCompUpdate()
+        {
+            TEST_SCENE_NAME = "TestScene3";
+            yield return WaitConnection();
+            
+            var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Assert.Greater(objs.Length, 3, "Object not spawned: " + objs.Length);
+            yield return WaitSpawnSync(objs);
+            
+            var comp1 = objs[0];
+            var comp2 = objs[1];
+            var comp3 = objs[2];
+            var comp4 = objs[3];
+            if (comp1.gameObject.name != comp2.gameObject.name)
+            {
+                if (comp1.gameObject.name == comp3.gameObject.name)
+                {
+                    (comp2, comp3) = (comp3, comp2);
+                }
+                else if (comp1.gameObject.name == comp4.gameObject.name)
+                {
+                    (comp2, comp4) = (comp4, comp2);
+                }
+            }
+            Assert.AreEqual(comp1.GetComponent<SceneObjectId>().sceneId, comp2.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().sceneId}");
+            Assert.AreEqual(comp3.GetComponent<SceneObjectId>().sceneId, comp4.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp3.GetComponent<SceneObjectId>().sceneId}");
+
+            yield return new WaitForSeconds(0.2f);
+            
+            comp1.Set(100, 1000, "first_changed");
+            comp2.Set(200, 1000, "second_changed");
+            
+            StateManager.SendUpdateStates();
+
+            yield return WaitValidate(typeof(SyncMessage));
+            SyncMessage syncMsg = (SyncMessage)received;
+            Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message");
+
+            yield return WaitValidate(typeof(SyncMessage));
+            syncMsg = (SyncMessage)received;
+            Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message for second component");
+            
+            Assert.AreEqual(comp1.health, comp2.health, $"Wrong health sync message {comp1.health}");
+            Assert.AreNotEqual(comp1.id, comp2.id, $"Wrong id sync message {comp1.id}");
+        }
+        [UnityTest]
+        public IEnumerator ReceiveMultipleComponentUpdate()
+        {
+            TEST_SCENE_NAME = "TestScene3";
+            yield return WaitConnection();
+
+            var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Assert.Greater(objs.Length, 3, "Object not spawned");
+            yield return WaitSpawnSync(objs);
+            var comp1 = objs[0];
+            var comp2 = objs[1];
+            var comp3 = objs[2];
+            var comp4 = objs[3];
+            if (comp1.gameObject.name != comp2.gameObject.name)
+            {
+                if (comp1.gameObject.name == comp3.gameObject.name)
+                {
+                    (comp2, comp3) = (comp3, comp2);
+                }
+                else if (comp1.gameObject.name == comp4.gameObject.name)
+                {
+                    (comp2, comp4) = (comp4, comp2);
+                }
+            }
+            Assert.AreEqual(comp1.GetComponent<SceneObjectId>().sceneId, comp2.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().sceneId}");
+            Assert.AreEqual(comp3.GetComponent<SceneObjectId>().sceneId, comp4.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp3.GetComponent<SceneObjectId>().sceneId}");
+
+            yield return new WaitForSeconds(0.2f);
+            
+            Dictionary<string, object> changes1 = new Dictionary<string, object> { { "health", 150 }, { "msg", "changed1" } };
+            Dictionary<string, object> changes2 = new Dictionary<string, object> { { "health", 250 }, { "msg", "changed2" } };
+            
+            NetMessage syncMsg = new SyncMessage(comp1.NetObject.NetId, 0, changes1);
+            NetMessage syncMsg1 = new SyncMessage(comp2.NetObject.NetId, 1, changes2);
+            client.Send(NetSerializer.Serialize(syncMsg));
+            client.Send(NetSerializer.Serialize(syncMsg1));
+
+            float startTime = Time.time;
+            while ((comp1.health != 150 || comp2.health != 250) && Time.time - startTime < 1f)
+            {
+                yield return null;
+            }
+
+            Assert.AreEqual(150, comp1.health, "First component update not applied");
+            Assert.AreEqual("changed1", comp1.msg, "First component message not updated");
+            Assert.AreEqual(250, comp2.health, "Second component update not applied");
+            Assert.AreEqual("changed2", comp2.msg, "Second component message not updated");
+        }
         [UnityTest]
         public IEnumerator ReceiveSingleUpdate()
         {
@@ -122,13 +217,14 @@ namespace SynchronizationTest
             Assert.Greater(objs.Length, 0, "Object not spawned");
             yield return WaitSpawnSync(objs);
             var comp1 = objs[0];
-            var comp2 = objs[0].gameObject.AddComponent<TestObj>();
+            var comp2 = objs[1];
+            yield return new WaitForSeconds(0.2f);
             
             Dictionary<string, object> changes1 = new Dictionary<string, object> { { "health", 150 }, { "msg", "changed1" } };
             Dictionary<string, object> changes2 = new Dictionary<string, object> { { "health", 250 }, { "msg", "changed2" } };
             
             NetMessage syncMsg = new SyncMessage(comp1.NetObject.NetId, 0, changes1);
-            NetMessage syncMsg1 = new SyncMessage(comp2.NetObject.NetId, 1, changes2);
+            NetMessage syncMsg1 = new SyncMessage(comp2.NetObject.NetId, 0, changes2);
             client.Send(NetSerializer.Serialize(syncMsg));
             client.Send(NetSerializer.Serialize(syncMsg1));
 
@@ -193,6 +289,7 @@ namespace SynchronizationTest
         [TearDown]
         public void TearDown()
         {
+            TEST_SCENE_NAME = "TestScene";
             NetManager.StopNet();
             client.Stop();
             Messager.ClearHandlers();

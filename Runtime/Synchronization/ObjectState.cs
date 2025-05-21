@@ -123,6 +123,12 @@ namespace NetPackage.Synchronization
             }
         }
         
+        public Dictionary<FieldInfo, object> GetField(object obj)
+        {
+            if (_trackedSyncVars.TryGetValue(obj, out var field))
+                return field;
+            return null;
+        }
         public ObjectState Clone()
         {
             ObjectState clone = new ObjectState();

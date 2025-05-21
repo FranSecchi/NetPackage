@@ -34,6 +34,8 @@ namespace NetPackage.Synchronization
         private TransformState _targetState;
         private TransformState _currentState;
         private bool _hasTargetState;
+        private Vector3 _lastPredictedPosition;
+        private Quaternion _lastPredictedRotation;
 
         protected override void OnNetSpawn()
         {
@@ -58,6 +60,38 @@ namespace NetPackage.Synchronization
             };
             _targetState = _currentState;
             _hasTargetState = true;
+
+            if (isOwned)
+            {
+                StartPrediction();
+            }
+        }
+
+        protected override void OnPredictionStart()
+        {
+            _lastPredictedPosition = transform.position;
+            _lastPredictedRotation = transform.rotation;
+        }
+
+        protected override void OnStateReconcile()
+        {
+            // Store current predicted state
+            var predictedPosition = transform.position;
+            var predictedRotation = transform.rotation;
+
+            // Apply authoritative state
+            transform.position = new Vector3(_positionX, _positionY, _positionZ);
+            transform.rotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
+
+            // Smoothly interpolate to predicted state if it's close enough
+            if (Vector3.Distance(predictedPosition, transform.position) < 1f)
+            {
+                transform.position = Vector3.Lerp(transform.position, predictedPosition, 0.5f);
+                transform.rotation = Quaternion.Slerp(transform.rotation, predictedRotation, 0.5f);
+            }
+
+            _lastPredictedPosition = transform.position;
+            _lastPredictedRotation = transform.rotation;
         }
 
         private void Update()
@@ -102,17 +136,27 @@ namespace NetPackage.Synchronization
             }
             else
             {
-                _positionX = transform.position.x;
-                _positionY = transform.position.y;
-                _positionZ = transform.position.z;
-                _rotationX = transform.rotation.x;
-                _rotationY = transform.rotation.y;
-                _rotationZ = transform.rotation.z;
-                _rotationW = transform.rotation.w;
-                _scaleX = transform.localScale.x;
-                _scaleY = transform.localScale.y;
-                _scaleZ = transform.localScale.z;
+                // For owned objects, update sync vars if not reconciling
+                if (!_isPredicting)
+                {
+                    _positionX = transform.position.x;
+                    _positionY = transform.position.y;
+                    _positionZ = transform.position.z;
+                    _rotationX = transform.rotation.x;
+                    _rotationY = transform.rotation.y;
+                    _rotationZ = transform.rotation.z;
+                    _rotationW = transform.rotation.w;
+                    _scaleX = transform.localScale.x;
+                    _scaleY = transform.localScale.y;
+                    _scaleZ = transform.localScale.z;
+                }
             }
+        }
+
+        // Called when receiving authoritative state from server
+        public void OnAuthoritativeStateReceived()
+        {
+            OnStateReceived();
         }
     }
 }

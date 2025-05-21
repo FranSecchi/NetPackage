@@ -12,7 +12,6 @@ namespace NetPackage.Synchronization
         private static Dictionary<int, ObjectState> snapshot = new();
         public static void Register(int netId, ObjectState state)
         {
-
             if (state == null)
             {
                 return;
@@ -52,6 +51,38 @@ namespace NetPackage.Synchronization
         public static ObjectState GetState(int objectId)
         {
             return snapshot.TryGetValue(objectId, out ObjectState state) ? state : null;
+        }
+
+        // New methods for rollback support
+        public static Dictionary<int, ObjectState> GetAllStates()
+        {
+            return new Dictionary<int, ObjectState>(snapshot);
+        }
+        
+        public static void RestoreState(int objectId, ObjectState state)
+        {
+            if (state == null) return;
+            
+            // If the object exists, update its state
+            if (snapshot.TryGetValue(objectId, out ObjectState currentState))
+            {
+                // Update all tracked variables
+                foreach (var kvp in state.TrackedSyncVars)
+                {
+                    var component = kvp.Key;
+                    foreach (var fieldKvp in kvp.Value)
+                    {
+                        var field = fieldKvp.Key;
+                        var value = fieldKvp.Value;
+                        field.SetValue(component, value);
+                    }
+                }
+            }
+            else
+            {
+                // If the object doesn't exist, add it
+                snapshot[objectId] = state;
+            }
         }
 
         public static void SendUpdateStates()

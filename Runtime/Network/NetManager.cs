@@ -35,6 +35,7 @@ namespace NetPackage.Network
         public static int MaxPlayers => _manager.maxPlayers;
         public static int PlayerCount => allPlayers.Count;
         public static bool Running => _manager._running;
+        public static bool Active => _manager != null;
         public static bool UseLan
         {
             get => _manager.useLAN;

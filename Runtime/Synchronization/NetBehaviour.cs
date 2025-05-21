@@ -16,7 +16,7 @@ namespace NetPackage.Synchronization
         
         protected virtual void Awake()
         {
-            if (!NetManager.Running)
+            if (!NetManager.Active || !NetManager.Running)
                 return;
             RegisterAsSceneObject();
         }

@@ -34,6 +34,7 @@ namespace NetPackage.Network
         public static string ServerName => _manager.serverName;
         public static int MaxPlayers => _manager.maxPlayers;
         public static ServerInfo ServerInfo => _serverInfo;
+        public static int PlayerCount => allPlayers.Count;
         public static bool UseLan
         {
             get => _manager.useLAN;

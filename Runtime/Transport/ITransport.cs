@@ -40,7 +40,7 @@ namespace NetPackage.Transport
 
         public override string ToString()
         {
-            return $"{ServerName} ({Address} | {Port})";
+            return $"{ServerName} ({Address}:{Port}) - Players: {CurrentPlayers}/{MaxPlayers} - Mode: {GameMode} - Ping: {Ping}ms";
         }
     }
 

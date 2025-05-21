@@ -14,12 +14,12 @@ namespace NetPackage.Synchronization
         public  bool isOwned => NetObject.Owned;
         protected bool spawned = false;
         
-        void Awake()
+        protected virtual void Awake()
         {
             Init();
             RegisterAsSceneObject();
         }
-        void OnEnable()
+        protected virtual void OnEnable()
         {
             if (NetObject != null)
             {
@@ -34,7 +34,7 @@ namespace NetPackage.Synchronization
             OnNetEnable();
         }
 
-        void OnDisable()
+        protected virtual void OnDisable()
         {
             if (NetObject != null)
             {

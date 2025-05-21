@@ -31,6 +31,7 @@ namespace NetPackage.Synchronization
                 OnNetSpawn();
                 if (!wasActive)
                     enabled = false;
+                else OnNetEnable();
                 spawned = true;
             }
             else OnNetEnable();
@@ -47,12 +48,12 @@ namespace NetPackage.Synchronization
         }
         private void Start()
         {
-            Init();
             // Register in play mode if not already registered
             if (!registered && NetObject == null)
             {
                 RegisterAsSceneObject();
             }
+            Init();
         }
         public void Disconnect()
         {

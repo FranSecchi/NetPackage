@@ -105,7 +105,12 @@ namespace NetPackage.Network
         {
             StopNet();
             ITransport.OnDataReceived += Receive;
-            if(serverInfo != null) _serverInfo = serverInfo;
+            if(serverInfo != null)
+            {
+                if (serverInfo.Address == null)
+                    serverInfo.Address = Transport.GetLocalIPAddress();
+                _serverInfo = serverInfo;
+            }
             else
             {
                 _serverInfo = new ServerInfo()

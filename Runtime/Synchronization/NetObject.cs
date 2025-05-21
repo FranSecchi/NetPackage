@@ -43,10 +43,6 @@ namespace NetPackage.Synchronization
             NetManager.Send(msg);
         }
 
-        public void Disconnect()
-        {
-        }
-
         public void Register(NetBehaviour obj)
         {
             if (!_behaviours.Contains(obj))
@@ -58,19 +54,12 @@ namespace NetPackage.Synchronization
 
         public void Destroy()
         {
-            foreach (var behaviour in _behaviours)
-            {
-                behaviour.OnNetDisable();
-            }
             GameObject.Destroy(_behaviours[0].gameObject);
         }
 
         public void Enable()
         {
-            foreach (var behaviour in _behaviours)
-            {
-                behaviour.OnNetEnable();
-            }
+            if(!_behaviours[0].gameObject.activeSelf) _behaviours[0].gameObject.SetActive(true);
         }
     }
 }

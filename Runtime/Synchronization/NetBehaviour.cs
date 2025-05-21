@@ -19,8 +19,7 @@ namespace NetPackage.Synchronization
         {
             RegisterAsSceneObject();
         }
-
-        public virtual void OnNetEnable()
+        protected virtual void OnEnable()
         {
             if (NetObject != null)
             {
@@ -29,37 +28,31 @@ namespace NetPackage.Synchronization
             }
             if (!spawned)
             {
-                spawned = true;
                 OnNetSpawn();
-                gameObject.SetActive(wasActive);
+                if (!wasActive)
+                    enabled = false;
+                spawned = true;
             }
-            else 
-                gameObject.SetActive(true);
+            else OnNetEnable();
         }
-        public virtual void OnNetDisable()
+
+        protected virtual void OnDisable()
         {
             if (NetObject != null)
             {
                 StateManager.Unregister(NetObject.NetId, this);
                 RPCManager.Unregister(NetObject.NetId, this);
             }
-            enabled = false;
-            wasActive = false;
+            OnNetDisable();
         }
         private void Start()
         {
+            Init();
             // Register in play mode if not already registered
             if (!registered && NetObject == null)
             {
                 RegisterAsSceneObject();
             }
-            OnNetStart();
-        }
-
-        private void OnDestroy()
-        {
-            OnNetDisable();
-            OnNetDestroy();
         }
         public void Disconnect()
         {
@@ -67,9 +60,10 @@ namespace NetPackage.Synchronization
             OnDisconnect();
         }
 
+        protected virtual void Init(){}
+        protected virtual void OnNetEnable(){ }
+        protected virtual void OnNetDisable(){ }
         protected virtual void OnNetSpawn(){ }
-        protected virtual void OnNetStart(){}
-        protected virtual void OnNetDestroy(){}
         protected virtual void OnDisconnect(){}
 
         protected void CallRPC(string methodName, params object[] parameters)
@@ -93,7 +87,7 @@ namespace NetPackage.Synchronization
                 }
             }
             wasActive = enabled;
-            if(wasActive) enabled = false;
+            if(wasActive) gameObject.SetActive(false);
             NetScene.RegisterSceneObject(this);
         }
         public void SetNetObject(NetObject obj)

@@ -47,7 +47,7 @@ namespace NetPackage.Network
         }
         private static void OnConnected(ConnMessage connection)
         {
-            Connection = new NetConn(connection.CurrentConnected, false);
+            if(Connection == null) Connection = new NetConn(connection.CurrentConnected, false);
             NetManager.allPlayers = connection.AllConnected;
             NetManager.SetServerInfo(connection.ServerInfo);
         }

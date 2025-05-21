@@ -56,7 +56,11 @@ namespace NetPackage.Network
         public static void UpdatePlayers(int id)
         {
             if (Clients.Count == 0) return;
-            NetMessage msg = new ConnMessage(id, NetManager.allPlayers, NetManager.GetServerInfo());
+            
+            ServerInfo info = NetManager.GetServerInfo();
+            info.CurrentPlayers = NetManager.PlayerCount;
+            NetManager.Transport.SetServerInfo(info);
+            NetMessage msg = new ConnMessage(id, NetManager.allPlayers, info);
             Send(msg);
         }
 

@@ -68,14 +68,14 @@ namespace NetPackage.Synchronization
 
         private static void Send(int netObjectKey, Dictionary<int, Dictionary<string, object>> changes)
         {
-            // int id = NetManager.ConnectionId();
+            int id = NetManager.ConnectionId();
             foreach (var change in changes)
             {
-                // if(id == -1 || NetScene.GetNetObject(change.Key).OwnerId == id)
-                // {
+                if(id == -1 || NetScene.GetNetObject(change.Key).OwnerId == id)
+                {
                     SyncMessage msg = new SyncMessage(netObjectKey, change.Key, change.Value);
                     NetManager.Send(msg);
-                // }
+                }
             }
         }
 

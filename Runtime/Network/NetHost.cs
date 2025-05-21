@@ -110,6 +110,7 @@ namespace NetPackage.Network
         private static void OnSyncMessage(SyncMessage obj)
         {
             StateManager.SetSync(obj);
+            Send(obj);
         }
         
         private static void OnSpawnMessage(SpawnMessage msg)

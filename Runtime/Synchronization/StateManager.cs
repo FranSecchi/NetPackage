@@ -71,9 +71,9 @@ namespace NetPackage.Synchronization
             int id = NetManager.ConnectionId();
             foreach (var change in changes)
             {
-                if(id == -1 || NetScene.GetNetObject(change.Key).OwnerId == id)
+                if(NetScene.GetNetObject(change.Key).OwnerId == id)
                 {
-                    SyncMessage msg = new SyncMessage(netObjectKey, change.Key, change.Value);
+                    SyncMessage msg = new SyncMessage(id, netObjectKey, change.Key, change.Value);
                     NetManager.Send(msg);
                 }
             }
@@ -82,9 +82,13 @@ namespace NetPackage.Synchronization
         public static void SetSync(SyncMessage syncMessage)
         {
             DebugQueue.AddMessage("Message setsync " + syncMessage, DebugQueue.MessageType.State);
-            if (snapshot.TryGetValue(syncMessage.ObjectID, out ObjectState state))
+            if (syncMessage.SenderId == NetManager.ConnectionId())
             {
-                state.SetChange(syncMessage.ObjectID, syncMessage.ComponentId, syncMessage.changedValues);
+                //Reconcile
+            }
+            else if (snapshot.TryGetValue(syncMessage.ObjectID, out ObjectState state))
+            {
+                    state.SetChange(syncMessage.ObjectID, syncMessage.ComponentId, syncMessage.changedValues);
             }
             else DebugQueue.AddMessage(
                 $"Not SetSync: {syncMessage.ObjectID} Objects: {string.Join(", ", snapshot.Select(kv => $"{kv.Key}: {kv.Value}"))}",

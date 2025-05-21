@@ -107,20 +107,22 @@ namespace NetPackage.Synchronization
 
         public void SetChange(int netId, int id, Dictionary<string, object> changes)
         {
-            if(!_objectIds.ContainsKey(id)) DebugQueue.AddMessage($"No object {netId} with component {id} found", DebugQueue.MessageType.Warning);
-            
-            DebugQueue.AddMessage($"SyncVar Update called: {netId} | {id}", DebugQueue.MessageType.State);
-            object obj = _objectIds[id];
-            foreach (var change in changes)
+            if (_objectIds.TryGetValue(id, out object obj))
             {
-                FieldInfo field = _trackedSyncVars[obj].Keys.FirstOrDefault(f => f.Name == change.Key);
-                
-                if (field != null && field.GetValue(obj) != change.Value)
+                DebugQueue.AddMessage($"SyncVar Update called: {netId} | {id}", DebugQueue.MessageType.State);
+                foreach (var change in changes)
                 {
-                    DebugQueue.AddStateChange(netId, id, change.Key, change.Value);
-                    field.SetValue(obj, change.Value);
+                    FieldInfo field = _trackedSyncVars[obj].Keys.FirstOrDefault(f => f.Name == change.Key);
+                
+                    if (field != null && field.GetValue(obj) != change.Value)
+                    {
+                        DebugQueue.AddStateChange(netId, id, change.Key, change.Value);
+                        field.SetValue(obj, change.Value);
+                    }
                 }
             }
+            else
+                DebugQueue.AddMessage($"No object {netId} with component {id} found", DebugQueue.MessageType.Warning);
         }
         
         public ObjectState Clone()
@@ -145,6 +147,12 @@ namespace NetPackage.Synchronization
 
         public void Unregister(object o)
         {
+            if (o == null)
+            {
+                DebugQueue.AddMessage("Attempted to unregister a null object", DebugQueue.MessageType.Warning);
+                return;
+            }
+            DebugQueue.AddMessage($"Unregister {o.GetType().Name}", DebugQueue.MessageType.State);
             _trackedSyncVars.Remove(o);
 
             int? keyToRemove = null;

@@ -14,12 +14,12 @@ namespace NetPackage.Synchronization
         public  bool isOwned => NetObject.Owned;
         protected bool spawned = false;
         
-        private void Awake()
+        void Awake()
         {
             Init();
             RegisterAsSceneObject();
         }
-        private void OnEnable()
+        void OnEnable()
         {
             if (NetObject != null)
             {
@@ -34,7 +34,7 @@ namespace NetPackage.Synchronization
             OnNetEnable();
         }
 
-        public void OnDisable()
+        void OnDisable()
         {
             if (NetObject != null)
             {
@@ -42,14 +42,6 @@ namespace NetPackage.Synchronization
                 RPCManager.Unregister(NetObject.NetId, this);
             }
             OnNetDisable();
-        }
-        private void Start()
-        {
-            // Register in play mode if not already registered
-            if (!registered && NetObject == null)
-            {
-                RegisterAsSceneObject();
-            }
         }
 
         public void Disconnect()

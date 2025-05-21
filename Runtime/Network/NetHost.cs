@@ -38,6 +38,7 @@ namespace NetPackage.Network
                 DebugQueue.AddMessage($"Client {id} disconnected. Clients count: {Clients.Count}", DebugQueue.MessageType.Network);
                 NetManager.allPlayers.Remove(id);
                 UpdatePlayers(id);
+                NetScene.DisconnectClient(id);
             }
         }
 

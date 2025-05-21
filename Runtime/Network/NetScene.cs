@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using NetPackage.Messages;
@@ -233,6 +234,22 @@ namespace NetPackage.Network
         public static List<NetObject> GetAllNetObjects()
         {
             return new List<NetObject>(netObjects.Values);
+        }
+
+        public static void DisconnectClient(int id)
+        {
+            foreach (var netObject in netObjects)
+            {
+                NetObject netObj = netObject.Value;
+                if (id == netObj.OwnerId)
+                {
+                    netObj.GiveOwner(-1);
+                    foreach (var netBehaviour in netObj._behaviours)
+                    {
+                        netBehaviour.Disconnect();
+                    }
+                }
+            }
         }
     }
 }

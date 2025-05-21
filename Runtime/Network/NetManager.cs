@@ -160,6 +160,7 @@ namespace NetPackage.Network
             if (IsHost) NetHost.Stop();
             else NetClient.Disconnect();
             allPlayers.Clear();
+            NetScene.CleanUp();
             Messager.ClearHandlers();
             ITransport.OnDataReceived -= Receive;
             

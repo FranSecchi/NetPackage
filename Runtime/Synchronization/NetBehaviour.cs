@@ -50,9 +50,16 @@ namespace NetPackage.Synchronization
                 RegisterAsSceneObject();
             }
         }
+
+        public void Disconnect()
+        {
+            if(!NetManager.IsHost)return;
+            OnDisconnect();
+        }
         protected virtual void OnNetEnable(){ }
         protected virtual void OnNetDisable(){ }
         protected virtual void OnNetSpawn(){ }
+        public virtual void OnDisconnect(){}
 
         protected void CallRPC(string methodName, params object[] parameters)
         {

@@ -43,6 +43,9 @@ namespace NetPackage.Synchronization
             NetManager.Send(msg);
         }
 
+        public void Disconnect()
+        {
+        }
 
         public void Register(NetBehaviour obj)
         {

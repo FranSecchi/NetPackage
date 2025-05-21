@@ -167,8 +167,8 @@ namespace SynchronizationTest
             Dictionary<string, object> changes1 = new Dictionary<string, object> { { "health", 150 }, { "msg", "changed1" } };
             Dictionary<string, object> changes2 = new Dictionary<string, object> { { "health", 250 }, { "msg", "changed2" } };
             
-            NetMessage syncMsg = new SyncMessage(comp1.NetObject.NetId, 0, changes1);
-            NetMessage syncMsg1 = new SyncMessage(comp2.NetObject.NetId, 1, changes2);
+            NetMessage syncMsg = new SyncMessage(CLIENT_ID, comp1.NetObject.NetId, 0, changes1);
+            NetMessage syncMsg1 = new SyncMessage(CLIENT_ID, comp2.NetObject.NetId, 1, changes2);
             client.Send(NetSerializer.Serialize(syncMsg));
             client.Send(NetSerializer.Serialize(syncMsg1));
 
@@ -195,7 +195,7 @@ namespace SynchronizationTest
             int initialHealth = testComponent.health;
 
             Dictionary<string, object> changes = new Dictionary<string, object> { { "health", 50 } };
-            NetMessage syncMsg = new SyncMessage(testComponent.NetObject.NetId, 0, changes);
+            NetMessage syncMsg = new SyncMessage(CLIENT_ID, testComponent.NetObject.NetId, 0, changes);
             client.Send(NetSerializer.Serialize(syncMsg));
 
             float startTime = Time.time;
@@ -223,8 +223,8 @@ namespace SynchronizationTest
             Dictionary<string, object> changes1 = new Dictionary<string, object> { { "health", 150 }, { "msg", "changed1" } };
             Dictionary<string, object> changes2 = new Dictionary<string, object> { { "health", 250 }, { "msg", "changed2" } };
             
-            NetMessage syncMsg = new SyncMessage(comp1.NetObject.NetId, 0, changes1);
-            NetMessage syncMsg1 = new SyncMessage(comp2.NetObject.NetId, 0, changes2);
+            NetMessage syncMsg = new SyncMessage(CLIENT_ID, comp1.NetObject.NetId, 0, changes1);
+            NetMessage syncMsg1 = new SyncMessage(CLIENT_ID, comp2.NetObject.NetId, 0, changes2);
             client.Send(NetSerializer.Serialize(syncMsg));
             client.Send(NetSerializer.Serialize(syncMsg1));
 

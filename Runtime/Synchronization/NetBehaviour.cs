@@ -13,7 +13,6 @@ namespace NetPackage.Synchronization
         private bool registered = false;
         public  bool isOwned => NetObject.Owned;
         protected bool spawned = false;
-        private bool wasActive = false;
         
         protected virtual void Awake()
         {
@@ -28,13 +27,10 @@ namespace NetPackage.Synchronization
             }
             if (!spawned)
             {
-                OnNetSpawn();
-                if (!wasActive)
-                    enabled = false;
-                else OnNetEnable();
                 spawned = true;
+                OnNetSpawn();
             }
-            else OnNetEnable();
+            OnNetEnable();
         }
 
         protected virtual void OnDisable()
@@ -87,8 +83,7 @@ namespace NetPackage.Synchronization
                     NetObject.Register(this);
                 }
             }
-            wasActive = enabled;
-            if(wasActive) gameObject.SetActive(false);
+            if(gameObject.activeSelf) gameObject.SetActive(false);
             NetScene.RegisterSceneObject(this);
         }
         public void SetNetObject(NetObject obj)

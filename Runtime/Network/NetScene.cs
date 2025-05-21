@@ -151,8 +151,7 @@ namespace NetPackage.Network
         private static void ValidateSpawn(SpawnMessage msg)
         {
             DebugQueue.AddMessage("Validated spawn: "+msg.netObjectId);
-            var obj = GetNetObject(msg.netObjectId);
-                NetManager.EnqueueMainThread(()=>obj?.Enable());
+            GetNetObject(msg.netObjectId)?.Enable();
         }
 
         private static void SpawnImmediate(SpawnMessage msg)

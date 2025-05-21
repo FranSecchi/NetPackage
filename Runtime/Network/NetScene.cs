@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using NetPackage.Messages;
@@ -20,6 +21,7 @@ namespace NetPackage.Network
             Messager.RegisterHandler<OwnershipMessage>(OnOwnership);
             Messager.RegisterHandler<DestroyMessage>(OnDestroyMessage);
             Messager.RegisterHandler<SceneLoadMessage>(OnSceneLoadMessage);
+            Messager.RegisterHandler<SpawnMessage>(OnSpawnMessage);
             sceneName = SceneManager.GetActiveScene().name;
         }
 
@@ -57,6 +59,30 @@ namespace NetPackage.Network
             NetManager.Send(msg);
         }
 
+
+        public static void RegisterPrefabs(List<GameObject> prefabs)
+        {
+            DebugQueue.AddMessage($"Registering {prefabs.Count} prefabs in NetScene instance");
+
+            foreach (var prefab in prefabs)
+            {
+                // prefab.GetComponent<NetBehaviour>().registered = true;
+                m_prefabs[prefab.name] = prefab;
+            }
+        }
+
+        private static void OnSpawnMessage(SpawnMessage msg)
+        {
+            if(NetManager.IsHost) Spawn(msg);
+            else
+            {
+                if (msg.requesterId == NetManager.ConnectionId())
+                {
+                    Reconciliate(msg);
+                }
+                else Spawn(msg);
+            }
+        }
         private static void OnOwnership(OwnershipMessage msg)
         {
             var netObj = GetNetObject(msg.netObjectId);
@@ -66,7 +92,6 @@ namespace NetPackage.Network
                 else netObj.OwnerId = msg.newOwnerId;
             }
         }
-
         private static void OnDestroyMessage(DestroyMessage msg)
         {
             if (NetManager.IsHost)
@@ -82,17 +107,6 @@ namespace NetPackage.Network
             else
             {
                 Destroy(msg.netObjectId);
-            }
-        }
-
-        public static void RegisterPrefabs(List<GameObject> prefabs)
-        {
-            DebugQueue.AddMessage($"Registering {prefabs.Count} prefabs in NetScene instance");
-
-            foreach (var prefab in prefabs)
-            {
-                // prefab.GetComponent<NetBehaviour>().registered = true;
-                m_prefabs[prefab.name] = prefab;
             }
         }
 
@@ -233,6 +247,22 @@ namespace NetPackage.Network
         public static List<NetObject> GetAllNetObjects()
         {
             return new List<NetObject>(netObjects.Values);
+        }
+
+        public static void DisconnectClient(int id)
+        {
+            foreach (var netObject in netObjects)
+            {
+                NetObject netObj = netObject.Value;
+                if (id == netObj.OwnerId)
+                {
+                    netObj.GiveOwner(-1);
+                    foreach (var netBehaviour in netObj._behaviours)
+                    {
+                        netBehaviour.Disconnect();
+                    }
+                }
+            }
         }
     }
 }

@@ -40,7 +40,7 @@ namespace NetPackage.Transport
 
         public override string ToString()
         {
-            return $"{ServerName} ({Address} | {Port})";
+            return $"{ServerName} ({Address}:{Port}) - Players: {CurrentPlayers}/{MaxPlayers} - Mode: {GameMode} - Ping: {Ping}ms";
         }
     }
 
@@ -157,7 +157,7 @@ namespace NetPackage.Transport
         /// <param name="clientId">The ID of the client</param>
         /// <returns>Connection information for the specified client</returns>
         ConnectionInfo GetConnectionInfo(int clientId);
-
+        void SetConnectionId(int clientId, int connectionId);
         /// <summary>
         /// Gets the current connection state for a specific client
         /// </summary>

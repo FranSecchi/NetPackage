@@ -86,6 +86,7 @@ namespace NetPackage.Synchronization
                 List<int> targets = new List<int>();
                 if (message.target != null) targets.Remove(message.SenderID); 
                 message.target = targets;
+                DebugQueue.AddMessage($"{message.SenderID} sent RPC {message.MethodName} | {message.ObjectId}", DebugQueue.MessageType.RPC);
                 NetManager.Send(message);
             }
             else CallRPC(message.ObjectId, message.MethodName, message.Parameters);
@@ -131,6 +132,7 @@ namespace NetPackage.Synchronization
                                 convertedParams[i] = NetSerializer._Serializer.Deserialize(bytes, paramTypes[i].ParameterType);
                             }
                         }
+                        DebugQueue.AddMessage($"Invoked RPC {methodName} | Obj: {netId}", DebugQueue.MessageType.RPC);
                         NetManager.EnqueueMainThread(()=>method.Invoke(target, convertedParams));
                     }
                 }
@@ -195,7 +197,8 @@ namespace NetPackage.Synchronization
             }
             DebugQueue.AddRPC(methodName, netId, NetManager.ConnectionId());
             var message = new RPCMessage(NetManager.ConnectionId(), netId, methodName, targetIds, parameters);
-            Debug.Log("called: " + message);
+            DebugQueue.AddMessage($"{message.SenderID} sent RPC {methodName} | Obj: {netId}", DebugQueue.MessageType.RPC);
+
             NetManager.Send(message);
         }
     }

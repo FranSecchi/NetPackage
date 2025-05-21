@@ -20,10 +20,11 @@ namespace NetPackage.Synchronization
         
         protected virtual void Awake()
         {
+            if (!NetManager.Active || !NetManager.Running)
+                return;
             RegisterAsSceneObject();
         }
-        
-        public void OnEnable()
+        protected virtual void OnEnable()
         {
             if (NetObject != null)
             {
@@ -38,7 +39,7 @@ namespace NetPackage.Synchronization
             OnNetEnable();
         }
 
-        public void OnDisable()
+        protected virtual void OnDisable()
         {
             if (NetObject != null)
             {
@@ -47,19 +48,26 @@ namespace NetPackage.Synchronization
             }
             OnNetDisable();
         }
-        
-        protected virtual void Start()
+        private void Start()
         {
             // Register in play mode if not already registered
             if (!registered && NetObject == null)
             {
                 RegisterAsSceneObject();
             }
+            OnNetStart();
         }
-        
-        protected virtual void OnNetEnable() { }
-        protected virtual void OnNetDisable() { }
-        protected virtual void OnNetSpawn() { }
+        public void Disconnect()
+        {
+            if(!NetManager.IsHost)return;
+            OnDisconnect();
+        }
+
+        protected virtual void OnNetStart(){}
+        protected virtual void OnNetEnable(){ }
+        protected virtual void OnNetDisable(){ }
+        protected virtual void OnNetSpawn(){ }
+        protected virtual void OnDisconnect(){}
 
         protected void CallRPC(string methodName, params object[] parameters)
         {

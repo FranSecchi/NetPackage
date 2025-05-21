@@ -33,7 +33,9 @@ namespace NetPackage.Network
         public static bool IsHost => _manager._isHost;
         public static string ServerName => _manager.serverName;
         public static int MaxPlayers => _manager.maxPlayers;
-        public static ServerInfo ServerInfo => _serverInfo;
+        public static int PlayerCount => allPlayers.Count;
+        public static bool Running => _manager._running;
+        public static bool Active => _manager != null;
         public static bool UseLan
         {
             get => _manager.useLAN;
@@ -105,7 +107,12 @@ namespace NetPackage.Network
         {
             StopNet();
             ITransport.OnDataReceived += Receive;
-            if(serverInfo != null) _serverInfo = serverInfo;
+            if(serverInfo != null)
+            {
+                if (serverInfo.Address == null)
+                    serverInfo.Address = Transport.GetLocalIPAddress();
+                _serverInfo = serverInfo;
+            }
             else
             {
                 _serverInfo = new ServerInfo()
@@ -160,6 +167,7 @@ namespace NetPackage.Network
             if (IsHost) NetHost.Stop();
             else NetClient.Disconnect();
             allPlayers.Clear();
+            NetScene.CleanUp();
             Messager.ClearHandlers();
             ITransport.OnDataReceived -= Receive;
             
@@ -230,7 +238,8 @@ namespace NetPackage.Network
         public static ServerInfo GetServerInfo()
         {
             if(!_manager._running) return null;
-            return Transport.GetServerInfo();
+            _serverInfo = Transport.GetServerInfo();
+            return _serverInfo;
         }
         public static ConnectionInfo GetConnectionInfo(int clientId = 0)
         {

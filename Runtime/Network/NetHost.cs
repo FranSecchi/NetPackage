@@ -20,7 +20,6 @@ namespace NetPackage.Network
             ITransport.OnClientConnected += OnClientConnected;;
             ITransport.OnClientDisconnected += OnClientDisconnected;
             Messager.RegisterHandler<SyncMessage>(OnSyncMessage);
-            Messager.RegisterHandler<SpawnMessage>(OnSpawnMessage);
             Messager.RegisterHandler<ConnMessage>(OnConnMessage);
         }
 
@@ -38,6 +37,7 @@ namespace NetPackage.Network
                 DebugQueue.AddMessage($"Client {id} disconnected. Clients count: {Clients.Count}", DebugQueue.MessageType.Network);
                 NetManager.allPlayers.Remove(id);
                 UpdatePlayers(id);
+                NetManager.EnqueueMainThread(() => NetScene.DisconnectClient(id));
             }
         }
 
@@ -56,7 +56,11 @@ namespace NetPackage.Network
         public static void UpdatePlayers(int id)
         {
             if (Clients.Count == 0) return;
-            NetMessage msg = new ConnMessage(id, NetManager.allPlayers, NetManager.ServerInfo);
+            
+            ServerInfo info = NetManager.GetServerInfo();
+            info.CurrentPlayers = NetManager.PlayerCount;
+            NetManager.Transport.SetServerInfo(info);
+            NetMessage msg = new ConnMessage(id, NetManager.allPlayers, info);
             Send(msg);
         }
 
@@ -106,13 +110,9 @@ namespace NetPackage.Network
         private static void OnSyncMessage(SyncMessage obj)
         {
             StateManager.SetSync(obj);
+            Send(obj);
         }
         
-        private static void OnSpawnMessage(SpawnMessage msg)
-        {
-            //Validate
-            NetScene.Spawn(msg);
-        }
 
     }
 }

@@ -182,7 +182,7 @@ namespace SerializerTest
 
         private void TransportOnOnClientConnected(int id, ITransport server)
         {
-            NetMessage msg = new ConnMessage(id, NetManager.allPlayers, NetManager.ServerInfo);
+            NetMessage msg = new ConnMessage(id, NetManager.allPlayers, NetManager.GetServerInfo());
             server.Send(NetSerializer.Serialize(msg));
         }
 

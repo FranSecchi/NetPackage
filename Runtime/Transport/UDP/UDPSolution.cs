@@ -122,6 +122,15 @@ namespace NetPackage.Transport.UDP
             return _aPeer.ConnectionInfo.TryGetValue(clientId <= 0 ? 0 : clientId, out var info) ? info : null;
         }
 
+        public void SetConnectionId(int clientId, int connectionId)
+        {
+            if (_aPeer.ConnectionInfo.TryGetValue(clientId <= 0 ? 0 : clientId, out var info))
+            {
+                info.Id = connectionId;
+                _aPeer.ConnectionInfo[clientId] = info;
+            }
+        }
+
         public ConnectionState GetConnectionState(int clientId)
         {
             return _aPeer.ConnectionInfo.TryGetValue(clientId, out var info) ? info.State : ConnectionState.Disconnected;

@@ -42,6 +42,7 @@ namespace NetPackage.Editor
             for (int i = 0; i < messageTypeFilters.Length; i++)
             {
                 messageTypeFilters[i] = true;
+                DebugQueue.SetMessageTypeEnabled((DebugQueue.MessageType)i, true);
             }
         }
 
@@ -136,7 +137,12 @@ namespace NetPackage.Editor
             {
                 var type = (DebugQueue.MessageType)i;
                 EditorGUILayout.BeginHorizontal(GUILayout.Width(100));
-                messageTypeFilters[i] = EditorGUILayout.Toggle(messageTypeFilters[i], GUILayout.Width(20));
+                bool newValue = EditorGUILayout.Toggle(messageTypeFilters[i], GUILayout.Width(20));
+                if (newValue != messageTypeFilters[i])
+                {
+                    messageTypeFilters[i] = newValue;
+                    DebugQueue.SetMessageTypeEnabled(type, newValue);
+                }
                 EditorGUILayout.LabelField(type.ToString(), GUILayout.Width(70));
                 EditorGUILayout.EndHorizontal();
             }

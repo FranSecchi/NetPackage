@@ -119,7 +119,7 @@ namespace SynchronizationTest
         
         private void SendObjUpdate(NetBehaviour netObj, Dictionary<string, object> changes)
         {
-            NetMessage spw = new SyncMessage(netObj.NetID, 0, changes);
+            NetMessage spw = new SyncMessage(-1, netObj.NetID, 0, changes);
             host.Send(NetSerializer.Serialize(spw));
         }
         private IEnumerator WaitConnection()

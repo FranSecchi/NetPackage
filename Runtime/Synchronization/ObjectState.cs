@@ -47,8 +47,7 @@ namespace NetPackage.Synchronization
                     _trackedSyncVars[obj] = new Dictionary<FieldInfo, object>();
                     int id = _nextId++;
                     _objectIds[id] = obj;
-                    DebugQueue.AddMessage($"Object with ID {netId}, component {obj.GetType().Name} with ID {id}", DebugQueue.MessageType.State);
-                    DebugQueue.AddMessage($"Object {((NetBehaviour)obj).gameObject.name}", DebugQueue.MessageType.State);
+                    DebugQueue.AddMessage($"Added ObjectState {((NetBehaviour)obj).gameObject.name} with ID {netId}, component {obj.GetType().Name} with ID {id}", DebugQueue.MessageType.State);
                 }
                 foreach (FieldInfo field in fields)
                 {
@@ -107,20 +106,21 @@ namespace NetPackage.Synchronization
 
         public void SetChange(int netId, int id, Dictionary<string, object> changes)
         {
-            if(!_objectIds.ContainsKey(id)) DebugQueue.AddMessage($"No object {netId} with component {id} found", DebugQueue.MessageType.Warning);
-            
-            DebugQueue.AddMessage($"SyncVar Update called: {netId} | {id}", DebugQueue.MessageType.State);
-            object obj = _objectIds[id];
-            foreach (var change in changes)
+            if (_objectIds.TryGetValue(id, out object obj))
             {
-                FieldInfo field = _trackedSyncVars[obj].Keys.FirstOrDefault(f => f.Name == change.Key);
-                
-                if (field != null && field.GetValue(obj) != change.Value)
+                foreach (var change in changes)
                 {
-                    DebugQueue.AddStateChange(netId, id, change.Key, change.Value);
-                    field.SetValue(obj, change.Value);
+                    FieldInfo field = _trackedSyncVars[obj].Keys.FirstOrDefault(f => f.Name == change.Key);
+                
+                    if (field != null && field.GetValue(obj) != change.Value)
+                    {
+                        DebugQueue.AddStateChange(netId, id, change.Key, change.Value);
+                        field.SetValue(obj, change.Value);
+                    }
                 }
             }
+            else
+                DebugQueue.AddMessage($"No object {netId} with component {id} found", DebugQueue.MessageType.Warning);
         }
         
         public Dictionary<FieldInfo, object> GetField(object obj)
@@ -151,6 +151,12 @@ namespace NetPackage.Synchronization
 
         public void Unregister(object o)
         {
+            if (o == null)
+            {
+                DebugQueue.AddMessage("Attempted to unregister a null object", DebugQueue.MessageType.Warning);
+                return;
+            }
+            DebugQueue.AddMessage($"Unregister {o.GetType().Name} state", DebugQueue.MessageType.State);
             _trackedSyncVars.Remove(o);
 
             int? keyToRemove = null;

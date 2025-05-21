@@ -43,7 +43,6 @@ namespace NetPackage.Synchronization
             NetManager.Send(msg);
         }
 
-
         public void Register(NetBehaviour obj)
         {
             if (!_behaviours.Contains(obj))

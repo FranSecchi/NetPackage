@@ -7,15 +7,17 @@ namespace NetPackage.Messages
     [MessagePackObject]
     public class SyncMessage : NetMessage
     {
-        [Key(1)]public int ObjectID;
-        [Key(2)]public int ComponentId;
-        [Key(3)] public Dictionary<string, object> changedValues; // Changed variables
+        [Key(1)] public int SenderId;   
+        [Key(2)]public int ObjectID;
+        [Key(3)]public int ComponentId;
+        [Key(4)] public Dictionary<string, object> changedValues;
 
         public SyncMessage(){}
-        public SyncMessage(int objectID, int componentID, Dictionary<string, object> changes, List<int> target = null) : base(target)
+        public SyncMessage(int senderId, int objectID, int componentID, Dictionary<string, object> changes, List<int> target = null) : base(target)
         {
-            this.ObjectID = objectID;
-            this.changedValues = changes;
+            SenderId = senderId;
+            ObjectID = objectID;
+            changedValues = changes;
             ComponentId = componentID;
         }
 

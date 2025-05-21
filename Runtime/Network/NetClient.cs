@@ -1,5 +1,6 @@
 using NetPackage.Messages;
 using NetPackage.Synchronization;
+using NetPackage.Transport;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -14,7 +15,6 @@ namespace NetPackage.Network
             NetScene.Init();
             RPCManager.Init();
             Messager.RegisterHandler<ConnMessage>(OnConnected);
-            Messager.RegisterHandler<SpawnMessage>(OnSpawned);
             Messager.RegisterHandler<SyncMessage>(OnSync);
             NetManager.Transport.Start();
             NetManager.Transport.Connect(address);
@@ -24,16 +24,6 @@ namespace NetPackage.Network
         {
             StateManager.SetSync(obj);
         }
-
-        private static void OnSpawned(SpawnMessage obj)
-        {
-            if (obj.requesterId == Connection.Id)
-            {
-                NetScene.Reconciliate(obj);
-            }
-            else NetScene.Spawn(obj);
-        }
-
         public static void Disconnect()
         {
             NetManager.Transport.Stop();
@@ -47,7 +37,11 @@ namespace NetPackage.Network
         }
         private static void OnConnected(ConnMessage connection)
         {
-            Connection = new NetConn(connection.CurrentConnected, false);
+            if(Connection == null)
+            {
+                Connection = new NetConn(connection.CurrentConnected, false);
+                NetManager.Transport.SetConnectionId(0, Connection.Id);
+            }
             NetManager.allPlayers = connection.AllConnected;
             NetManager.SetServerInfo(connection.ServerInfo);
         }

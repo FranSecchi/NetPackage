@@ -14,11 +14,12 @@ namespace NetPackage.Synchronization
         public  bool isOwned => NetObject.Owned;
         protected bool spawned = false;
         
-        protected virtual void Awake()
+        private void Awake()
         {
+            Init();
             RegisterAsSceneObject();
         }
-        public void OnEnable()
+        private void OnEnable()
         {
             if (NetObject != null)
             {
@@ -42,7 +43,7 @@ namespace NetPackage.Synchronization
             }
             OnNetDisable();
         }
-        protected virtual void Start()
+        private void Start()
         {
             // Register in play mode if not already registered
             if (!registered && NetObject == null)
@@ -56,6 +57,8 @@ namespace NetPackage.Synchronization
             if(!NetManager.IsHost)return;
             OnDisconnect();
         }
+
+        protected virtual void Init(){}
         protected virtual void OnNetEnable(){ }
         protected virtual void OnNetDisable(){ }
         protected virtual void OnNetSpawn(){ }

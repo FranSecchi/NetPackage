@@ -21,6 +21,7 @@ namespace NetPackage.Network
             Messager.RegisterHandler<OwnershipMessage>(OnOwnership);
             Messager.RegisterHandler<DestroyMessage>(OnDestroyMessage);
             Messager.RegisterHandler<SceneLoadMessage>(OnSceneLoadMessage);
+            Messager.RegisterHandler<SpawnMessage>(OnSpawnMessage);
             sceneName = SceneManager.GetActiveScene().name;
         }
 
@@ -58,6 +59,30 @@ namespace NetPackage.Network
             NetManager.Send(msg);
         }
 
+
+        public static void RegisterPrefabs(List<GameObject> prefabs)
+        {
+            DebugQueue.AddMessage($"Registering {prefabs.Count} prefabs in NetScene instance");
+
+            foreach (var prefab in prefabs)
+            {
+                // prefab.GetComponent<NetBehaviour>().registered = true;
+                m_prefabs[prefab.name] = prefab;
+            }
+        }
+
+        private static void OnSpawnMessage(SpawnMessage msg)
+        {
+            if(NetManager.IsHost) Spawn(msg);
+            else
+            {
+                if (msg.requesterId == NetManager.ConnectionId())
+                {
+                    Reconciliate(msg);
+                }
+                else Spawn(msg);
+            }
+        }
         private static void OnOwnership(OwnershipMessage msg)
         {
             var netObj = GetNetObject(msg.netObjectId);
@@ -67,7 +92,6 @@ namespace NetPackage.Network
                 else netObj.OwnerId = msg.newOwnerId;
             }
         }
-
         private static void OnDestroyMessage(DestroyMessage msg)
         {
             if (NetManager.IsHost)
@@ -83,17 +107,6 @@ namespace NetPackage.Network
             else
             {
                 Destroy(msg.netObjectId);
-            }
-        }
-
-        public static void RegisterPrefabs(List<GameObject> prefabs)
-        {
-            DebugQueue.AddMessage($"Registering {prefabs.Count} prefabs in NetScene instance");
-
-            foreach (var prefab in prefabs)
-            {
-                // prefab.GetComponent<NetBehaviour>().registered = true;
-                m_prefabs[prefab.name] = prefab;
             }
         }
 

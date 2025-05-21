@@ -20,7 +20,6 @@ namespace NetPackage.Network
             ITransport.OnClientConnected += OnClientConnected;;
             ITransport.OnClientDisconnected += OnClientDisconnected;
             Messager.RegisterHandler<SyncMessage>(OnSyncMessage);
-            Messager.RegisterHandler<SpawnMessage>(OnSpawnMessage);
             Messager.RegisterHandler<ConnMessage>(OnConnMessage);
         }
 
@@ -114,11 +113,6 @@ namespace NetPackage.Network
             Send(obj);
         }
         
-        private static void OnSpawnMessage(SpawnMessage msg)
-        {
-            //Validate
-            NetScene.Spawn(msg);
-        }
 
     }
 }

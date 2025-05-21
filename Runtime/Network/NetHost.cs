@@ -14,7 +14,7 @@ namespace NetPackage.Network
         public static void StartHost()
         {
             NetManager.Transport.Start();
-            NetManager.allPlayers.Add(0);
+            NetManager.allPlayers.Add(-1);
             NetScene.Init();
             RPCManager.Init();
             ITransport.OnClientConnected += OnClientConnected;;
@@ -33,7 +33,6 @@ namespace NetPackage.Network
 
         private static void OnClientDisconnected(int id)
         {
-            id += 1;
             if(Clients.TryRemove(id, out _))
             {
                 DebugQueue.AddMessage($"Client {id} disconnected. Clients count: {Clients.Count}", DebugQueue.MessageType.Network);
@@ -45,7 +44,6 @@ namespace NetPackage.Network
 
         private static void OnClientConnected(int id)
         {
-            id += 1;
             if (Clients.TryAdd(id, new NetConn(id, true)))
             {
                 DebugQueue.AddMessage($"Client {id} connected. Clients count: {Clients.Count}", DebugQueue.MessageType.Network);

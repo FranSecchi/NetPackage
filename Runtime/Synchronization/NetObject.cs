@@ -58,12 +58,19 @@ namespace NetPackage.Synchronization
 
         public void Destroy()
         {
+            foreach (var behaviour in _behaviours)
+            {
+                behaviour.OnNetDisable();
+            }
             GameObject.Destroy(_behaviours[0].gameObject);
         }
 
         public void Enable()
         {
-            if(!_behaviours[0].gameObject.activeSelf) _behaviours[0].gameObject.SetActive(true);
+            foreach (var behaviour in _behaviours)
+            {
+                behaviour.OnNetEnable();
+            }
         }
     }
 }

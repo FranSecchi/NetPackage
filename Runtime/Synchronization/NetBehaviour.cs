@@ -13,12 +13,14 @@ namespace NetPackage.Synchronization
         private bool registered = false;
         public  bool isOwned => NetObject.Owned;
         protected bool spawned = false;
+        private bool wasActive = false;
         
         protected virtual void Awake()
         {
             RegisterAsSceneObject();
         }
-        protected virtual void OnEnable()
+
+        public virtual void OnNetEnable()
         {
             if (NetObject != null)
             {
@@ -29,27 +31,34 @@ namespace NetPackage.Synchronization
             {
                 spawned = true;
                 OnNetSpawn();
+                gameObject.SetActive(wasActive);
             }
-            OnNetEnable();
+            else 
+                gameObject.SetActive(true);
         }
-
-        protected virtual void OnDisable()
+        public virtual void OnNetDisable()
         {
             if (NetObject != null)
             {
                 StateManager.Unregister(NetObject.NetId, this);
                 RPCManager.Unregister(NetObject.NetId, this);
             }
-            OnNetDisable();
+            enabled = false;
         }
         private void Start()
         {
-            Init();
+            OnNetStart();
             // Register in play mode if not already registered
             if (!registered && NetObject == null)
             {
                 RegisterAsSceneObject();
             }
+        }
+
+        private void OnDestroy()
+        {
+            OnNetDisable();
+            OnNetDestroy();
         }
         public void Disconnect()
         {
@@ -57,10 +66,9 @@ namespace NetPackage.Synchronization
             OnDisconnect();
         }
 
-        protected virtual void Init(){}
-        protected virtual void OnNetEnable(){ }
-        protected virtual void OnNetDisable(){ }
         protected virtual void OnNetSpawn(){ }
+        protected virtual void OnNetStart(){}
+        protected virtual void OnNetDestroy(){}
         protected virtual void OnDisconnect(){}
 
         protected void CallRPC(string methodName, params object[] parameters)
@@ -83,7 +91,8 @@ namespace NetPackage.Synchronization
                     NetObject.Register(this);
                 }
             }
-            if(gameObject.activeSelf) gameObject.SetActive(false);
+            wasActive = enabled;
+            if(wasActive) gameObject.SetActive(false);
             NetScene.RegisterSceneObject(this);
         }
         public void SetNetObject(NetObject obj)

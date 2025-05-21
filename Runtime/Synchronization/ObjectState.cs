@@ -47,8 +47,7 @@ namespace NetPackage.Synchronization
                     _trackedSyncVars[obj] = new Dictionary<FieldInfo, object>();
                     int id = _nextId++;
                     _objectIds[id] = obj;
-                    DebugQueue.AddMessage($"Object with ID {netId}, component {obj.GetType().Name} with ID {id}", DebugQueue.MessageType.State);
-                    DebugQueue.AddMessage($"Object {((NetBehaviour)obj).gameObject.name}", DebugQueue.MessageType.State);
+                    DebugQueue.AddMessage($"Added ObjectState {((NetBehaviour)obj).gameObject.name} with ID {netId}, component {obj.GetType().Name} with ID {id}", DebugQueue.MessageType.State);
                 }
                 foreach (FieldInfo field in fields)
                 {
@@ -109,7 +108,6 @@ namespace NetPackage.Synchronization
         {
             if (_objectIds.TryGetValue(id, out object obj))
             {
-                DebugQueue.AddMessage($"SyncVar Update called: {netId} | {id}", DebugQueue.MessageType.State);
                 foreach (var change in changes)
                 {
                     FieldInfo field = _trackedSyncVars[obj].Keys.FirstOrDefault(f => f.Name == change.Key);
@@ -152,7 +150,7 @@ namespace NetPackage.Synchronization
                 DebugQueue.AddMessage("Attempted to unregister a null object", DebugQueue.MessageType.Warning);
                 return;
             }
-            DebugQueue.AddMessage($"Unregister {o.GetType().Name}", DebugQueue.MessageType.State);
+            DebugQueue.AddMessage($"Unregister {o.GetType().Name} state", DebugQueue.MessageType.State);
             _trackedSyncVars.Remove(o);
 
             int? keyToRemove = null;

@@ -48,12 +48,12 @@ namespace NetPackage.Synchronization
         }
         private void Start()
         {
-            OnNetStart();
             // Register in play mode if not already registered
             if (!registered && NetObject == null)
             {
                 RegisterAsSceneObject();
             }
+            OnNetStart();
         }
 
         private void OnDestroy()

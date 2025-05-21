@@ -18,18 +18,16 @@ namespace NetPackage.Synchronization
                 return;
             }
             snapshot[netId] = state;
-            DebugQueue.AddMessage("Register " + netId + " Count: " + snapshot.Count, DebugQueue.MessageType.State);
         }
         public static void Register(int netId, object obj)
         {
-            DebugQueue.AddMessage("Register behavior " + obj.GetType(), DebugQueue.MessageType.State);
 
             if (snapshot.TryGetValue(netId, out ObjectState state))
             {
                 state.Register(netId, obj);
             }
             else
-                DebugQueue.AddMessage("Not Registered :" + obj.GetType(), DebugQueue.MessageType.State);
+                DebugQueue.AddMessage("Not Registered state :" + obj.GetType().Name, DebugQueue.MessageType.State);
 
         }
         public static void Unregister(int netId, object obj)
@@ -81,7 +79,6 @@ namespace NetPackage.Synchronization
 
         public static void SetSync(SyncMessage syncMessage)
         {
-            DebugQueue.AddMessage("Message setsync " + syncMessage, DebugQueue.MessageType.State);
             if (syncMessage.SenderId == NetManager.ConnectionId())
             {
                 //Reconcile

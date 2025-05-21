@@ -51,7 +51,7 @@ namespace NetPackage.Synchronization
             {
                 RegisterAsSceneObject();
             }
-            Init();
+            OnNetStart();
         }
         public void Disconnect()
         {
@@ -59,7 +59,7 @@ namespace NetPackage.Synchronization
             OnDisconnect();
         }
 
-        protected virtual void Init(){}
+        protected virtual void OnNetStart(){}
         protected virtual void OnNetEnable(){ }
         protected virtual void OnNetDisable(){ }
         protected virtual void OnNetSpawn(){ }

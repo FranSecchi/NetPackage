@@ -44,6 +44,7 @@ namespace NetPackage.Synchronization
                 RPCManager.Unregister(NetObject.NetId, this);
             }
             enabled = false;
+            wasActive = false;
         }
         private void Start()
         {
@@ -92,7 +93,7 @@ namespace NetPackage.Synchronization
                 }
             }
             wasActive = enabled;
-            if(wasActive) gameObject.SetActive(false);
+            if(wasActive) enabled = false;
             NetScene.RegisterSceneObject(this);
         }
         public void SetNetObject(NetObject obj)

@@ -33,7 +33,6 @@ namespace NetPackage.Network
         public static bool IsHost => _manager._isHost;
         public static string ServerName => _manager.serverName;
         public static int MaxPlayers => _manager.maxPlayers;
-        public static ServerInfo ServerInfo => _serverInfo;
         public static int PlayerCount => allPlayers.Count;
         public static bool UseLan
         {
@@ -231,7 +230,8 @@ namespace NetPackage.Network
         public static ServerInfo GetServerInfo()
         {
             if(!_manager._running) return null;
-            return Transport.GetServerInfo();
+            _serverInfo = Transport.GetServerInfo();
+            return _serverInfo;
         }
         public static ConnectionInfo GetConnectionInfo(int clientId = 0)
         {

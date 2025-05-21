@@ -71,7 +71,7 @@ namespace NetPackage.Synchronization
             int id = NetManager.ConnectionId();
             foreach (var change in changes)
             {
-                if(NetScene.GetNetObject(change.Key).OwnerId == id)
+                if(NetScene.GetNetObject(netObjectKey).OwnerId == id)
                 {
                     SyncMessage msg = new SyncMessage(id, netObjectKey, change.Key, change.Value);
                     NetManager.Send(msg);

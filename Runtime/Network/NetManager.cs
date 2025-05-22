@@ -290,7 +290,7 @@ namespace NetPackage.Network
             if (data != null && data.Length != 0)
             {
                 NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
-                DebugQueue.AddNetworkMessage(msg);
+                if(msg is not SyncMessage) DebugQueue.AddNetworkMessage(msg);
                 Messager.HandleMessage(msg);
             }
         }

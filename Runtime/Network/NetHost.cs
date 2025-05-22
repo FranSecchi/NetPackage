@@ -91,7 +91,7 @@ namespace NetPackage.Network
             {
                 foreach (var client in Clients.Values)
                 {
-                    DebugQueue.AddNetworkMessage(netMessage, false);
+                    if(netMessage is not SyncMessage) DebugQueue.AddNetworkMessage(netMessage, false);
                     client.Send(netMessage);
                 }
             }
@@ -101,7 +101,7 @@ namespace NetPackage.Network
                 {
                     if (Clients.TryGetValue(targetId, out NetConn client))
                     {
-                        DebugQueue.AddNetworkMessage(netMessage, false);
+                        if(netMessage is not SyncMessage) DebugQueue.AddNetworkMessage(netMessage, false);
                         client.Send(netMessage);
                     }
                 }

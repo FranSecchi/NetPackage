@@ -77,7 +77,7 @@ namespace NetPackage.Synchronization
             NetObject.GiveOwner(ownerId);
             if (ownChildren)
             {
-                var childs = FindObjectsOfType<NetBehaviour>();
+                var childs = GetComponentsInChildren<NetBehaviour>();
                 foreach (var child in childs)
                 {
                     child.Own(ownerId, true);

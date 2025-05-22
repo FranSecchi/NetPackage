@@ -113,8 +113,8 @@ namespace NetPackage.Network
         public static void RegisterSceneObject(NetBehaviour netBehaviour)
         {
             string sceneId = netBehaviour.GetComponent<SceneObjectId>().sceneId;
-            DebugQueue.AddMessage($"Registering {netBehaviour.gameObject.name} as {sceneId}", DebugQueue.MessageType.Warning);
             if(sceneId != null && !sceneObjects.ContainsKey(sceneId)) sceneObjects[sceneId] = netBehaviour.gameObject;
+            DebugQueue.AddMessage($"Registering {netBehaviour.gameObject.name} as {sceneId}", DebugQueue.MessageType.Warning);
             if (!NetManager.IsHost) return;
             
             int id = netObjectId++;

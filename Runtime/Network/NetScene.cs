@@ -15,6 +15,7 @@ namespace NetPackage.Network
         private static Dictionary<string, GameObject> sceneObjects = new Dictionary<string, GameObject>();
         private static int netObjectId = 0;
         private static string sceneName = "";
+        public static Dictionary<string, GameObject> PrefabsList => m_prefabs;
         public static void Init()
         {
             netObjectId = 0;

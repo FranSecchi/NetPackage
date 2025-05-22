@@ -180,8 +180,7 @@ namespace NetPackage.Network
             DebugQueue.AddMessage($"Spawned NetObject with ID {msg.netObjectId}, owned by {netObj.OwnerId}", DebugQueue.MessageType.Network);
 
             msg.target = null;
-            if(NetManager.IsHost)
-                NetHost.Send(msg);
+            NetManager.Send(msg);
         }
 
         public static void Destroy(int objectId)

@@ -192,14 +192,7 @@ namespace NetPackage.Network
             if (!_manager._running) return;
             SpawnMessage spm = new SpawnMessage(ConnectionId(), prefab.name, position, rotation, owner);
             spm.requesterId = ConnectionId();
-            if (IsHost)
-            {
-                NetScene.Spawn(spm);
-            }
-            else
-            {
-                NetClient.Send(spm);
-            }
+            NetScene.Spawn(spm);
         }
 
         public static void Destroy(int netObjectId)

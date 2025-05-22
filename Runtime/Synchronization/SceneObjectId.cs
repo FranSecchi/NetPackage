@@ -1,7 +1,6 @@
 using System;
-using NetPackage.Network;
+using UnityEditor;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace NetPackage.Synchronization
 {
@@ -10,32 +9,18 @@ namespace NetPackage.Synchronization
     {
         public string sceneId;
 
-        private void Awake()
-        {
-            if (!Application.isPlaying) return;
-
-            var scene = gameObject.scene;
-
-            // Only assign if scene is valid, loaded state is false (scene is still being loaded),
-            // and ID is not yet assigned
-            if (scene.IsValid() && scene.isLoaded && !string.IsNullOrEmpty(sceneId))
-            {
-                DebugQueue.AddMessage($"Removing sceneid {gameObject.name}", DebugQueue.MessageType.Warning);
-                sceneId = "";
-            }
-        }
-
-
+        
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            // In the editor, don't assign unless it's missing and we're in edit mode
+            // Run in edit mode only
             if (!Application.isPlaying)
             {
+                // If no ID yet or it's a duplicate in the scene, generate a new one
                 if (string.IsNullOrEmpty(sceneId) || HasDuplicateIdInScene())
                 {
                     sceneId = Guid.NewGuid().ToString();
-                    UnityEditor.EditorUtility.SetDirty(this);
+                    EditorUtility.SetDirty(this);
                 }
             }
         }

@@ -22,11 +22,8 @@ namespace NetPackage.Synchronization
         {
             if (NetObject == null)
                 return;
-            if (NetObject != null)
-            {
-                StateManager.Register(NetObject.NetId, this);
-                RPCManager.Register(NetObject.NetId, this);
-            }
+            StateManager.Register(NetObject.NetId, this);
+            RPCManager.Register(NetObject.NetId, this);
             if (!spawned)
             {
                 DebugQueue.AddMessage($"Spawned {GetType().Name} | {gameObject.name}.", DebugQueue.MessageType.Warning);
@@ -41,11 +38,8 @@ namespace NetPackage.Synchronization
         {
             if (NetObject == null)
                 return;
-            if (NetObject != null)
-            {
-                StateManager.Unregister(NetObject.NetId, this);
-                RPCManager.Unregister(NetObject.NetId, this);
-            }
+            StateManager.Unregister(NetObject.NetId, this);
+            RPCManager.Unregister(NetObject.NetId, this);
             OnNetDisable();
         }
         private void Start()

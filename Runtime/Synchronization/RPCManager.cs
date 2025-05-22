@@ -30,6 +30,8 @@ namespace NetPackage.Synchronization
                     {
                         _rpcMethods[netId][method.Name] = new List<MethodInfo>();
                     }
+                    DebugQueue.AddMessage($"RPC registered {netId} | {method.Name}.", DebugQueue.MessageType.RPC);
+
                     _rpcMethods[netId][method.Name].Add(method);
                     break;
                 }

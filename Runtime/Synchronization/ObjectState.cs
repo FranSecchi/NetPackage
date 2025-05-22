@@ -104,7 +104,7 @@ namespace NetPackage.Synchronization
             return allChanges;
         }
 
-        public void SetChange(int netId, int id, Dictionary<string, object> changes)
+        public void SetChange(int id, Dictionary<string, object> changes)
         {
             if (_objectIds.TryGetValue(id, out object obj))
             {
@@ -114,13 +114,12 @@ namespace NetPackage.Synchronization
                 
                     if (field != null && field.GetValue(obj) != change.Value)
                     {
-                        DebugQueue.AddStateChange(netId, id, change.Key, change.Value);
                         field.SetValue(obj, change.Value);
                     }
                 }
             }
             else
-                DebugQueue.AddMessage($"No object {netId} with component {id} found", DebugQueue.MessageType.Warning);
+                DebugQueue.AddMessage($"No component {id} found", DebugQueue.MessageType.Warning);
         }
         
         public ObjectState Clone()

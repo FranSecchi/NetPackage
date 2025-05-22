@@ -85,7 +85,8 @@ namespace NetPackage.Synchronization
             }
             else if (snapshot.TryGetValue(syncMessage.ObjectID, out ObjectState state))
             {
-                    state.SetChange(syncMessage.ObjectID, syncMessage.ComponentId, syncMessage.changedValues);
+                    DebugQueue.AddStateChange(syncMessage.ObjectID, syncMessage.ComponentId, "Player "+syncMessage.SenderId, syncMessage.changedValues);
+                    state.SetChange(syncMessage.ComponentId, syncMessage.changedValues);
             }
             else DebugQueue.AddMessage(
                 $"Not SetSync: {syncMessage.ObjectID} Objects: {string.Join(", ", snapshot.Select(kv => $"{kv.Key}: {kv.Value}"))}",

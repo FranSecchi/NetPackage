@@ -22,7 +22,7 @@ namespace NetPackage.Network
             {
                 Message = message;
                 Type = type;
-                Timestamp = DateTime.Now;
+                Timestamp = DateTime.UtcNow;
             }
         }
 

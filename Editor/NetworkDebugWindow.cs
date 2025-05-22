@@ -48,17 +48,20 @@ namespace NetPackage.Editor
 
         private void Update()
         {
-            if (!Application.isPlaying) return;
+            if (!Application.isPlaying || !this) return;
 
             // Handle auto-refresh
             if (autoRefresh && EditorApplication.timeSinceStartup - lastRefreshTime > refreshInterval)
             {
-                Repaint();
-                lastRefreshTime = EditorApplication.timeSinceStartup;
+                if (this)
+                {
+                    Repaint();
+                    lastRefreshTime = EditorApplication.timeSinceStartup;
+                }
             }
 
             // Update last known state
-            if (Application.isPlaying)
+            if (Application.isPlaying && this)
             {
                 UpdateLastKnownState();
             }
@@ -403,6 +406,8 @@ namespace NetPackage.Editor
 
         private void OnGUI()
         {
+            if (!this) return;
+
             EditorGUILayout.BeginVertical();
 
             if (!Application.isPlaying)

@@ -27,6 +27,8 @@ namespace NetPackage.Synchronization
             }
             if (!spawned)
             {
+                DebugQueue.AddMessage($"Spawned {GetType().Name} | {NetID}.", DebugQueue.MessageType.Warning);
+
                 spawned = true;
                 OnNetSpawn();
             }

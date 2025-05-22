@@ -13,7 +13,6 @@ namespace NetPackage.Synchronization
         private bool registered = false;
         public  bool isOwned => NetObject.Owned;
         protected bool spawned = false;
-        private bool validated = false;
         
         protected virtual void Awake()
         {
@@ -21,7 +20,7 @@ namespace NetPackage.Synchronization
         }
         protected virtual void OnEnable()
         {
-            if (NetObject == null || !validated)
+            if (NetObject == null)
                 return;
             if (NetObject != null)
             {
@@ -30,16 +29,18 @@ namespace NetPackage.Synchronization
             }
             if (!spawned)
             {
-                DebugQueue.AddMessage($"Spawned {GetType().Name} | {NetID}.", DebugQueue.MessageType.Warning);
+                DebugQueue.AddMessage($"Spawned {GetType().Name} | {gameObject.name}.", DebugQueue.MessageType.Warning);
 
                 spawned = true;
                 OnNetSpawn();
             }
-            OnNetEnable();
+            else OnNetEnable();
         }
 
         protected virtual void OnDisable()
         {
+            if (NetObject == null)
+                return;
             if (NetObject != null)
             {
                 StateManager.Unregister(NetObject.NetId, this);
@@ -95,6 +96,9 @@ namespace NetPackage.Synchronization
                 return;
             if (registered) return;
             registered = true;
+            enabled = false;                
+            DebugQueue.AddMessage($"Disable {GetType().Name} | {gameObject.name}.", DebugQueue.MessageType.Warning);
+
             var behaviours = gameObject.GetComponents<NetBehaviour>();
             foreach (var behaviour in behaviours)
             {
@@ -102,9 +106,9 @@ namespace NetPackage.Synchronization
                 {
                     NetObject = behaviour.NetObject;
                     NetObject.Register(this);
+                    return;
                 }
             }
-            if(isActiveAndEnabled) enabled = false;
             NetScene.RegisterSceneObject(this);
         }
         public void SetNetObject(NetObject obj)
@@ -112,11 +116,7 @@ namespace NetPackage.Synchronization
             if (obj == null) return;
             NetObject = obj;
             registered = true;
-        }
-
-        public void Validate()
-        {
-            validated = true;
+            enabled = false;
         }
     }
 }

@@ -63,7 +63,6 @@ namespace NetPackage.Synchronization
             foreach (var netBehaviour in _behaviours)
             {
                 DebugQueue.AddMessage($"Enabling {netBehaviour.GetType().Name} | {NetId}.", DebugQueue.MessageType.Warning);
-                netBehaviour.Validate();
                 if(!netBehaviour.isActiveAndEnabled) NetManager.EnqueueMainThread(() => netBehaviour.enabled = true);
             }
         }

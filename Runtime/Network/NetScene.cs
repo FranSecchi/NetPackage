@@ -15,7 +15,6 @@ namespace NetPackage.Network
         private static Dictionary<string, GameObject> sceneObjects = new Dictionary<string, GameObject>();
         private static int netObjectId = 0;
         private static string sceneName = "";
-        public static Dictionary<string, GameObject> PrefabsList => m_prefabs;
         public static void Init()
         {
             netObjectId = 0;
@@ -56,6 +55,10 @@ namespace NetPackage.Network
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
             sceneName = scene.name;
+            if (NetManager.PrefabsList != null)
+            {
+                RegisterPrefabs(NetManager.PrefabsList.prefabs);
+            }
             SceneLoadMessage msg = new SceneLoadMessage(scene.name, NetManager.ConnectionId(), true);
             NetManager.Send(msg);
         }

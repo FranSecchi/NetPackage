@@ -30,6 +30,7 @@ namespace NetPackage.Network
         private float _lastLanDiscovery;
         private List<ServerInfo> _discoveredServers = new List<ServerInfo>();
         
+        public static NetPrefabRegistry PrefabsList => _manager.NetPrefabs;
         public static bool IsHost => _manager._isHost;
         public static string ServerName => _manager.serverName;
         public static int MaxPlayers => _manager.maxPlayers;

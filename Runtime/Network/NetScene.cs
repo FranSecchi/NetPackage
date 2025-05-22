@@ -142,6 +142,7 @@ namespace NetPackage.Network
                 NetObject netObj = new NetObject(msg.netObjectId, netBehaviour, msg.owner);
                 Register(netObj);
                 obj.transform.position = msg.position;
+                obj.transform.rotation = msg.rotation;
                 NetManager.Send(msg);
                 ValidateSpawn(msg);
             }
@@ -160,7 +161,7 @@ namespace NetPackage.Network
             GameObject obj = m_prefabs[msg.prefabName];
             if(obj == null) DebugQueue.AddMessage($"Spawning null prefab: {msg.prefabName}", DebugQueue.MessageType.Error);
             
-            GameObject instance = GameObject.Instantiate(obj, msg.position, Quaternion.identity);
+            GameObject instance = GameObject.Instantiate(obj, msg.position, msg.rotation);
             NetObject netObj = instance.GetComponent<NetBehaviour>().NetObject;
             if (netObj == null)
             {

@@ -190,7 +190,7 @@ namespace NetPackage.Network
         public static void Spawn(GameObject prefab, Vector3 position, Quaternion rotation = default, int owner = -1)
         {
             if (!_manager._running) return;
-            SpawnMessage spm = new SpawnMessage(ConnectionId(), prefab.name, position, owner);
+            SpawnMessage spm = new SpawnMessage(ConnectionId(), prefab.name, position, rotation, owner);
             spm.requesterId = ConnectionId();
             if (IsHost)
             {

@@ -77,6 +77,19 @@ namespace NetPackage.Synchronization
                 RPCManager.SendRPC(NetObject.NetId, methodName, parameters);
             }
         }
+
+        public void Own(int ownerId, bool ownChildren = false)
+        {
+            NetObject.GiveOwner(ownerId);
+            if (ownChildren)
+            {
+                var childs = FindObjectsOfType<NetBehaviour>();
+                foreach (var child in childs)
+                {
+                    child.Own(ownerId, true);
+                }
+            }
+        }
         private void RegisterAsSceneObject()
         {
             if (!NetManager.Active || !NetManager.Running)

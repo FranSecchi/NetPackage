@@ -87,7 +87,6 @@ namespace NetPackage.Synchronization
             }
             else if (snapshot.TryGetValue(syncMessage.ObjectID, out ObjectState state))
             {
-                    DebugQueue.AddStateChange(syncMessage.ObjectID, syncMessage.ComponentId, "Player "+syncMessage.SenderId, syncMessage.changedValues);
                     state.SetChange(syncMessage.ComponentId, syncMessage.changedValues);
             }
             else DebugQueue.AddMessage(

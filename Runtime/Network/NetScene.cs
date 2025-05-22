@@ -139,6 +139,7 @@ namespace NetPackage.Network
         {
             if (sceneObjects.TryGetValue(msg.sceneId, out GameObject obj))
             {
+                DebugQueue.AddMessage($"Spawned SceneObject with ID {msg.sceneId}, owned by {msg.owner}", DebugQueue.MessageType.Network);
                 NetBehaviour netBehaviour = obj.GetComponent<NetBehaviour>();
                 NetObject netObj = new NetObject(msg.netObjectId, netBehaviour, msg.owner);
                 Register(netObj);

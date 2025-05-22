@@ -16,7 +16,7 @@ namespace NetPackage.Synchronization
         
         protected virtual void Awake()
         {
-            RegisterAsSceneObject();
+            if(GetComponent<SceneObjectId>().sceneId != "") RegisterAsSceneObject();
         }
         protected virtual void OnEnable()
         {
@@ -97,9 +97,10 @@ namespace NetPackage.Synchronization
                 {
                     NetObject = behaviour.NetObject;
                     NetObject.Register(this);
+                    return;
                 }
             }
-            if(isActiveAndEnabled) enabled = false;
+            gameObject.SetActive(false);
             NetScene.RegisterSceneObject(this);
         }
         public void SetNetObject(NetObject obj)

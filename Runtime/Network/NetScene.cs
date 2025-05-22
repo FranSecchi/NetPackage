@@ -161,26 +161,31 @@ namespace NetPackage.Network
         private static void SpawnImmediate(SpawnMessage msg)
         {
             if (NetManager.IsHost && msg.netObjectId >= 0) return;
-            GameObject obj = m_prefabs[msg.prefabName];
-            if(obj == null) DebugQueue.AddMessage($"Spawning null prefab: {msg.prefabName}", DebugQueue.MessageType.Error);
-            
-            GameObject instance = GameObject.Instantiate(obj, msg.position, msg.rotation);
-            NetObject netObj = instance.GetComponent<NetBehaviour>().NetObject;
-            if (netObj == null)
+            if(m_prefabs.TryGetValue(msg.prefabName, out GameObject obj))
             {
-                DebugQueue.AddMessage($"Spawning null netObject: {msg.prefabName}", DebugQueue.MessageType.Error);
-                return;
-            }
-            
-            netObj.OwnerId = msg.owner;
-            msg.netObjectId = msg.netObjectId >= 0 ? msg.netObjectId : netObj.NetId;
-            netObj.SceneId = "";
-            Register(netObj);
-            ValidateSpawn(msg);
-            DebugQueue.AddMessage($"Spawned NetObject with ID {msg.netObjectId}, owned by {netObj.OwnerId}", DebugQueue.MessageType.Network);
+                GameObject instance = GameObject.Instantiate(obj, msg.position, msg.rotation);
+                NetObject netObj = instance.GetComponent<NetBehaviour>().NetObject;
+                if (netObj == null)
+                {
+                    DebugQueue.AddMessage($"Spawning null netObject: {msg.prefabName}", DebugQueue.MessageType.Error);
+                    return;
+                }
 
-            msg.target = null;
-            NetManager.Send(msg);
+                netObj.OwnerId = msg.owner;
+                msg.netObjectId = msg.netObjectId >= 0 ? msg.netObjectId : netObj.NetId;
+                netObj.SceneId = "";
+                Register(netObj);
+                ValidateSpawn(msg);
+                DebugQueue.AddMessage($"Spawned NetObject with ID {msg.netObjectId}, owned by {netObj.OwnerId}",
+                    DebugQueue.MessageType.Network);
+
+                msg.target = null;
+                NetManager.Send(msg);
+            }
+            else
+            {
+                DebugQueue.AddMessage($"Spawning null prefab: {msg.prefabName}", DebugQueue.MessageType.Error);
+            };
         }
 
         public static void Destroy(int objectId)

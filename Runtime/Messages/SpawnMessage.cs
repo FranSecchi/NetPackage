@@ -9,11 +9,11 @@ namespace NetPackage.Messages
     {
         [Key(1)]public string prefabName;
         [Key(2)]public Vector3 position;
-        [Key(2)]public Quaternion rotation;
-        [Key(3)]public int requesterId;
-        [Key(4)]public int owner;
-        [Key(5)]public int netObjectId;
-        [Key(6)]public string sceneId;
+        [Key(3)]public Quaternion rotation;
+        [Key(4)]public int requesterId;
+        [Key(5)]public int owner;
+        [Key(6)]public int netObjectId;
+        [Key(7)]public string sceneId;
         public SpawnMessage(){}
         public SpawnMessage(int requesterId, string prefabName, Vector3 position, Quaternion rotation = default, int owner = -1, string sceneId = "", List<int> target = null) : base(target)
         {

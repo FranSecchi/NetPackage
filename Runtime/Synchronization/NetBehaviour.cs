@@ -97,10 +97,9 @@ namespace NetPackage.Synchronization
                 {
                     NetObject = behaviour.NetObject;
                     NetObject.Register(this);
-                    return;
                 }
             }
-            gameObject.SetActive(false);
+            if(isActiveAndEnabled) enabled = false;
             NetScene.RegisterSceneObject(this);
         }
         public void SetNetObject(NetObject obj)

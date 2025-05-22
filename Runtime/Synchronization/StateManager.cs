@@ -60,7 +60,10 @@ namespace NetPackage.Synchronization
                 
                 var changes = netObject.Value.Update();
                 if (changes.Count > 0)
+                {
+                    DebugQueue.AddMessage($"Object {netObject.Key}", DebugQueue.MessageType.State);
                     Send(netObject.Key, changes);
+                }
             }
         }
 

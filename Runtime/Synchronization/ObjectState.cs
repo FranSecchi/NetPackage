@@ -68,6 +68,7 @@ namespace NetPackage.Synchronization
             {
                 var fields = _trackedSyncVars[obj.Value];
                 Dictionary<string, object> changes = new Dictionary<string, object>();
+                DebugQueue.AddMessage($"Component {obj.GetType().Name} changed", DebugQueue.MessageType.State);
 
                 foreach (var fieldEntry in fields)
                 {
@@ -77,7 +78,6 @@ namespace NetPackage.Synchronization
 
                     if (!Equals(oldValue, newValue))
                     {
-                        DebugQueue.AddMessage($"SyncVar {field.Name} changed from {oldValue} to {newValue}", DebugQueue.MessageType.State);
                         changes[field.Name] = newValue;
                         if (!updates.ContainsKey(obj.Value))
                         {

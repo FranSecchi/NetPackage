@@ -7,6 +7,8 @@ namespace NetPackage.Network
     public class DebugQueue
     {
         private static readonly Queue<DebugMessage> messageQueue = new Queue<DebugMessage>();
+        private static readonly object messageQueueLock = new object();
+        private static readonly object messageTypesLock = new object();
         private const int MaxMessages = 100;
         private static bool[] enabledMessageTypes;
 
@@ -45,20 +47,32 @@ namespace NetPackage.Network
 
         public static void SetMessageTypeEnabled(MessageType type, bool enabled)
         {
-            enabledMessageTypes[(int)type] = enabled;
+            lock (messageTypesLock)
+            {
+                enabledMessageTypes[(int)type] = enabled;
+            }
         }
 
         public static bool IsMessageTypeEnabled(MessageType type)
         {
-            return enabledMessageTypes[(int)type];
+            lock (messageTypesLock)
+            {
+                return enabledMessageTypes[(int)type];
+            }
         }
 
         public static void AddMessage(string message, MessageType type = MessageType.Info)
         {
-            if (!IsMessageTypeEnabled(type))
+            bool isEnabled;
+            lock (messageTypesLock)
+            {
+                isEnabled = enabledMessageTypes[(int)type];
+            }
+
+            if (!isEnabled)
                 return;
 
-            lock (messageQueue)
+            lock (messageQueueLock)
             {
                 messageQueue.Enqueue(new DebugMessage(message, type));
                 while (messageQueue.Count > MaxMessages)
@@ -70,7 +84,13 @@ namespace NetPackage.Network
 
         public static void AddNetworkMessage(NetMessage message, bool isReceived = true)
         {
-            if (!IsMessageTypeEnabled(MessageType.Network))
+            bool isEnabled;
+            lock (messageTypesLock)
+            {
+                isEnabled = enabledMessageTypes[(int)MessageType.Network];
+            }
+
+            if (!isEnabled)
                 return;
 
             string direction = isReceived ? "Received" : "Sent";
@@ -79,7 +99,13 @@ namespace NetPackage.Network
 
         public static void AddRPC(string rpcName, int objectId, int senderId)
         {
-            if (!IsMessageTypeEnabled(MessageType.RPC))
+            bool isEnabled;
+            lock (messageTypesLock)
+            {
+                isEnabled = enabledMessageTypes[(int)MessageType.RPC];
+            }
+
+            if (!isEnabled)
                 return;
 
             AddMessage($"[RPC] {rpcName} on object {objectId} from {senderId}", MessageType.RPC);
@@ -87,7 +113,13 @@ namespace NetPackage.Network
 
         public static void AddStateChange(int objectId, int componentId, string stateName, object change)
         {
-            if (!IsMessageTypeEnabled(MessageType.State))
+            bool isEnabled;
+            lock (messageTypesLock)
+            {
+                isEnabled = enabledMessageTypes[(int)MessageType.State];
+            }
+
+            if (!isEnabled)
                 return;
 
             AddMessage($"[State] Object {objectId}, component {componentId} changed {stateName} to {change}", MessageType.State);
@@ -95,15 +127,15 @@ namespace NetPackage.Network
 
         public static List<DebugMessage> GetMessages()
         {
-            lock (messageQueue)
+            lock (messageQueueLock)
             {
-                return new List<DebugMessage>(messageQueue);
+                return new List<DebugMessage>(messageQueue.ToArray());
             }
         }
 
         public static void ClearMessages()
         {
-            lock (messageQueue)
+            lock (messageQueueLock)
             {
                 messageQueue.Clear();
             }

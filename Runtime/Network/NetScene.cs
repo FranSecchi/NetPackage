@@ -82,6 +82,7 @@ namespace NetPackage.Network
             {
                 if (msg.requesterId == NetManager.ConnectionId())
                 {
+                    Spawn(msg);
                     Reconciliate(msg);
                 }
                 else Spawn(msg);

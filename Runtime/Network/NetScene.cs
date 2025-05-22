@@ -184,7 +184,7 @@ namespace NetPackage.Network
             }
             else
             {
-                DebugQueue.AddMessage($"Spawning null prefab: {msg.prefabName}", DebugQueue.MessageType.Error);
+                DebugQueue.AddMessage($"Spawning null prefab: {msg.prefabName}", DebugQueue.MessageType.Warning);
             };
         }
 

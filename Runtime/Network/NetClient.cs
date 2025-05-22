@@ -32,7 +32,7 @@ namespace NetPackage.Network
 
         public static void Send(NetMessage netMessage)
         {
-            DebugQueue.AddNetworkMessage(netMessage, false);
+            if(netMessage is not SyncMessage) DebugQueue.AddNetworkMessage(netMessage, false);
             Connection?.Send(netMessage);
         }
         private static void OnConnected(ConnMessage connection)

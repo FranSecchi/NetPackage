@@ -42,6 +42,15 @@ namespace NetPackage.Synchronization
             }
             OnNetDisable();
         }
+        private void Start()
+        {
+            // Register in play mode if not already registered
+            if (!registered && NetObject == null)
+            {
+                RegisterAsSceneObject();
+            }
+            OnNetStart();
+        }
         public void Disconnect()
         {
             if(!NetManager.IsHost)return;

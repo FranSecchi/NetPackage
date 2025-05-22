@@ -378,14 +378,14 @@ namespace NetPackage.Editor
             EditorGUI.indentLevel++;
             try
             {
-                var prefabsList = Application.isPlaying ? NetScene.PrefabsList : null;
-                if (prefabsList != null && prefabsList.Count > 0)
+                var prefabsList = Application.isPlaying ? NetManager.PrefabsList : null;
+                if (prefabsList != null && prefabsList.prefabs != null && prefabsList.prefabs.Count > 0)
                 {
-                    foreach (var prefab in prefabsList)
+                    foreach (var prefab in prefabsList.prefabs)
                     {
-                        if (prefab.Value != null)
+                        if (prefab != null)
                         {
-                            EditorGUILayout.LabelField(prefab.Key);
+                            EditorGUILayout.LabelField(prefab.name);
                         }
                     }
                 }

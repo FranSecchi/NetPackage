@@ -37,6 +37,8 @@ namespace NetPackage.Synchronization
 
         protected override void OnNetSpawn()
         {
+            if (!NetManager.Active || !NetManager.Running)
+                return;
             _positionX = transform.position.x;
             _positionY = transform.position.y;
             _positionZ = transform.position.z;
@@ -62,6 +64,8 @@ namespace NetPackage.Synchronization
 
         private void Update()
         {
+            if (!NetManager.Active || !NetManager.Running)
+                return;
             if (!isOwned)
             {
                 // Store new state when received

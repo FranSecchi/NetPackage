@@ -86,14 +86,25 @@ namespace NetPackage.Synchronization
             if(NetManager.IsHost)
             {
                 if(message.target == null || message.target.Contains(-1)) 
+                {
                     CallRPC(message.ObjectId, message.MethodName, message.Parameters);
-                List<int> targets = new List<int>();
-                if (message.target != null) targets.Remove(message.SenderID); 
-                message.target = targets;
-                DebugQueue.AddMessage($"{message.SenderID} sent RPC {message.MethodName} | {message.ObjectId}", DebugQueue.MessageType.RPC);
-                NetManager.Send(message);
+                }
+                
+                if (message.target != null)
+                {
+                    message.target.Remove(message.SenderID);
+                    
+                    if (message.target.Count > 0)
+                    {
+                        DebugQueue.AddMessage($"{message.SenderID} sent RPC {message.MethodName} | {message.ObjectId}", DebugQueue.MessageType.RPC);
+                        NetManager.Send(message);
+                    }
+                }
             }
-            else CallRPC(message.ObjectId, message.MethodName, message.Parameters);
+            else 
+            {
+                CallRPC(message.ObjectId, message.MethodName, message.Parameters);
+            }
         }
 
         private static void CallRPC(int netId, string methodName, object[] parameters)
@@ -187,23 +198,37 @@ namespace NetPackage.Synchronization
                                 return;
                             }
                             targetIds = (List<int>)parameters[^1];
-                            if(NetManager.IsHost && targetIds.Contains(-1)) CallRPC(netId, methodName, parameters);
+                            if(NetManager.IsHost && targetIds.Contains(-1)) 
+                            {
+                                CallRPC(netId, methodName, parameters);
+                            }
                             break;
                         case Send.Others:
                             targetIds = new List<int>(NetManager.allPlayers);
                             targetIds.Remove(NetManager.ConnectionId());
+                            if(NetManager.IsHost)
+                            {
+                                CallRPC(netId, methodName, parameters);
+                            }
                             break;
                         case Send.All:
-                            if(NetManager.IsHost) CallRPC(netId, methodName, parameters);
+                            if(NetManager.IsHost)
+                            {
+                                CallRPC(netId, methodName, parameters);
+                            }
+                            targetIds = new List<int>(NetManager.allPlayers);
                             break;
                     }
                 }
             }
-            DebugQueue.AddRPC(methodName, netId, NetManager.ConnectionId());
-            var message = new RPCMessage(NetManager.ConnectionId(), netId, methodName, targetIds, parameters);
-            DebugQueue.AddMessage($"{message.SenderID} sent RPC {methodName} | Obj: {netId}", DebugQueue.MessageType.RPC);
-
-            NetManager.Send(message);
+            
+            if (targetIds != null && targetIds.Count > 0)
+            {
+                DebugQueue.AddRPC(methodName, netId, NetManager.ConnectionId());
+                var message = new RPCMessage(NetManager.ConnectionId(), netId, methodName, targetIds, parameters);
+                DebugQueue.AddMessage($"{message.SenderID} sent RPC {methodName} | Obj: {netId}", DebugQueue.MessageType.RPC);
+                NetManager.Send(message);
+            }
         }
     }
 } 

@@ -28,12 +28,6 @@ namespace NetPackage.Synchronization
             }
             if (!spawned)
             {
-                if (!wasEnabled)
-                {
-                    wasEnabled = true;
-                    enabled = false;
-                    return;
-                }
                 spawned = true;
                 OnNetSpawn();
             }
@@ -92,8 +86,7 @@ namespace NetPackage.Synchronization
                     NetObject.Register(this);
                 }
             }
-            wasEnabled = isActiveAndEnabled;
-            if(wasEnabled) enabled = false;
+            if(isActiveAndEnabled) enabled = false;
             NetScene.RegisterSceneObject(this);
         }
         public void SetNetObject(NetObject obj)

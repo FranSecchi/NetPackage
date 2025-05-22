@@ -47,6 +47,7 @@ namespace NetPackage.Synchronization
         {
             if (!_behaviours.Contains(obj))
             {
+                DebugQueue.AddMessage($"Registering {obj.GetType().Name} to {NetId}.", DebugQueue.MessageType.Warning);
                 _behaviours.Add(obj);
             }
             obj.SetNetObject(this);

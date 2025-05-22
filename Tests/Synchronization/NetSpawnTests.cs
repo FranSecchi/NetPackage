@@ -86,7 +86,7 @@ namespace SynchronizationTest
             int initialCount = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
             
             Vector3 spawnPos = new Vector3(4, 5, 6);
-            NetMessage clientSpawnMsg = new SpawnMessage(CLIENT_ID, "TestObj", spawnPos, CLIENT_ID);
+            NetMessage clientSpawnMsg = new SpawnMessage(CLIENT_ID, "TestObj", spawnPos, owner: CLIENT_ID);
             client.Send(NetSerializer.Serialize(clientSpawnMsg));
             yield return new WaitForSeconds(0.5f);
             

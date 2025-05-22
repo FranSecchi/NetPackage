@@ -129,6 +129,7 @@ namespace NetPackage.Network
             int id = netObjectId++;
             NetObject netObj = new NetObject(id, netBehaviour);
             netObj.SceneId = sceneId;
+            Register(netObj);
         }
         public static void Spawn(SpawnMessage msg)
         {
@@ -163,7 +164,6 @@ namespace NetPackage.Network
         private static void ValidateSpawn(SpawnMessage msg)
         {
             DebugQueue.AddMessage("Validated spawn: "+msg.netObjectId, DebugQueue.MessageType.Network);
-            StateManager.Register(msg.netObjectId, new ObjectState());
             GetNetObject(msg.netObjectId)?.Enable();
         }
 
@@ -223,7 +223,9 @@ namespace NetPackage.Network
         private static void Register(NetObject obj)
         {
             if (netObjects.ContainsKey(obj.NetId)) return;
-            netObjects[obj.NetId] = obj;
+            netObjects[obj.NetId] = obj;            
+            StateManager.Register(obj.NetId, new ObjectState());
+
         }
 
         private static void Unregister(int objectId)

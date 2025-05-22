@@ -13,6 +13,7 @@ namespace NetPackage.Synchronization
         private bool registered = false;
         public  bool isOwned => NetObject.Owned;
         protected bool spawned = false;
+        private bool validated = false;
         
         protected virtual void Awake()
         {
@@ -20,6 +21,8 @@ namespace NetPackage.Synchronization
         }
         protected virtual void OnEnable()
         {
+            if (NetObject == null || !validated)
+                return;
             if (NetObject != null)
             {
                 StateManager.Register(NetObject.NetId, this);
@@ -109,6 +112,11 @@ namespace NetPackage.Synchronization
             if (obj == null) return;
             NetObject = obj;
             registered = true;
+        }
+
+        public void Validate()
+        {
+            validated = true;
         }
     }
 }

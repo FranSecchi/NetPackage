@@ -117,8 +117,12 @@ namespace NetPackage.Network
         public static void RegisterSceneObject(NetBehaviour netBehaviour)
         {
             string sceneId = netBehaviour.GetComponent<SceneObjectId>().sceneId;
-            if(sceneId != null && !sceneObjects.ContainsKey(sceneId)) sceneObjects[sceneId] = netBehaviour.gameObject;
-            DebugQueue.AddMessage($"Registering {netBehaviour.gameObject.name} as {sceneId}", DebugQueue.MessageType.Warning);
+            if(sceneId != null && !sceneObjects.ContainsKey(sceneId))
+            {
+                sceneObjects[sceneId] = netBehaviour.gameObject;
+                DebugQueue.AddMessage($"Registering {netBehaviour.gameObject.name} as {sceneId}",
+                    DebugQueue.MessageType.Warning);
+            }
             if (!NetManager.IsHost) return;
             
             int id = netObjectId++;
@@ -171,12 +175,14 @@ namespace NetPackage.Network
                 NetObject netObj = instance.GetComponent<NetBehaviour>().NetObject;
                 if (netObj == null)
                 {
-                    DebugQueue.AddMessage($"Spawning null netObject: {msg.prefabName}", DebugQueue.MessageType.Error);
-                    return;
+                    netObj = new NetObject(msg.netObjectId, instance.GetComponent<NetBehaviour>(), msg.owner);
                 }
-
-                netObj.OwnerId = msg.owner;
-                msg.netObjectId = msg.netObjectId >= 0 ? msg.netObjectId : netObj.NetId;
+                else
+                {
+                    netObj.OwnerId = msg.owner;
+                    msg.netObjectId = msg.netObjectId >= 0 ? msg.netObjectId : netObj.NetId;
+                }
+                
                 netObj.SceneId = "";
                 Register(netObj);
                 ValidateSpawn(msg);

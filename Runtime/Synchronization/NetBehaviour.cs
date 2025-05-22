@@ -16,8 +16,6 @@ namespace NetPackage.Synchronization
         
         protected virtual void Awake()
         {
-            if (!NetManager.Active || !NetManager.Running)
-                return;
             RegisterAsSceneObject();
         }
         protected virtual void OnEnable()
@@ -74,6 +72,8 @@ namespace NetPackage.Synchronization
         }
         private void RegisterAsSceneObject()
         {
+            if (!NetManager.Active || !NetManager.Running)
+                return;
             if (registered) return;
             registered = true;
             var behaviours = gameObject.GetComponents<NetBehaviour>();

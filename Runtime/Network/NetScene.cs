@@ -184,7 +184,8 @@ namespace NetPackage.Network
                     DebugQueue.MessageType.Network);
 
                 msg.target = null;
-                NetManager.Send(msg);
+                if(NetManager.IsHost)
+                    NetHost.Send(msg);
             }
             else
             {

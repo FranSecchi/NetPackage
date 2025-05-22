@@ -110,12 +110,13 @@ namespace NetPackage.Synchronization
 
         public static void SetSync(SyncMessage syncMessage)
         {
-            if (syncMessage.SenderId == NetManager.ConnectionId())
+            if (snapshot.TryGetValue(syncMessage.ObjectID, out ObjectState state))
             {
-                //Reconcile
-            }
-            else if (snapshot.TryGetValue(syncMessage.ObjectID, out ObjectState state))
-            {
+                if (syncMessage.SenderId == NetManager.ConnectionId())
+                {
+                    state.Reconcile(syncMessage.ObjectID, syncMessage.ComponentId, syncMessage.changedValues);
+                }
+                else 
                     state.SetChange(syncMessage.ObjectID, syncMessage.ComponentId, syncMessage.changedValues);
             }
             else DebugQueue.AddMessage(

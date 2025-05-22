@@ -19,26 +19,13 @@ namespace NetPackage.Synchronization
         [Sync] private float _scaleZ;
 
         // Interpolation settings
-        [SerializeField] private float _interpolationBackTime = 0.1f; // How far back to interpolate
         [SerializeField] private float _interpolationSpeed = 10f; // How fast to interpolate
-        
-        private struct TransformState
-        {
-            public Vector3 Position;
-            public Quaternion Rotation;
-            public Vector3 Scale;
-            public float Timestamp;
-        }
-        
-        private Queue<TransformState> _stateBuffer = new Queue<TransformState>();
-        private TransformState _targetState;
-        private TransformState _currentState;
-        private bool _hasTargetState;
-        private Vector3 _lastPredictedPosition;
-        private Quaternion _lastPredictedRotation;
+        [SerializeField] private float _positionTolerance = 0.1f; // How much position difference is allowed
+        [SerializeField] private float _rotationTolerance = 5f; // How much rotation difference is allowed (in degrees)
 
         protected override void OnNetSpawn()
         {
+            // Initialize sync vars with current transform values
             _positionX = transform.position.x;
             _positionY = transform.position.y;
             _positionZ = transform.position.z;
@@ -50,113 +37,124 @@ namespace NetPackage.Synchronization
             _scaleY = transform.localScale.y;
             _scaleZ = transform.localScale.z;
 
-            // Initialize states
-            _currentState = new TransformState
-            {
-                Position = transform.position,
-                Rotation = transform.rotation,
-                Scale = transform.localScale,
-                Timestamp = Time.time
-            };
-            _targetState = _currentState;
-            _hasTargetState = true;
-
             if (isOwned)
             {
                 StartPrediction();
             }
         }
 
-        protected override void OnPredictionStart()
+        protected override void Predict(float deltaTime)
         {
-            _lastPredictedPosition = transform.position;
-            _lastPredictedRotation = transform.rotation;
+            if (isOwned)
+            {
+                // Update sync vars with current transform values
+                _positionX = transform.position.x;
+                _positionY = transform.position.y;
+                _positionZ = transform.position.z;
+                _rotationX = transform.rotation.x;
+                _rotationY = transform.rotation.y;
+                _rotationZ = transform.rotation.z;
+                _rotationW = transform.rotation.w;
+                _scaleX = transform.localScale.x;
+                _scaleY = transform.localScale.y;
+                _scaleZ = transform.localScale.z;
+            }
         }
 
-        protected override void OnStateReconcile()
+        protected override bool IsDesynchronized(Dictionary<string, object> changes)
         {
-            // Store current predicted state
-            var predictedPosition = transform.position;
-            var predictedRotation = transform.rotation;
-
-            // Apply authoritative state
-            transform.position = new Vector3(_positionX, _positionY, _positionZ);
-            transform.rotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
-
-            // Smoothly interpolate to predicted state if it's close enough
-            if (Vector3.Distance(predictedPosition, transform.position) < 1f)
+            // Check position changes
+            if (HasPositionChanges(changes, out Vector3 newPos))
             {
-                transform.position = Vector3.Lerp(transform.position, predictedPosition, 0.5f);
-                transform.rotation = Quaternion.Slerp(transform.rotation, predictedRotation, 0.5f);
+                return Vector3.Distance(transform.position, newPos) > _positionTolerance;
             }
 
-            _lastPredictedPosition = transform.position;
-            _lastPredictedRotation = transform.rotation;
+            // Check rotation changes
+            if (HasRotationChanges(changes, out Quaternion newRot))
+            {
+                return Quaternion.Angle(transform.rotation, newRot) > _rotationTolerance;
+            }
+
+            return false;
         }
 
-        private void Update()
+        protected override void OnStateReconcile(Dictionary<string, object> changes)
         {
-            if (!isOwned)
+            // Handle position changes
+            if (HasPositionChanges(changes, out Vector3 newPos))
             {
-                // Store new state when received
-                if (_positionX != transform.position.x || _positionY != transform.position.y || _positionZ != transform.position.z ||
-                    _rotationX != transform.rotation.x || _rotationY != transform.rotation.y || _rotationZ != transform.rotation.z || _rotationW != transform.rotation.w)
+                if (isOwned)
                 {
-                    var newState = new TransformState
-                    {
-                        Position = new Vector3(_positionX, _positionY, _positionZ),
-                        Rotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW),
-                        Scale = new Vector3(_scaleX, _scaleY, _scaleZ),
-                        Timestamp = Time.time
-                    };
-                    
-                    _stateBuffer.Enqueue(newState);
-                    
-                    // Remove old states
-                    while (_stateBuffer.Count > 0 && _stateBuffer.Peek().Timestamp < Time.time - _interpolationBackTime)
-                    {
-                        _stateBuffer.Dequeue();
-                    }
-                    
-                    // Update target state
-                    if (_stateBuffer.Count > 0)
-                    {
-                        _targetState = _stateBuffer.Peek();
-                        _hasTargetState = true;
-                    }
+                    transform.position = Vector3.Lerp(transform.position, newPos, Time.deltaTime * _interpolationSpeed);
                 }
-
-                // Interpolate to target state
-                if (_hasTargetState)
+                else
                 {
-                    transform.position = Vector3.Lerp(transform.position, _targetState.Position, Time.deltaTime * _interpolationSpeed);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, _targetState.Rotation, Time.deltaTime * _interpolationSpeed);
-                    transform.localScale = Vector3.Lerp(transform.localScale, _targetState.Scale, Time.deltaTime * _interpolationSpeed);
+                    transform.position = newPos;
                 }
             }
-            else
+
+            // Handle rotation changes
+            if (HasRotationChanges(changes, out Quaternion newRot))
             {
-                // For owned objects, update sync vars if not reconciling
-                if (!_isPredicting)
+                if (isOwned)
                 {
-                    _positionX = transform.position.x;
-                    _positionY = transform.position.y;
-                    _positionZ = transform.position.z;
-                    _rotationX = transform.rotation.x;
-                    _rotationY = transform.rotation.y;
-                    _rotationZ = transform.rotation.z;
-                    _rotationW = transform.rotation.w;
-                    _scaleX = transform.localScale.x;
-                    _scaleY = transform.localScale.y;
-                    _scaleZ = transform.localScale.z;
+                    transform.rotation = Quaternion.Slerp(transform.rotation, newRot, Time.deltaTime * _interpolationSpeed);
+                }
+                else
+                {
+                    transform.rotation = newRot;
+                }
+            }
+
+            // Handle scale changes
+            if (HasScaleChanges(changes, out Vector3 newScale))
+            {
+                if (isOwned)
+                {
+                    transform.localScale = Vector3.Lerp(transform.localScale, newScale, Time.deltaTime * _interpolationSpeed);
+                }
+                else
+                {
+                    transform.localScale = newScale;
                 }
             }
         }
 
-        // Called when receiving authoritative state from server
-        public void OnAuthoritativeStateReceived()
+        private bool HasPositionChanges(Dictionary<string, object> changes, out Vector3 newPos)
         {
-            OnStateReceived();
+            newPos = transform.position;
+            bool hasChanges = false;
+
+            if (changes.TryGetValue("_positionX", out object x)) { newPos.x = (float)x; hasChanges = true; }
+            if (changes.TryGetValue("_positionY", out object y)) { newPos.y = (float)y; hasChanges = true; }
+            if (changes.TryGetValue("_positionZ", out object z)) { newPos.z = (float)z; hasChanges = true; }
+
+            return hasChanges;
+        }
+
+        private bool HasRotationChanges(Dictionary<string, object> changes, out Quaternion newRot)
+        {
+            newRot = transform.rotation;
+            bool hasChanges = false;
+
+            if (changes.TryGetValue("_rotationX", out object x)) { newRot.x = (float)x; hasChanges = true; }
+            if (changes.TryGetValue("_rotationY", out object y)) { newRot.y = (float)y; hasChanges = true; }
+            if (changes.TryGetValue("_rotationZ", out object z)) { newRot.z = (float)z; hasChanges = true; }
+            if (changes.TryGetValue("_rotationW", out object w)) { newRot.w = (float)w; hasChanges = true; }
+
+            return hasChanges;
+        }
+
+        private bool HasScaleChanges(Dictionary<string, object> changes, out Vector3 newScale)
+        {
+            newScale = transform.localScale;
+            bool hasChanges = false;
+
+            if (changes.TryGetValue("_scaleX", out object x)) { newScale.x = (float)x; hasChanges = true; }
+            if (changes.TryGetValue("_scaleY", out object y)) { newScale.y = (float)y; hasChanges = true; }
+            if (changes.TryGetValue("_scaleZ", out object z)) { newScale.z = (float)z; hasChanges = true; }
+
+            return hasChanges;
         }
     }
 }

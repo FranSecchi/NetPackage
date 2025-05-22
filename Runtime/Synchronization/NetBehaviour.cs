@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NetPackage.Network;
 using UnityEngine;
 
@@ -17,6 +18,9 @@ namespace NetPackage.Synchronization
         // Prediction support
         protected bool _isPredicting = false;
         protected float _lastPredictionTime;
+        protected float _lastReconcileTime;
+        protected float _predictionDelay = 0.1f;
+        public bool IsPredicting => _isPredicting;
         
         protected virtual void Awake()
         {
@@ -30,10 +34,12 @@ namespace NetPackage.Synchronization
             {
                 StateManager.Register(NetObject.NetId, this);
                 RPCManager.Register(NetObject.NetId, this);
+                RollbackManager.UpdatePrediction += UpdatePrediction;
             }
             if (!spawned)
             {
                 spawned = true;
+                if (NetManager.Rollback) 
                 OnNetSpawn();
             }
             OnNetEnable();
@@ -45,6 +51,7 @@ namespace NetPackage.Synchronization
             {
                 StateManager.Unregister(NetObject.NetId, this);
                 RPCManager.Unregister(NetObject.NetId, this);
+                RollbackManager.UpdatePrediction += UpdatePrediction;
             }
             OnNetDisable();
         }
@@ -107,7 +114,20 @@ namespace NetPackage.Synchronization
             registered = true;
         }
         
-        // New prediction methods
+        private void UpdatePrediction()
+        {
+            if (!isOwned || !_isPredicting) return;
+            
+            float currentTime = Time.time;
+            if (currentTime - _lastPredictionTime >= _predictionDelay)
+            {
+                Predict(currentTime - _lastPredictionTime);
+                _lastPredictionTime = currentTime;
+            }
+            else StopPrediction();
+        }
+        
+        // Prediction methods
         protected virtual void StartPrediction()
         {
             if (!isOwned) return;
@@ -116,7 +136,7 @@ namespace NetPackage.Synchronization
             OnPredictionStart();
         }
         
-        protected virtual void StopPrediction()
+        protected void StopPrediction()
         {
             if (!isOwned) return;
             _isPredicting = false;
@@ -126,17 +146,51 @@ namespace NetPackage.Synchronization
         protected virtual void OnPredictionStart() { }
         protected virtual void OnPredictionStop() { }
         
-        protected virtual void OnStateReceived()
+        // Called by StateManager when state changes are received
+        public void OnStateReceived(int id, Dictionary<string, object> changes)
         {
             if (isOwned && _isPredicting)
             {
-                // Handle state reconciliation
-                OnStateReconcile();
+                // Check for desync with the new state changes
+                if (IsDesynchronized(changes))
+                {
+                    // Log the desync
+                    DebugQueue.AddRollback(NetID, _lastReconcileTime, "State desync detected at " + GetType().Name);
+                    
+                    // Trigger rollback
+                    RollbackManager.RollbackToTime(NetID, id, _lastReconcileTime, changes);
+                }
+                else
+                {
+                    // Handle state reconciliation
+                    _lastReconcileTime = Time.time;
+                    OnStateReconcile(changes);
+                }
+            }
+            else
+            {
+                // For non-owned objects, just apply the changes
+                OnStateReconcile(changes);
             }
         }
         
-        protected virtual void OnStateReconcile() { }
+        protected virtual void OnStateReconcile(Dictionary<string, object> changes) { }
         
-        public bool IsPredicting => _isPredicting;
+        // New virtual methods for prediction and desync detection
+        protected virtual void Predict(float deltaTime)
+        {
+            // Override this method to implement prediction logic
+            // This is called during prediction phase
+        }
+        
+        protected virtual bool IsDesynchronized(Dictionary<string, object> changes)
+        {
+            // Override this method to implement desync detection logic
+            // Return true if the current state differs from the authoritative state
+            return false;
+        }
+        
+        
+        
     }
 }

@@ -123,6 +123,18 @@ namespace NetPackage.Synchronization
                 DebugQueue.AddMessage($"No object {netId} with component {id} found", DebugQueue.MessageType.Warning);
         }
         
+        public void Reconcile(int netId, int id, Dictionary<string, object> changes)
+        {
+            if (_objectIds.TryGetValue(id, out object obj))
+            {
+                if (obj is NetBehaviour netBehaviour)
+                {
+                    netBehaviour.OnStateReceived(id, changes);
+                }
+            }
+            else
+                DebugQueue.AddMessage($"No object {netId} with component {id} found", DebugQueue.MessageType.Warning);
+        }
         public Dictionary<FieldInfo, object> GetField(object obj)
         {
             if (_trackedSyncVars.TryGetValue(obj, out var field))
@@ -174,5 +186,6 @@ namespace NetPackage.Synchronization
                 _objectIds.Remove(keyToRemove.Value);
             }
         }
+
     }
 }

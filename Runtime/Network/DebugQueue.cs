@@ -31,7 +31,8 @@ namespace NetPackage.Network
             Error,
             Network,
             RPC,
-            State
+            State,
+            Rollback
         }
 
         static DebugQueue()
@@ -91,6 +92,14 @@ namespace NetPackage.Network
                 return;
 
             AddMessage($"[State] Object {objectId}, component {componentId} changed {stateName} to {change}", MessageType.State);
+        }
+
+        public static void AddRollback(int objectId, float targetTime, string reason)
+        {
+            if (!IsMessageTypeEnabled(MessageType.Rollback))
+                return;
+
+            AddMessage($"[Rollback] Object {objectId} rolling back to time {targetTime:F3}s. Reason: {reason}", MessageType.Rollback);
         }
 
         public static List<DebugMessage> GetMessages()

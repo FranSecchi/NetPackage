@@ -24,6 +24,9 @@ namespace NetPackage.Network
         [SerializeField] public string serverName = "Net_Server";
         [SerializeField] public int maxPlayers = 10;
         [SerializeField] public bool useLAN = false;
+        [SerializeField] public bool useRollback = false;
+        [SerializeField] public float rollbackWindow = 0.1f;
+        [SerializeField] public int maxStates = 20;
         [SerializeField] public float lanDiscoveryInterval = 0.1f;
         [SerializeField] public float stateUpdateInterval = 0.05f; // 20 updates per second by default
         private float _lastStateUpdate;
@@ -35,6 +38,7 @@ namespace NetPackage.Network
         public static int MaxPlayers => _manager.maxPlayers;
         public static int PlayerCount => allPlayers.Count;
         public static bool Running => _manager._running;
+        public static bool Rollback => _manager.useRollback;
         public static bool Active => _manager != null;
         public static bool UseLan
         {
@@ -54,6 +58,7 @@ namespace NetPackage.Network
             Transport ??= new UDPSolution();
             allPlayers = new List<int>();
             if(NetPrefabs != null) NetScene.RegisterPrefabs(NetPrefabs.prefabs);
+            if(useRollback) RollbackManager.Initialize(rollbackWindow, maxStates);
             _running = false;
             DontDestroyOnLoad(this);
         }
@@ -83,6 +88,7 @@ namespace NetPackage.Network
                 if (currentTime - _lastStateUpdate >= stateUpdateInterval)
                 {
                     StateManager.SendUpdateStates();
+                    if(useRollback) RollbackManager.Update();
                     _lastStateUpdate = currentTime;
                 }
             }

@@ -31,6 +31,7 @@ namespace NetPackage.Network
         private List<ServerInfo> _discoveredServers = new List<ServerInfo>();
         
         public static bool IsHost => _manager._isHost;
+        public static NetPrefabRegistry PrefabsList => _manager.NetPrefabs;
         public static string ServerName => _manager.serverName;
         public static int MaxPlayers => _manager.maxPlayers;
         public static int PlayerCount => allPlayers.Count;

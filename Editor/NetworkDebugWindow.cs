@@ -372,6 +372,35 @@ namespace NetPackage.Editor
             EditorGUI.indentLevel--;
         }
 
+        private void DrawRegisteredPrefabs()
+        {
+            EditorGUILayout.LabelField("Registered Prefabs", EditorStyles.boldLabel);
+            EditorGUI.indentLevel++;
+            try
+            {
+                var prefabsList = Application.isPlaying ? NetManager.PrefabsList : null;
+                if (prefabsList != null && prefabsList.prefabs != null && prefabsList.prefabs.Count > 0)
+                {
+                    foreach (var prefab in prefabsList.prefabs)
+                    {
+                        if (prefab != null)
+                        {
+                            EditorGUILayout.LabelField(prefab.name);
+                        }
+                    }
+                }
+                else
+                {
+                    EditorGUILayout.LabelField("No prefabs registered");
+                }
+            }
+            catch (System.Exception)
+            {
+                EditorGUILayout.LabelField("Unable to retrieve registered prefabs");
+            }
+            EditorGUI.indentLevel--;
+        }
+
         private void OnGUI()
         {
             EditorGUILayout.BeginVertical();
@@ -402,6 +431,8 @@ namespace NetPackage.Editor
             DrawServerInformation();
             EditorGUILayout.Space();
             DrawClientInformation();
+            EditorGUILayout.Space();
+            DrawRegisteredPrefabs();
             EditorGUILayout.Space();
             DrawNetworkObjects();
 

@@ -1,4 +1,5 @@
 using System;
+using NetPackage.Network;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -19,6 +20,7 @@ namespace NetPackage.Synchronization
             // and ID is not yet assigned
             if (scene.IsValid() && scene.isLoaded && !string.IsNullOrEmpty(sceneId))
             {
+                DebugQueue.AddMessage($"Removing sceneid {gameObject.name}", DebugQueue.MessageType.Warning);
                 sceneId = "";
             }
         }

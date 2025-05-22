@@ -19,18 +19,8 @@ namespace NetPackage.Synchronization
         }
         public static void Register(int netId, object target)
         {
-            if (!_rpcTargets.ContainsKey(netId))
-            {
-                _rpcTargets[netId] = new List<object>();
-                _rpcMethods[netId] = new Dictionary<string, List<MethodInfo>>();
-            }
-
-            if (_rpcTargets[netId].Contains(target))
-                return;
-
-            _rpcTargets[netId].Add(target);
-
             var methods = target.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
             foreach (var method in methods)
             {
                 var rpcAttr = method.GetCustomAttribute<NetRPC>();
@@ -41,8 +31,22 @@ namespace NetPackage.Synchronization
                         _rpcMethods[netId][method.Name] = new List<MethodInfo>();
                     }
                     _rpcMethods[netId][method.Name].Add(method);
+                    break;
                 }
             }
+
+            if (methods.Length <= 0) return;
+
+            if (!_rpcTargets.ContainsKey(netId))
+            {
+                _rpcTargets[netId] = new List<object>();
+                _rpcMethods[netId] = new Dictionary<string, List<MethodInfo>>();
+            }
+
+            if (_rpcTargets[netId].Contains(target))
+                return;
+
+            _rpcTargets[netId].Add(target);
         }
 
         public static void Unregister(int netId, object target)

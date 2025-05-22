@@ -22,6 +22,8 @@ namespace NetPackage.Synchronization
         [SerializeField] private float _interpolationBackTime = 0.1f; // How far back to interpolate
         [SerializeField] private float _interpolationSpeed = 10f; // How fast to interpolate
         
+        private bool _isSynchronized = true;
+        
         private struct TransformState
         {
             public Vector3 Position;
@@ -34,6 +36,39 @@ namespace NetPackage.Synchronization
         private TransformState _targetState;
         private TransformState _currentState;
         private bool _hasTargetState;
+
+        public void Reset()
+        {
+            _isSynchronized = false;
+            _stateBuffer.Clear();
+            _hasTargetState = false;
+            
+            // Update the current state to match the current transform
+            _currentState = new TransformState
+            {
+                Position = transform.position,
+                Rotation = transform.rotation,
+                Scale = transform.localScale,
+                Timestamp = Time.time
+            };
+            
+            // Update the sync variables to match current transform
+            _positionX = transform.position.x;
+            _positionY = transform.position.y;
+            _positionZ = transform.position.z;
+            _rotationX = transform.rotation.x;
+            _rotationY = transform.rotation.y;
+            _rotationZ = transform.rotation.z;
+            _rotationW = transform.rotation.w;
+            _scaleX = transform.localScale.x;
+            _scaleY = transform.localScale.y;
+            _scaleZ = transform.localScale.z;
+        }
+
+        public void ResumeSynchronization()
+        {
+            _isSynchronized = true;
+        }
 
         protected override void OnNetSpawn()
         {
@@ -64,7 +99,7 @@ namespace NetPackage.Synchronization
 
         private void Update()
         {
-            if (!NetManager.Active || !NetManager.Running)
+            if (!NetManager.Active || !NetManager.Running || !_isSynchronized)
                 return;
             if (!isOwned)
             {

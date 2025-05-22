@@ -143,6 +143,7 @@ namespace NetPackage.Network
                 NetBehaviour netBehaviour = obj.GetComponent<NetBehaviour>();
                 NetObject netObj = new NetObject(msg.netObjectId, netBehaviour, msg.owner);
                 Register(netObj);
+                netObj.SceneId = msg.sceneId;
                 obj.transform.position = msg.position;
                 obj.transform.rotation = msg.rotation;
                 NetManager.Send(msg);

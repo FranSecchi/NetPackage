@@ -100,6 +100,7 @@ namespace NetPackage.Network
         private void OnApplicationQuit()
         {
             StopNet();
+            _manager.mainThreadActions.Clear();
             Messager.ClearHandlers();
             NetScene.CleanUp();
         }

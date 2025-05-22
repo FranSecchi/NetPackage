@@ -59,7 +59,10 @@ namespace NetPackage.Synchronization
 
         public void Enable()
         {
-            if(!_behaviours[0].gameObject.activeSelf) _behaviours[0].gameObject.SetActive(true);
+            foreach (var netBehaviour in _behaviours)
+            {
+                if(!netBehaviour.isActiveAndEnabled) netBehaviour.enabled = true;
+            }
         }
     }
 }

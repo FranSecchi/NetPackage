@@ -25,7 +25,6 @@ namespace NetPackage.Editor
         private bool[] messageTypeFilters;
         private string messageSearchText = "";
 
-        // Last known state fields
         private static ServerInfo lastKnownServerInfo;
         private static List<ConnectionInfo> lastKnownClients;
         private static List<NetObject> lastKnownNetObjects;
@@ -52,7 +51,6 @@ namespace NetPackage.Editor
         {
             if (!Application.isPlaying || !this) return;
 
-            // Handle auto-refresh
             if (autoRefresh && EditorApplication.timeSinceStartup - lastRefreshTime > refreshInterval)
             {
                 if (this)
@@ -62,7 +60,6 @@ namespace NetPackage.Editor
                 }
             }
 
-            // Update last known state
             if (Application.isPlaying && this)
             {
                 UpdateLastKnownState();
@@ -115,7 +112,6 @@ namespace NetPackage.Editor
                 var newNetObjects = NetScene.GetAllNetObjects();
                 if (newNetObjects != null && newNetObjects.Count > 0)
                 {
-                    // Create a new list to store the objects
                     lastKnownNetObjects = new List<NetObject>();
                     foreach (var netObj in newNetObjects)
                     {
@@ -135,7 +131,6 @@ namespace NetPackage.Editor
             EditorGUILayout.LabelField("Message Log", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
 
-            // Message filters
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Filter:", GUILayout.Width(50));
             for (int i = 0; i < messageTypeFilters.Length; i++)
@@ -153,10 +148,8 @@ namespace NetPackage.Editor
             }
             EditorGUILayout.EndHorizontal();
 
-            // Search box
             messageSearchText = EditorGUILayout.TextField("Search", messageSearchText);
 
-            // Clear button
             if (GUILayout.Button("Clear Messages"))
             {
                 DebugQueue.ClearMessages();
@@ -420,7 +413,6 @@ namespace NetPackage.Editor
                 EditorGUILayout.HelpBox("Showing last known state from previous play session.", MessageType.Info);
             }
 
-            // Auto-refresh toggle (only in play mode)
             if (Application.isPlaying)
             {
                 autoRefresh = EditorGUILayout.Toggle("Auto Refresh", autoRefresh);

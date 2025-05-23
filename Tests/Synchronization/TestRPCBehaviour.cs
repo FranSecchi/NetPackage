@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using MessagePack;
-using NetPackage.Synchronization;
-
-namespace SynchronizationTest
+namespace NetPackage.Synchronization.Tests
 {
     public class TestRPCBehaviour : NetBehaviour
     {

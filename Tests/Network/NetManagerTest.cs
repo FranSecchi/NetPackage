@@ -5,10 +5,8 @@ using NetPackage.Messages;
 using NetPackage.Transport;
 using NetPackage.Transport.UDP;
 using UnityEngine;
-using System.Net;
-using NetPackage.Network;
 
-namespace NetworkManagerTest
+namespace NetPackage.Network.Tests
 {
     public class NetManagerTest : MonoBehaviour
     {
@@ -214,7 +212,6 @@ namespace NetworkManagerTest
             if (data != null && data.Length != 0)
             {
                 NetMessage msg = NetSerializer.Deserialize<NetMessage>(data);
-                Debug.Log("Received: " + msg);
                 Messager.HandleMessage(msg);
             }
         }
@@ -271,7 +268,6 @@ namespace NetworkManagerTest
         {
             if (Clients.TryAdd(id, new NetConnTest(id, true)))
             {
-                Debug.Log($"Client {id} connected. Clients count: {Clients.Count}");
                 NetManagerTest.allPlayers.Add(id);
                 UpdatePlayers(id);
             }
@@ -282,7 +278,6 @@ namespace NetworkManagerTest
         {
             if(Clients.TryRemove(id, out _))
             {
-                Debug.Log($"Client {id} disconnected. Clients count: {Clients.Count}");
                 NetManagerTest.allPlayers.Remove(id);
                 UpdatePlayers(id);
             }
@@ -319,7 +314,6 @@ namespace NetworkManagerTest
         {
             if (netMessage.target == null)
             {
-                Debug.Log($"Sending all: {netMessage.GetType().Name}");
                 foreach (var client in Clients.Values)
                 {
                     client.Send(netMessage);
@@ -331,7 +325,6 @@ namespace NetworkManagerTest
                 {
                     if (Clients.TryGetValue(targetId, out NetConnTest client))
                     {
-                        Debug.Log($"Sending to {targetId}: {netMessage.GetType().Name}");
                         client.Send(netMessage);
                     }
                 }

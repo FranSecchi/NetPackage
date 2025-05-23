@@ -1,39 +1,35 @@
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
-using NetPackage.Transport;
 using NetPackage.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace TransportTest
+namespace NetPackage.Transport.Tests
 {
-    public class UDPHostTest
+    public class UDPHostTest : TransportTestBase
     {
-        private ITransport _transport;
         private List<int> _connectedClients;
         
         private const int Port = 7777;
         private const string TestMessage = "Hello, Server!";
         
-        [SetUp]
-        public void SetUp()
+        protected override IEnumerator SetUp()
         {
+            StartHost();
             _connectedClients = new List<int>();
-            
-            _transport = new UDPSolution();
-            _transport.Setup(Port, true);
-            _transport.Start();
-            ITransport.OnClientConnected += OnClientConnected;
-            ITransport.OnClientDisconnected += OnClientDisconnected;
-            _connectedClients = new List<int>();
-            
+            yield return new WaitForSeconds(0.2f);
         }
-        
+
+        protected override IEnumerator Teardown()
+        {
+            yield return null;
+        }
+
         [UnityTest]
         public IEnumerator TestServerUp()
         {
-            Assert.IsNotNull(_transport, "Server instance is null.");
+            Assert.IsNotNull(_server, "Server instance is null.");
             yield return null;
         }
         
@@ -74,7 +70,7 @@ namespace TransportTest
             yield return new WaitForSeconds(0.2f);
             for (int i = 0; i < 5; i++)
             {
-                _transport.SendTo(_connectedClients[i], System.Text.Encoding.ASCII.GetBytes(TestMessage));
+                _server.SendTo(_connectedClients[i], System.Text.Encoding.ASCII.GetBytes(TestMessage));
                 yield return new WaitForSeconds(0.2f);
                 string receivedMessage = System.Text.Encoding.ASCII.GetString(clients[i].Receive());
                 Assert.AreEqual(TestMessage, receivedMessage, "Message did not match.");
@@ -100,7 +96,7 @@ namespace TransportTest
             }
             yield return new WaitForSeconds(0.2f);
             
-            _transport.Send(System.Text.Encoding.ASCII.GetBytes(TestMessage));
+            _server.Send(System.Text.Encoding.ASCII.GetBytes(TestMessage));
         
             yield return new WaitForSeconds(0.2f);
 
@@ -131,7 +127,7 @@ namespace TransportTest
                 clients.Add(client);
                 yield return new WaitForSeconds(0.2f);
             }
-            _transport.Kick(2);
+            _server.Kick(2);
             yield return new WaitForSeconds(2f);
             
             Assert.IsTrue(_connectedClients.Count == 4, "There should be 4 clients.");
@@ -141,15 +137,7 @@ namespace TransportTest
             }
         }
         
-        [TearDown]
-        public void TearDown()
-        {
-            _transport?.Stop();
-            ITransport.OnClientConnected -= OnClientConnected;
-            ITransport.OnClientDisconnected -= OnClientDisconnected;
-        }
-        
-        private void OnClientConnected(int id)
+        protected override void OnClientConnected(int id)
         {
             if (_connectedClients.Contains(id))
             {
@@ -157,14 +145,13 @@ namespace TransportTest
             }
             _connectedClients.Add(id);
         }
-        private void OnClientDisconnected(int id)
+        protected override void OnClientDisconnected(int id)
         {
             if (!_connectedClients.Contains(id))
             {
                 return;
             }
             _connectedClients.Remove(id);
-            Debug.Log(id + " disconnected." + _connectedClients.Count);
         }
     }
 }

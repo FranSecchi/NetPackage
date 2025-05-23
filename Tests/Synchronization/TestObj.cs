@@ -1,7 +1,6 @@
-using NetPackage.Synchronization;
 using UnityEngine;
 
-namespace SynchronizationTest
+namespace NetPackage. Synchronization.Tests
 {
     public class TestObj : NetBehaviour
     {

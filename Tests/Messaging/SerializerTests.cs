@@ -3,14 +3,15 @@ using MessagePack;
 using NUnit.Framework;
 using NetPackage.Serializer;
 
-namespace SerializerTest
+namespace NetPackage.Messaging.Tests
 {
     public class SerializerTests
     {
         private object objectTest;
         private ISerialize _Serializer;
+        
         [SetUp]
-        public void Setup()
+        public void SetUp()
         {
             _Serializer = new MPSerializer();
         }

@@ -10,7 +10,7 @@ using NetPackage.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace SerializerTest
+namespace NetPackage.Messaging.Tests
 {
     public class NetworkMessageTests
     {
@@ -25,9 +25,6 @@ namespace SerializerTest
             _manager.address = "localhost";
             received = null;
         }
-        
-        
-        
         
         [UnityTest]
         public IEnumerator Server_SendMsg()

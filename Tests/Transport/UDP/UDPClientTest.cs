@@ -1,36 +1,22 @@
 using System.Collections;
 using NUnit.Framework;
-using NetPackage.Transport;
-using NetPackage.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace TransportTest
+namespace NetPackage.Transport.Tests
 {
-    public class UDPClientTest
+    public class UDPClientTest : TransportTestBase
     {
-        private const int Port = 7777;
         private const string TestMessage = "Hello, Server!";
-        
-        private ITransport _server;
-        private ITransport _client;
         private bool _connected = false;
         
-        [SetUp]
-        public void SetUp()
+        protected override IEnumerator SetUp()
         {
-            // Create and start the server
-            _server = new UDPSolution();
-            _server.Setup(Port, true);
-            _server.Start();
-            ITransport.OnClientConnected += OnClientConnected;
-            ITransport.OnClientDisconnected += OnClientDisconnected;
-            // Create and start the client
-            _client = new UDPSolution();
-            _client.Setup(Port, false);
-            _client.Start();
+            StartHost();
+            yield return new WaitForSeconds(0.2f);
+            StartClient();
+            yield return new WaitForSeconds(0.2f);
         }
-
 
         [UnityTest]
         public IEnumerator TestClientConnected()
@@ -67,21 +53,17 @@ namespace TransportTest
             Assert.AreEqual(TestMessage, receivedMessage, "Received message.");
         }
         
-        
-        [TearDown]
-        public void TearDown()
+        protected override IEnumerator Teardown()
         {
-            _server?.Stop();
-            _client?.Stop();
-            ITransport.OnClientConnected -= OnClientConnected;
-            ITransport.OnClientDisconnected -= OnClientDisconnected;
+            base.TearDown();
+            yield return null;
         }
         
-        private void OnClientConnected(int id)
+        protected override void OnClientConnected(int id)
         {
             _connected = true;
         }
-        private void OnClientDisconnected(int id)
+        protected override void OnClientDisconnected(int id)
         {
             _connected = false;
         }

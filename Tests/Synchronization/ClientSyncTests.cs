@@ -1,44 +1,36 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using NetPackage.Network;
 using NetPackage.Serializer;
 using NetPackage.Messages;
-using NetPackage.Synchronization;
 using NetPackage.Transport;
-using NetPackage.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace SynchronizationTest
+namespace NetPackage.Synchronization.Tests
 {
-    public class ClientSyncTests
+    public class ClientSyncTests : SynchronizationTestBase
     {
-        private NetPrefabRegistry prefabs;
-        private ITransport host;
-        private NetMessage received;
-        private const int CLIENT_ID = 0;
         private List<int> clientIds = new List<int>();
-        private const string TEST_SCENE_NAME = "TestScene";
 
-        [UnitySetUp]
-        public IEnumerator SetUp()
+        protected override IEnumerator SetUp()
         {
-            host = new UDPSolution();
-            host.Setup(NetManager.Port, true,  new ServerInfo(){Address = "127.0.0.1", Port = NetManager.Port, MaxPlayers = 10});
-            host.Start();
+            StartHost(false);
             yield return new WaitForSeconds(0.2f);
-            var managerObj = new GameObject();
-            var manager = managerObj.AddComponent<NetManager>();
-            NetManager.StartClient();
-
-            RegisterPrefab();
+            StartClient(true);
+            yield return new WaitForSeconds(0.2f);
             
             yield return WaitConnection();
             NetMessage answerMsg =  new SceneLoadMessage(TEST_SCENE_NAME, -1);
-            host.Send(NetSerializer.Serialize(answerMsg));
+            _server.Send(NetSerializer.Serialize(answerMsg));
             yield return new WaitForSeconds(0.5f);
+        }
+
+        protected override IEnumerator Teardown()
+        {
+            clientIds.Clear();
+            yield return null;
         }
 
         [UnityTest]
@@ -49,7 +41,7 @@ namespace SynchronizationTest
             foreach (NetBehaviour hostObj in hostObjects)
             {
                 NetMessage msg = new SpawnMessage(-1, hostObj.gameObject.name, hostObj.transform.position, sceneId:hostObj.GetComponent<SceneObjectId>().sceneId);
-                host.Send(NetSerializer.Serialize(msg));
+                _server.Send(NetSerializer.Serialize(msg));
                 yield return new WaitForSeconds(0.2f);
             }
             Dictionary<string, object> changes = new Dictionary<string, object> 
@@ -76,7 +68,7 @@ namespace SynchronizationTest
             foreach (NetBehaviour hostObj in hostObjects)
             {
                 NetMessage msg = new SpawnMessage(-1, hostObj.gameObject.name, hostObj.transform.position, sceneId:hostObj.GetComponent<SceneObjectId>().sceneId);
-                host.Send(NetSerializer.Serialize(msg));
+                _server.Send(NetSerializer.Serialize(msg));
                 yield return new WaitForSeconds(0.2f);
             }
             
@@ -88,9 +80,8 @@ namespace SynchronizationTest
             }
             
             NetMessage ownerMsg = new OwnershipMessage(hostObjects[0].NetObject.NetId, CLIENT_ID);
-            host.Send(NetSerializer.Serialize(ownerMsg));
+            _server.Send(NetSerializer.Serialize(ownerMsg));
 
-            // Wait for ownership to be updated
             float startTime = Time.time;
             while (hostObjects[0].NetObject.OwnerId != CLIENT_ID && Time.time - startTime < 1f)
             {
@@ -102,65 +93,18 @@ namespace SynchronizationTest
             Assert.AreEqual(CLIENT_ID, obj1.NetObject.OwnerId, "Ownership not updated correctly");
         }
 
-        [TearDown]
-        public void TearDown()
-        {
-            host.Stop();
-            NetManager.StopNet();
-            clientIds.Clear();
-            received = null;
-            var objects = GameObject.FindObjectsByType<NetManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            foreach (var obj in objects)
-            {
-                GameObject.DestroyImmediate(obj.gameObject);
-            }
-        }
-
-        
         private void SendObjUpdate(NetBehaviour netObj, Dictionary<string, object> changes)
         {
             NetMessage spw = new SyncMessage(-1, netObj.NetID, 0, changes);
-            host.Send(NetSerializer.Serialize(spw));
+            _server.Send(NetSerializer.Serialize(spw));
         }
-        private IEnumerator WaitConnection()
+        protected override IEnumerator WaitConnection()
         {
             clientIds.Add(0);
             yield return new WaitForSeconds(0.5f);
             NetMessage rcv = new ConnMessage(0, clientIds, new ServerInfo(){Address = "127.0.0.1", Port = NetManager.Port, MaxPlayers = 10});
-            host.Send(NetSerializer.Serialize(rcv));
+            _server.Send(NetSerializer.Serialize(rcv));
             yield return new WaitForSeconds(0.5f);
-        }
-
-        private IEnumerator WaitValidate(Type expectedType)
-        {
-            byte[] data = null;
-            float startTime = Time.time;
-            NetMessage msg = null;
-            while (Time.time - startTime < 1f)
-            {
-                data = host.Receive();
-                if (data != null)
-                {
-                    msg = NetSerializer.Deserialize<NetMessage>(data);
-                    if (msg.GetType() == expectedType)
-                    {
-                        received = msg;
-                        yield break;
-                    }
-                }
-                yield return null;
-            }
-            
-            Assert.IsTrue(msg != null && msg.GetType() == expectedType, 
-                $"Expected message of type {expectedType.Name} but got {(msg == null ? "null" : msg.GetType().Name)}");
-        }
-        
-        private void RegisterPrefab()
-        {
-            var prefab = Resources.Load<GameObject>("TestObj");
-            prefabs = ScriptableObject.CreateInstance<NetPrefabRegistry>();
-            prefabs.prefabs.Add(prefab);
-            NetScene.RegisterPrefabs(prefabs.prefabs);
         }
     }
 } 

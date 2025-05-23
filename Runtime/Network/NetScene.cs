@@ -247,6 +247,7 @@ namespace NetPackage.Network
                         NetManager.ConnectionId(),
                         obj.name,
                         obj.transform.position,
+                        obj.transform.rotation,
                         owner: netObj.OwnerId,
                         sceneId: sceneObjects.Key,
                         target: new List<int>{id});

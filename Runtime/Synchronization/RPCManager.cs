@@ -42,10 +42,9 @@ namespace NetPackage.Synchronization
             if (methods.Length <= 0) return;
 
             if (!_rpcTargets.ContainsKey(netId))
-            {
                 _rpcTargets[netId] = new List<object>();
+            if (!_rpcMethods.ContainsKey(netId))
                 _rpcMethods[netId] = new Dictionary<string, List<MethodInfo>>();
-            }
 
             if (_rpcTargets[netId].Contains(target))
                 return;

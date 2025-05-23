@@ -20,6 +20,7 @@ namespace NetPackage.Synchronization
         public static void Register(int netId, object target)
         {
             var methods = target.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            DebugQueue.AddMessage($"Registering RPCs for {target.GetType().Name} with netId {netId}. Found {methods.Length} methods.", DebugQueue.MessageType.RPC);
 
             foreach (var method in methods)
             {
@@ -32,10 +33,9 @@ namespace NetPackage.Synchronization
                     {
                         _rpcMethods[netId][method.Name] = new List<MethodInfo>();
                     }
-                    DebugQueue.AddMessage($"RPC registered {netId} | {method.Name}.", DebugQueue.MessageType.RPC);
+                    DebugQueue.AddMessage($"RPC registered {netId} | {method.Name} | Direction: {rpcAttr.Direction}", DebugQueue.MessageType.RPC);
 
                     _rpcMethods[netId][method.Name].Add(method);
-                    break;
                 }
             }
 
@@ -151,6 +151,8 @@ namespace NetPackage.Synchronization
 
         public static void SendRPC(int netId, string methodName, params object[] parameters)
         {
+            DebugQueue.AddMessage($"Attempting to send RPC {methodName} for netId {netId}", DebugQueue.MessageType.RPC);
+            
             if (!_rpcTargets.ContainsKey(netId))
             {
                 DebugQueue.AddMessage($"No RPC targets found for netId {netId}", DebugQueue.MessageType.Error);
@@ -159,7 +161,7 @@ namespace NetPackage.Synchronization
 
             if (!_rpcMethods[netId].ContainsKey(methodName))
             {
-                DebugQueue.AddMessage($"No RPC method {methodName} found for netId {netId}", DebugQueue.MessageType.Error);
+                DebugQueue.AddMessage($"No RPC method {methodName} found for netId {netId}. Available methods: {string.Join(", ", _rpcMethods[netId].Keys)}", DebugQueue.MessageType.Error);
                 return;
             }
             List<int> targetIds = null;

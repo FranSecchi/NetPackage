@@ -26,8 +26,8 @@ namespace NetPackage.Synchronization
                 var rpcAttr = method.GetCustomAttribute<NetRPC>();
                 if (rpcAttr != null)
                 {
-                    if(!_rpcTargets.ContainsKey(netId))
-                        _rpcTargets.Add(netId, new List<object>());
+                    if (!_rpcMethods.ContainsKey(netId))
+                        _rpcMethods.Add(netId, new Dictionary<string, List<MethodInfo>>());
                     if (!_rpcMethods[netId].ContainsKey(method.Name))
                     {
                         _rpcMethods[netId][method.Name] = new List<MethodInfo>();

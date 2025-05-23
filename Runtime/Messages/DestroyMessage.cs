@@ -3,6 +3,9 @@ using MessagePack;
 
 namespace NetPackage.Messages
 {
+    /// <summary>
+    /// Message for destroying a network object.
+    /// </summary>
     [MessagePackObject]
     public class DestroyMessage : NetMessage
     {
@@ -11,6 +14,9 @@ namespace NetPackage.Messages
 
         public DestroyMessage() { }
 
+        /// <param name="netObjectId">The ID of the network object to be destroyed.</param>
+        /// <param name="requesterId">The ID of the client requesting the object destruction.</param>
+        /// <param name="target">Optional list of target client IDs to receive this message.</param>
         public DestroyMessage(int netObjectId, int requesterId, List<int> target = null) : base(target)
         {
             this.netObjectId = netObjectId;

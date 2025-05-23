@@ -4,6 +4,9 @@ using NetPackage.Transport;
 
 namespace NetPackage.Messages
 {
+    /// <summary>
+    /// Message for connection status updates.
+    /// </summary>
     [MessagePackObject]
     public class ConnMessage : NetMessage
     {
@@ -13,6 +16,10 @@ namespace NetPackage.Messages
         
         public ConnMessage(){}
 
+        /// <param name="currentConnected">The ID of the currently connected client.</param>
+        /// <param name="allConnected">List of IDs for all currently connected clients.</param>
+        /// <param name="serverInfo">Information about the server connection.</param>
+        /// <param name="target">Optional list of target client IDs to receive this message.</param>
         public ConnMessage(int currentConnected, List<int> allConnected, ServerInfo serverInfo, List<int> target = null) : base(target)
         {
             this.CurrentConnected = currentConnected;

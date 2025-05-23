@@ -5,8 +5,9 @@ using UnityEngine;
 namespace NetPackage.Synchronization
 {
     [ExecuteAlways]
-    public class SceneObjectId : MonoBehaviour
+    internal class SceneObjectId : MonoBehaviour
     {
+        [NonSerialized]
         public string sceneId;
 
         

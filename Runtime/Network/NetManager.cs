@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Runtime.CompilerServices;
 using NetPackage.Synchronization;
 using NetPackage.Serializer;
 using NetPackage.Messages;
@@ -9,46 +10,142 @@ using NetPackage.Transport.UDP;
 using NetPackage.Utilities;
 using UnityEngine;
 
+[assembly: InternalsVisibleTo("NetPackage.Editor")]
+[assembly: InternalsVisibleTo("NetPackage.Tests")]
+[assembly: InternalsVisibleTo("NetPackage.Tests.Editor")]
+
 namespace NetPackage.Network
 {
+    /// <summary>
+    /// Main network manager class that handles network initialization, connection management, and message routing.
+    /// </summary>
     public class NetManager : MonoBehaviour
     {
-        public NetPrefabRegistry NetPrefabs;
         private static NetManager _manager;
         private static ServerInfo _serverInfo;
-        public static ITransport Transport;
-        public static int Port = 7777;
-        public static List<int> allPlayers;
+        
+        private readonly Queue<Action> mainThreadActions = new();
+        private List<ServerInfo> _discoveredServers = new List<ServerInfo>();
+        private float _lastStateUpdate;
+        private float _lastLanDiscovery;
         private bool _isHost = false;
         private bool _running = false;
         
-        [SerializeField] public string serverName = "Net_Server";
-        [SerializeField] public int maxPlayers = 10;
-        [SerializeField] public bool useLAN = false;
-        [SerializeField] public float lanDiscoveryInterval = 0.1f;
-        [SerializeField] public float stateUpdateInterval = 0.05f; // 20 updates per second by default
-        private float _lastStateUpdate;
-        private float _lastLanDiscovery;
-        private List<ServerInfo> _discoveredServers = new List<ServerInfo>();
+        /// <summary>
+        /// Registry containing all network prefabs that can be spawned.
+        /// </summary>
+        public NetPrefabRegistry NetPrefabs;
+
+        /// <summary>
+        /// The transport layer implementation used for network communication.
+        /// </summary>
+        public static ITransport Transport;
+
+        /// <summary>
+        /// The port number used for network communication.
+        /// </summary>
+        public static int Port = 7777;
+
+        /// <summary>
+        /// List of all connected player IDs.
+        /// </summary>
+        public static List<int> allPlayers;
         
+        /// <summary>
+        /// The name of the server.
+        /// </summary>
+        [Tooltip("The name of the server that will be displayed to clients")]
+        [SerializeField] public string serverName = "Net_Server";
+
+        /// <summary>
+        /// Maximum number of players allowed on the server.
+        /// </summary>
+        [Tooltip("Maximum number of players that can connect to the server")]
+        [SerializeField] public int maxPlayers = 10;
+
+        /// <summary>
+        /// Whether to use LAN discovery for server finding.
+        /// </summary>
+        [Tooltip("Enable LAN server discovery")]
+        [SerializeField] public bool useLAN = false;
+
+        /// <summary>
+        /// Interval between LAN server discovery broadcasts in seconds.
+        /// </summary>
+        [Tooltip("Time between LAN server discovery broadcasts (in seconds)")]
+        [SerializeField] public float lanDiscoveryInterval = 0.1f;
+
+        /// <summary>
+        /// Interval between state updates in seconds.
+        /// </summary>
+        [Tooltip("Time between network state updates (in seconds)")]
+        [SerializeField] public float stateUpdateInterval = 0.05f; // 20 updates per second by default
+
+
+        /// <summary>
+        /// Gets the list of network prefabs.
+        /// </summary>
         public static NetPrefabRegistry PrefabsList => _manager.NetPrefabs;
+
+        /// <summary>
+        /// Gets whether this instance is acting as a host.
+        /// </summary>
         public static bool IsHost => _manager._isHost;
+
+        /// <summary>
+        /// Gets the current server name.
+        /// </summary>
         public static string ServerName => _manager.serverName;
+
+        /// <summary>
+        /// Gets the maximum number of players allowed.
+        /// </summary>
         public static int MaxPlayers => _manager.maxPlayers;
+
+        /// <summary>
+        /// Gets the current number of connected players.
+        /// </summary>
         public static int PlayerCount => allPlayers.Count;
+
+        /// <summary>
+        /// Gets whether the network system is currently running.
+        /// </summary>
         public static bool Running => _manager._running;
+
+        /// <summary>
+        /// Gets whether the client is currently connected to a server.
+        /// </summary>
         public static bool Connected => GetConnectionState() == ConnectionState.Connected;
+
+        /// <summary>
+        /// Gets whether the network manager is active.
+        /// </summary>
         public static bool Active => _manager != null;
+
+        /// <summary>
+        /// Gets or sets whether LAN discovery is enabled.
+        /// </summary>
         public static bool UseLan
         {
             get => _manager.useLAN;
             set => _manager.useLAN = value;
         }
+
+        /// <summary>
+        /// The address of the server to connect to.
+        /// </summary>
+        [Tooltip("The address of the server to connect to")]
         public string address = "localhost";
+
+        /// <summary>
+        /// Sets the transport layer implementation for network communication.
+        /// </summary>
+        /// <param name="transport">The transport implementation to use.</param>
         public static void SetTransport(ITransport transport)
         {
             Transport = transport;
         }
+
         private void Awake()
         {
             if (_manager != null)
@@ -60,8 +157,10 @@ namespace NetPackage.Network
             _running = false;
             DontDestroyOnLoad(this);
         }
-
-        private readonly Queue<Action> mainThreadActions = new();
+        /// <summary>
+        /// Enqueues an action to be executed on the main thread.
+        /// </summary>
+        /// <param name="action">The action to be executed.</param>
         public static void EnqueueMainThread(Action action)
         {
             lock (_manager.mainThreadActions)
@@ -107,6 +206,10 @@ namespace NetPackage.Network
             NetScene.CleanUp();
         }
 
+        /// <summary>
+        /// Starts a new network host with optional server information.
+        /// </summary>
+        /// <param name="serverInfo">Optional server information. If null, default values will be used.</param>
         public static void StartHost(ServerInfo serverInfo = null)
         {
             StopNet();
@@ -138,6 +241,9 @@ namespace NetPackage.Network
                 Transport.BroadcastServerInfo();
             }
         }
+        /// <summary>
+        /// Starts the network client and connects to the server.
+        /// </summary>
         public static void StartClient()
         {
             StopNet();
@@ -155,6 +261,10 @@ namespace NetPackage.Network
             }
         }
 
+        /// <summary>
+        /// Connects to a specific server address.
+        /// </summary>
+        /// <param name="address">The address of the server to connect to.</param>
         public static void ConnectTo(string address)
         {
             StopNet();
@@ -164,6 +274,9 @@ namespace NetPackage.Network
             _manager._running = true;
             NetClient.Connect(address);
         }
+        /// <summary>
+        /// Stops all network operations and cleans up resources.
+        /// </summary>
         public static void StopNet()
         {
             if (!_manager._running) return;
@@ -178,11 +291,19 @@ namespace NetPackage.Network
             _manager._running = false;
         }
 
+        /// <summary>
+        /// Gets the current connection ID.
+        /// </summary>
+        /// <returns>The connection ID if connected as a client, -1 if hosting.</returns>
         public static int ConnectionId()
         {
             if (!IsHost) return NetClient.Connection.Id;
             return -1;
         }
+        /// <summary>
+        /// Sends a network message to the connected peers.
+        /// </summary>
+        /// <param name="netMessage">The message to send.</param>
         public static void Send(NetMessage netMessage)
         {
             if (!_manager._running) return;
@@ -191,6 +312,13 @@ namespace NetPackage.Network
             else NetClient.Send(netMessage);
         }
         
+        /// <summary>
+        /// Spawns a network object at the specified position and rotation.
+        /// </summary>
+        /// <param name="prefab">The prefab to spawn.</param>
+        /// <param name="position">The position to spawn at.</param>
+        /// <param name="rotation">The rotation of the spawned object.</param>
+        /// <param name="owner">The ID of the client that will own the object. Defaults to -1 (no owner).</param>
         public static void Spawn(GameObject prefab, Vector3 position, Quaternion rotation = default, int owner = -1)
         {
             if (!_manager._running) return;
@@ -206,6 +334,10 @@ namespace NetPackage.Network
             }
         }
 
+        /// <summary>
+        /// Destroys a network object with the specified ID.
+        /// </summary>
+        /// <param name="netObjectId">The ID of the network object to destroy.</param>
         public static void Destroy(int netObjectId)
         {
             if (!_manager._running) return;
@@ -224,6 +356,9 @@ namespace NetPackage.Network
                 }
             }
         }
+        /// <summary>
+        /// Stops LAN discovery and broadcasting.
+        /// </summary>
         public static void StopLan()
         {
             if (!IsHost)
@@ -234,34 +369,60 @@ namespace NetPackage.Network
             }
             else Transport.StopServerBroadcast();
         }
+        /// <summary>
+        /// Gets the list of discovered LAN servers.
+        /// </summary>
+        /// <returns>A list of discovered server information.</returns>
         public static List<ServerInfo> GetDiscoveredServers()
         {
             return _manager._discoveredServers;
         }
 
+        /// <summary>
+        /// Gets the current server information.
+        /// </summary>
+        /// <returns>The server information if running, null otherwise.</returns>
         public static ServerInfo GetServerInfo()
         {
             if(!_manager._running) return null;
             _serverInfo = Transport.GetServerInfo();
             return _serverInfo;
         }
+        /// <summary>
+        /// Gets connection information for a specific client.
+        /// </summary>
+        /// <param name="clientId">The ID of the client to get information for. Defaults to 0.</param>
+        /// <returns>The connection information if running, null otherwise.</returns>
         public static ConnectionInfo GetConnectionInfo(int clientId = 0)
         {
             if(!_manager._running) return null;
             return Transport.GetConnectionInfo(clientId);
         }
+        /// <summary>
+        /// Gets the connection state for a specific client.
+        /// </summary>
+        /// <param name="clientId">The ID of the client to get state for. Defaults to 0.</param>
+        /// <returns>The connection state if running, null otherwise.</returns>
         public static ConnectionState? GetConnectionState(int clientId = 0)
         {
             if(!_manager._running) return null;
             return Transport.GetConnectionState(clientId);
         }
 
+        /// <summary>
+        /// Sets the server information and updates connected clients.
+        /// </summary>
+        /// <param name="serverInfo">The new server information.</param>
         public static void SetServerInfo(ServerInfo serverInfo)
         {
             _serverInfo = serverInfo;
             Transport.SetServerInfo(serverInfo);
             if(IsHost) NetHost.UpdatePlayers(ConnectionId());
         }
+        /// <summary>
+        /// Sets the server name and updates connected clients.
+        /// </summary>
+        /// <param name="serverName">The new server name.</param>
         public static void SetServerName(string serverName)
         {
             if (_manager._running && IsHost)
@@ -271,11 +432,19 @@ namespace NetPackage.Network
             }
         }
 
+        /// <summary>
+        /// Loads a scene on all connected clients.
+        /// </summary>
+        /// <param name="sceneName">The name of the scene to load.</param>
         public static void LoadScene(string sceneName)
         {
             if (!_manager._running) return;
             if(IsHost) NetScene.LoadScene(sceneName);
         }
+        /// <summary>
+        /// Gets information about all connected clients.
+        /// </summary>
+        /// <returns>A list of connection information for all clients, or null if not hosting.</returns>
         public static List<ConnectionInfo> GetClients()
         {
             if(!IsHost) return null;

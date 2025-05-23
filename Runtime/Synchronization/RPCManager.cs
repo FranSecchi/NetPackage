@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace NetPackage.Synchronization
 {
-    public class RPCManager
+    internal class RPCManager
     {
         private static Dictionary<int, List<object>> _rpcTargets = new();
         private static Dictionary<int, Dictionary<string, List<MethodInfo>>> _rpcMethods = new();

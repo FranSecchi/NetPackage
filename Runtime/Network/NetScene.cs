@@ -9,14 +9,14 @@ using UnityEngine.SceneManagement;
 
 namespace NetPackage.Network
 {
-    public static class NetScene
+    internal static class NetScene
     { 
         private static Dictionary<string, GameObject> m_prefabs = new Dictionary<string, GameObject>();
         private static Dictionary<int, NetObject> netObjects = new Dictionary<int, NetObject>();
         private static Dictionary<string, GameObject> sceneObjects = new Dictionary<string, GameObject>();
         private static int netObjectId = 0;
         private static string sceneName = "";
-        public static void Init()
+        internal static void Init()
         {
             netObjectId = 0;
             Messager.RegisterHandler<OwnershipMessage>(OnOwnership);
@@ -26,12 +26,12 @@ namespace NetPackage.Network
             sceneName = SceneManager.GetActiveScene().name;
         }
 
-        public static void LoadScene(string name)
+        internal static void LoadScene(string name)
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.LoadScene(name);
         }
-        public static void SendScene(int id)
+        internal static void SendScene(int id)
         {
             NetMessage msg = new SceneLoadMessage(sceneName, -1, true);
             NetManager.Send(msg);
@@ -65,7 +65,7 @@ namespace NetPackage.Network
         }
 
 
-        public static void RegisterPrefabs(List<GameObject> prefabs)
+        internal static void RegisterPrefabs(List<GameObject> prefabs)
         {
             DebugQueue.AddMessage($"Registering {prefabs.Count} prefabs in NetScene instance");
 
@@ -116,7 +116,7 @@ namespace NetPackage.Network
             }
         }
 
-        public static void RegisterSceneObject(NetBehaviour netBehaviour)
+        internal static void RegisterSceneObject(NetBehaviour netBehaviour)
         {
             string sceneId = netBehaviour.GetComponent<SceneObjectId>().sceneId;
             if(sceneId != null && !sceneObjects.ContainsKey(sceneId))
@@ -132,7 +132,7 @@ namespace NetPackage.Network
             netObj.SceneId = sceneId;
             Register(netObj);
         }
-        public static void Spawn(SpawnMessage msg)
+        internal static void Spawn(SpawnMessage msg)
         {
             if (msg.sceneId != "")
             {
@@ -201,7 +201,7 @@ namespace NetPackage.Network
             };
         }
 
-        public static void Destroy(int objectId)
+        internal static void Destroy(int objectId)
         {
             if (netObjects.TryGetValue(objectId, out NetObject obj))
             {
@@ -210,12 +210,12 @@ namespace NetPackage.Network
             }
         }
 
-        public static NetObject GetNetObject(int netId)
+        internal static NetObject GetNetObject(int netId)
         {
             return netObjects.TryGetValue(netId, out NetObject obj) ? obj : null;
         }
 
-        public static void Reconciliate(SpawnMessage spawnMessage)
+        internal static void Reconciliate(SpawnMessage spawnMessage)
         {
             //Compare
             
@@ -235,7 +235,7 @@ namespace NetPackage.Network
             StateManager.Unregister(objectId);
         }
 
-        public static void SendObjects(int id)
+        internal static void SendObjects(int id)
         {
             foreach(var sceneObjects in sceneObjects)
             {
@@ -260,19 +260,19 @@ namespace NetPackage.Network
             }
         }
 
-        public static void CleanUp()
+        internal static void CleanUp()
         {
             m_prefabs.Clear();
             netObjects.Clear();
             sceneObjects.Clear();
         }
 
-        public static List<NetObject> GetAllNetObjects()
+        internal static List<NetObject> GetAllNetObjects()
         {
             return new List<NetObject>(netObjects.Values);
         }
 
-        public static void DisconnectClient(int id)
+        internal static void DisconnectClient(int id)
         {
             foreach (var netObject in netObjects)
             {

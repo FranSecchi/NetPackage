@@ -8,7 +8,7 @@ using static NetPackage.Transport.ITransport;
 
 namespace NetPackage.Transport.UDP
 {
-    public class UDPSolution : ITransport
+    internal class UDPSolution : ITransport
     {
         private APeer _aPeer;
         private Thread _pollingThread;

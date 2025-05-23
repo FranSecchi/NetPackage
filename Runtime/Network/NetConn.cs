@@ -6,36 +6,36 @@ using NetPackage.Transport;
 
 namespace NetPackage.Network
 {
-    public class NetConn
+    internal class NetConn
     {
-        public int Id { get; private set; }
-        public bool IsHost { get; private set; }
-        public List<int> Objects;
+        internal int Id { get; private set; }
+        internal bool IsHost { get; private set; }
+        internal List<int> Objects;
         private readonly ITransport _transport;
-        public NetConn(int id, bool isHost)
+        internal NetConn(int id, bool isHost)
         {
             Id = id;
             IsHost = isHost;
             _transport = NetManager.Transport;
         }
 
-        public void Disconnect()
+        internal void Disconnect()
         {
             _transport?.Kick(Id);
         }
-        public void Send(NetMessage netMessage)
+        internal void Send(NetMessage netMessage)
         {
             byte[] data = NetSerializer.Serialize(netMessage);
             if(IsHost)
                 _transport.SendTo(Id, data);
             else _transport.Send(data);
         }
-        public void Own(NetObject netObject)
+        internal void Own(NetObject netObject)
         {
             Objects.Add(netObject.NetId);
             netObject.GiveOwner(Id);
         }
-        public void Disown(NetObject netObject)
+        internal void Disown(NetObject netObject)
         {
             Objects.Remove(netObject.NetId);
         }

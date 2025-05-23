@@ -7,10 +7,10 @@ using UnityEngine.SceneManagement;
 
 namespace NetPackage.Network
 {
-    public static class NetClient
+    internal static class NetClient
     {
-        public static NetConn Connection;
-        public static void Connect(string address)
+        internal static NetConn Connection;
+        internal static void Connect(string address)
         {
             if (Connection != null) return;
             NetScene.Init();
@@ -25,13 +25,13 @@ namespace NetPackage.Network
         {
             StateManager.SetSync(obj);
         }
-        public static void Disconnect()
+        internal static void Disconnect()
         {
             NetManager.Transport.Stop();
             Connection = null;
         }
 
-        public static void Send(NetMessage netMessage)
+        internal static void Send(NetMessage netMessage)
         {
             if(netMessage is not SyncMessage) DebugQueue.AddNetworkMessage(netMessage, false);
             Connection?.Send(netMessage);

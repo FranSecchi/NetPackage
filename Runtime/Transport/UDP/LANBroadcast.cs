@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace NetPackage.Transport.UDP
 {
-    public class LANBroadcast
+    internal class LANBroadcast
     {
         private UdpClient _udpClient;
         private Thread _broadcastThread;

@@ -10,7 +10,7 @@ namespace NetPackage.Synchronization
 {
     [AttributeUsage(AttributeTargets.Field)]
     public class Sync : Attribute { }
-    public class ObjectState
+    internal class ObjectState
     {
         private readonly object _syncLock = new object();
         //Component_instance - (Var_info - Var_value)

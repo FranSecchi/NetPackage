@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace NetPackage.Synchronization
 {
-    public static class StateManager
+    internal class StateManager
     {
         //Object id - state
         private static ConcurrentDictionary<int, ObjectState> snapshot = new();

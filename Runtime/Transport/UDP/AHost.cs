@@ -1,12 +1,16 @@
+using System;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
+using NetPackage.Transport;
+using NetPackage.Utilities;
 using System.Collections.Generic;
 using LiteNetLib;
-using NetPackage.Network;
-using NetPackage.Utilities;
-using UnityEngine;
 
 namespace NetPackage.Transport.UDP
 {
-    public class AHost : APeer
+    internal class AHost : APeer
     {
         private int _connected;
         public AHost(int port) : base(port)

@@ -1,5 +1,5 @@
 {
-    "name": "Runtime",
+    "name": "NetPackage.Runtime",
     "rootNamespace": "NetPackage.Runtime",
     "references": [],
     "includePlatforms": [],

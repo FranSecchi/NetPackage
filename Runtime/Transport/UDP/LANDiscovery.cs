@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace NetPackage.Transport.UDP
 {
-    public class LANDiscovery
+    internal class LANDiscovery
     {
         private UdpClient _udpClient;
         private Thread _discoveryThread;

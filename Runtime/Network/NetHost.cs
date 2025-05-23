@@ -8,11 +8,11 @@ using UnityEngine.SceneManagement;
 
 namespace NetPackage.Network
 {
-    public static class NetHost
+    internal static class NetHost
     {
-        public static ConcurrentDictionary<int, NetConn> Clients = new();
+        internal static ConcurrentDictionary<int, NetConn> Clients = new();
         private static readonly object Lock = new object();
-        public static void StartHost()
+        internal static void StartHost()
         {
             NetManager.Transport.Start();
             NetManager.allPlayers.Add(-1);
@@ -54,7 +54,7 @@ namespace NetPackage.Network
             }
         }
 
-        public static void UpdatePlayers(int id)
+        internal static void UpdatePlayers(int id)
         {
             if (Clients.Count == 0) return;
             
@@ -65,7 +65,7 @@ namespace NetPackage.Network
             Send(msg);
         }
 
-        public static void Stop()
+        internal static void Stop()
         {
             foreach (var client in Clients.Values)
             {
@@ -78,7 +78,7 @@ namespace NetPackage.Network
             Clients.Clear();
         }
 
-        public static void Kick(int id)
+        internal static void Kick(int id)
         {
             if (Clients.TryGetValue(id, out NetConn client))
             {
@@ -86,7 +86,7 @@ namespace NetPackage.Network
             }
         }
 
-        public static void Send(NetMessage netMessage)
+        internal static void Send(NetMessage netMessage)
         {
             if (netMessage.target == null)
             {

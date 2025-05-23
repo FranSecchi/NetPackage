@@ -28,7 +28,7 @@ namespace NetPackage.Messages
 
         public override string ToString()
         {
-            return $"{base.ToString()} Prefab:{prefabName}, Pos:{position}, ID:{netObjectId}, SceneID:{sceneId}, Requester:{requesterId}, Own by :{owner}";
+            return $"{base.ToString()}, Requester:{requesterId} Prefab:{prefabName}, ID:{netObjectId}, Own by :{owner}, Pos:{position}, Rot: {rotation} SceneID:{sceneId}";
         }
     }
 }

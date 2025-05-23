@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NetPackage.Messages;
 using NetPackage.Network;
+using NetPackage.Utilities;
 using UnityEngine;
 
 namespace NetPackage.Synchronization

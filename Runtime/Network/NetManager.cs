@@ -6,6 +6,7 @@ using NetPackage.Serializer;
 using NetPackage.Messages;
 using NetPackage.Transport;
 using NetPackage.Transport.UDP;
+using NetPackage.Utilities;
 using UnityEngine;
 
 namespace NetPackage.Network

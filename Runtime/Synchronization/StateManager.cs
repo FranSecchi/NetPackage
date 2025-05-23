@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using NetPackage.Network;
 using NetPackage.Messages;
+using NetPackage.Utilities;
 using UnityEngine;
 
 namespace NetPackage.Synchronization

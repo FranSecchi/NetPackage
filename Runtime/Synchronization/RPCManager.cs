@@ -4,6 +4,7 @@ using System.Reflection;
 using NetPackage.Network;
 using NetPackage.Serializer;
 using NetPackage.Messages;
+using NetPackage.Utilities;
 using UnityEngine;
 
 namespace NetPackage.Synchronization

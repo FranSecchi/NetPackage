@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using NetPackage.Network;
-using UnityEngine;
+using NetPackage.Utilities;
 using static NetPackage.Transport.ITransport;
 
 namespace NetPackage.Transport.UDP

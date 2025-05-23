@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using NetPackage.Messages;
 
-namespace NetPackage.Network
+namespace NetPackage.Utilities
 {
     public class DebugQueue
     {

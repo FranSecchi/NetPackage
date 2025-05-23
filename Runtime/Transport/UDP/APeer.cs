@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
 using NetPackage.Network;
+using NetPackage.Utilities;
 using UnityEngine;
 using static NetPackage.Transport.ITransport;
 using NetManager = LiteNetLib.NetManager;

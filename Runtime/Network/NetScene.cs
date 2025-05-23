@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using NetPackage.Messages;
 using NetPackage.Synchronization;
+using NetPackage.Utilities;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 

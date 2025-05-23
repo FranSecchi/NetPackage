@@ -1,5 +1,6 @@
 using LiteNetLib;
 using NetPackage.Network;
+using NetPackage.Utilities;
 using UnityEngine;
 
 namespace NetPackage.Transport.UDP

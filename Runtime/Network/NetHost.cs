@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using NetPackage.Messages;
 using NetPackage.Synchronization;
 using NetPackage.Transport;
+using NetPackage.Utilities;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 

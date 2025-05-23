@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NetPackage.Transport;
 using NetPackage.Synchronization;
+using NetPackage.Utilities;
 
 namespace NetPackage.Editor
 {

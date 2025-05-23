@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using NetPackage.Network;
+using NetPackage.Utilities;
 using UnityEngine;
 
 namespace NetPackage.Synchronization

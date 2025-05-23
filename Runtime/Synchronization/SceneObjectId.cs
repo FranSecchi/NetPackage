@@ -1,14 +1,15 @@
 using System;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace NetPackage.Synchronization
 {
     [ExecuteAlways]
     internal class SceneObjectId : MonoBehaviour
     {
-        [NonSerialized]
-        public string sceneId;
+        [SerializeField] private string sceneId;
+        public string SceneId => sceneId;
 
         
 #if UNITY_EDITOR

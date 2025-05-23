@@ -118,7 +118,7 @@ namespace NetPackage.Network
 
         internal static void RegisterSceneObject(NetBehaviour netBehaviour)
         {
-            string sceneId = netBehaviour.GetComponent<SceneObjectId>().sceneId;
+            string sceneId = netBehaviour.GetComponent<SceneObjectId>().SceneId;
             if(sceneId != null && !sceneObjects.ContainsKey(sceneId))
             {
                 sceneObjects[sceneId] = netBehaviour.gameObject;

@@ -72,7 +72,7 @@ namespace NetPackage.Synchronization.Tests
             syncMsg = (SyncMessage)received;
             Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message for second component");
             
-            Assert.AreNotEqual(comp1.GetComponent<SceneObjectId>().sceneId, comp2.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().sceneId}");
+            Assert.AreNotEqual(comp1.GetComponent<SceneObjectId>().SceneId, comp2.GetComponent<SceneObjectId>().SceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().SceneId}");
         }
 
         [UnityTest]
@@ -100,8 +100,8 @@ namespace NetPackage.Synchronization.Tests
                     (comp2, comp4) = (comp4, comp2);
                 }
             }
-            Assert.AreEqual(comp1.GetComponent<SceneObjectId>().sceneId, comp2.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().sceneId}");
-            Assert.AreEqual(comp3.GetComponent<SceneObjectId>().sceneId, comp4.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp3.GetComponent<SceneObjectId>().sceneId}");
+            Assert.AreEqual(comp1.GetComponent<SceneObjectId>().SceneId, comp2.GetComponent<SceneObjectId>().SceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().SceneId}");
+            Assert.AreEqual(comp3.GetComponent<SceneObjectId>().SceneId, comp4.GetComponent<SceneObjectId>().SceneId, $"Wrong scene ID in sync message {comp3.GetComponent<SceneObjectId>().SceneId}");
 
             yield return new WaitForSeconds(0.2f);
             
@@ -145,8 +145,9 @@ namespace NetPackage.Synchronization.Tests
                     (comp2, comp4) = (comp4, comp2);
                 }
             }
-            Assert.AreEqual(comp1.GetComponent<SceneObjectId>().sceneId, comp2.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().sceneId}");
-            Assert.AreEqual(comp3.GetComponent<SceneObjectId>().sceneId, comp4.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp3.GetComponent<SceneObjectId>().sceneId}");
+            Assert.AreEqual(comp1.GetComponent<SceneObjectId>().SceneId, comp2.GetComponent<SceneObjectId>().SceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().SceneId}");
+            Assert.AreEqual(comp3.GetComponent<SceneObjectId>().SceneId, comp4.GetComponent<SceneObjectId>().SceneId, $"Wrong scene ID in sync message {comp3.GetComponent<SceneObjectId>().SceneId}");
+            Assert.AreNotEqual(comp1.GetComponent<SceneObjectId>().SceneId, comp3.GetComponent<SceneObjectId>().SceneId, $"Wrong scene ID in sync message {comp3.GetComponent<SceneObjectId>().SceneId}");
 
             yield return new WaitForSeconds(0.2f);
             
@@ -158,11 +159,7 @@ namespace NetPackage.Synchronization.Tests
             _client.Send(NetSerializer.Serialize(syncMsg));
             _client.Send(NetSerializer.Serialize(syncMsg1));
 
-            float startTime = Time.time;
-            while ((comp1.health != 150 || comp2.health != 250) && Time.time - startTime < 1f)
-            {
-                yield return null;
-            }
+            yield return new WaitForSeconds(0.5f);
 
             Assert.AreEqual(150, comp1.health, "First component update not applied");
             Assert.AreEqual("changed1", comp1.msg, "First component message not updated");

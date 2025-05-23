@@ -40,7 +40,7 @@ namespace NetPackage.Synchronization.Tests
             Assert.Greater(hostObjects.Length, 0, "No NetBehaviour objects found in host scene");
             foreach (NetBehaviour hostObj in hostObjects)
             {
-                NetMessage msg = new SpawnMessage(-1, hostObj.gameObject.name, hostObj.transform.position, sceneId:hostObj.GetComponent<SceneObjectId>().sceneId);
+                NetMessage msg = new SpawnMessage(-1, hostObj.gameObject.name, hostObj.transform.position, sceneId:hostObj.GetComponent<SceneObjectId>().SceneId);
                 _server.Send(NetSerializer.Serialize(msg));
                 yield return new WaitForSeconds(0.2f);
             }
@@ -67,7 +67,7 @@ namespace NetPackage.Synchronization.Tests
             Assert.Greater(hostObjects.Length, 0, "No NetBehaviour objects found in host scene");
             foreach (NetBehaviour hostObj in hostObjects)
             {
-                NetMessage msg = new SpawnMessage(-1, hostObj.gameObject.name, hostObj.transform.position, sceneId:hostObj.GetComponent<SceneObjectId>().sceneId);
+                NetMessage msg = new SpawnMessage(-1, hostObj.gameObject.name, hostObj.transform.position, sceneId:hostObj.GetComponent<SceneObjectId>().SceneId);
                 _server.Send(NetSerializer.Serialize(msg));
                 yield return new WaitForSeconds(0.2f);
             }

@@ -39,7 +39,7 @@ namespace NetPackage.Synchronization
         /// </summary>
         protected virtual void Awake()
         {
-            if(GetComponent<SceneObjectId>().sceneId != "") RegisterAsSceneObject();
+            if(GetComponent<SceneObjectId>().SceneId != "") RegisterAsSceneObject();
         }
         private void OnEnable()
         {

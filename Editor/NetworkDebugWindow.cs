@@ -18,6 +18,8 @@ namespace NetPackage.Editor
         private bool showDetailedInfo = false;
         private bool showNetObjects = false;
         private bool showMessages = false;
+        private bool showServerInfo = false;
+        private bool showClientInfo = false;
         private Dictionary<int, bool> clientFoldouts = new Dictionary<int, bool>();
         private Dictionary<int, bool> netObjectFoldouts = new Dictionary<int, bool>();
         private bool[] messageTypeFilters;
@@ -219,113 +221,116 @@ namespace NetPackage.Editor
 
         private void DrawServerInformation()
         {
-            EditorGUILayout.LabelField("Server Information", EditorStyles.boldLabel);
-            EditorGUI.indentLevel++;
-            try
+            showServerInfo = EditorGUILayout.Foldout(showServerInfo, "Server Information", true);
+            if (showServerInfo)
             {
-                var serverInfo = Application.isPlaying ? NetManager.GetServerInfo() : lastKnownServerInfo;
-                if (serverInfo != null)
+                EditorGUI.indentLevel++;
+                try
                 {
-                    EditorGUILayout.LabelField("Server Name", serverInfo.ServerName);
-                    EditorGUILayout.LabelField("Address", serverInfo.Address);
-                    EditorGUILayout.LabelField("Port", serverInfo.Port.ToString());
-                    EditorGUILayout.LabelField("Current Players", serverInfo.CurrentPlayers.ToString());
-                    EditorGUILayout.LabelField("Max Players", serverInfo.MaxPlayers.ToString());
-                    EditorGUILayout.LabelField("Game Mode", serverInfo.GameMode);
+                    var serverInfo = Application.isPlaying ? NetManager.GetServerInfo() : lastKnownServerInfo;
+                    if (serverInfo != null)
+                    {
+                        EditorGUILayout.LabelField("Server Name", serverInfo.ServerName);
+                        EditorGUILayout.LabelField("Address", serverInfo.Address);
+                        EditorGUILayout.LabelField("Port", serverInfo.Port.ToString());
+                        EditorGUILayout.LabelField("Current Players", serverInfo.CurrentPlayers.ToString());
+                        EditorGUILayout.LabelField("Max Players", serverInfo.MaxPlayers.ToString());
+                        EditorGUILayout.LabelField("Game Mode", serverInfo.GameMode);
+                    }
+                    else
+                    {
+                        EditorGUILayout.LabelField("No server information available");
+                    }
                 }
-                else
+                catch (System.Exception)
                 {
-                    EditorGUILayout.LabelField("No server information available");
+                    EditorGUILayout.LabelField("Unable to retrieve server information");
                 }
+                EditorGUI.indentLevel--;
             }
-            catch (System.Exception)
-            {
-                EditorGUILayout.LabelField("Unable to retrieve server information");
-            }
-            EditorGUI.indentLevel--;
         }
 
         private void DrawClientInformation()
         {
-            try
+            showClientInfo = EditorGUILayout.Foldout(showClientInfo, "Client Information", true);
+            if (showClientInfo)
             {
-                bool isHost = Application.isPlaying ? NetManager.IsHost : lastKnownIsHost;
-                if (isHost)
+                EditorGUI.indentLevel++;
+                try
                 {
-                    EditorGUILayout.LabelField("Connected Clients", EditorStyles.boldLabel);
-                    EditorGUI.indentLevel++;
-                    var clients = Application.isPlaying ? NetManager.GetClients() : lastKnownClients;
-                    if (clients != null && clients.Count > 0)
+                    bool isHost = Application.isPlaying ? NetManager.IsHost : lastKnownIsHost;
+                    if (isHost)
                     {
-                        foreach (var client in clients)
+                        var clients = Application.isPlaying ? NetManager.GetClients() : lastKnownClients;
+                        if (clients != null && clients.Count > 0)
                         {
-                            EditorGUILayout.LabelField($"Client {client.Id}", $"State: {client.State}");
-                        }
-
-                        EditorGUILayout.Space();
-                        showDetailedInfo = EditorGUILayout.Foldout(showDetailedInfo, "Detailed Connection Information", true);
-                        if (showDetailedInfo)
-                        {
-                            EditorGUI.indentLevel++;
                             foreach (var client in clients)
                             {
-                                if (!clientFoldouts.ContainsKey(client.Id))
-                                {
-                                    clientFoldouts[client.Id] = false;
-                                }
-
-                                clientFoldouts[client.Id] = EditorGUILayout.Foldout(clientFoldouts[client.Id], $"Client {client.Id} Details", true);
-                                if (clientFoldouts[client.Id])
-                                {
-                                    EditorGUI.indentLevel++;
-                                    ConnectionInfo connectionInfo = Application.isPlaying ? NetManager.GetConnectionInfo(client.Id) : client;
-                                    if (connectionInfo != null)
-                                    {
-                                        EditorGUILayout.LabelField("Connection ID", connectionInfo.Id.ToString());
-                                        EditorGUILayout.LabelField("State", connectionInfo.State.ToString());
-                                        EditorGUILayout.LabelField("Bytes Received", connectionInfo.BytesReceived.ToString() ?? "Unknown");
-                                        EditorGUILayout.LabelField("Bytes Sent", connectionInfo.BytesSent.ToString());
-                                        EditorGUILayout.LabelField("Last Ping", $"{connectionInfo.Ping}ms");
-                                        EditorGUILayout.LabelField("Packet Loss", connectionInfo.PacketLoss.ToString());
-                                        EditorGUILayout.LabelField("Connected Since", connectionInfo.ConnectedSince.ToString("HH:mm:ss"));
-                                    }
-                                    EditorGUI.indentLevel--;
-                                }
+                                EditorGUILayout.LabelField($"Client {client.Id}", $"State: {client.State}");
                             }
-                            EditorGUI.indentLevel--;
+
+                            EditorGUILayout.Space();
+                            showDetailedInfo = EditorGUILayout.Foldout(showDetailedInfo, "Detailed Connection Information", true);
+                            if (showDetailedInfo)
+                            {
+                                EditorGUI.indentLevel++;
+                                foreach (var client in clients)
+                                {
+                                    if (!clientFoldouts.ContainsKey(client.Id))
+                                    {
+                                        clientFoldouts[client.Id] = false;
+                                    }
+
+                                    clientFoldouts[client.Id] = EditorGUILayout.Foldout(clientFoldouts[client.Id], $"Client {client.Id} Details", true);
+                                    if (clientFoldouts[client.Id])
+                                    {
+                                        EditorGUI.indentLevel++;
+                                        ConnectionInfo connectionInfo = Application.isPlaying ? NetManager.GetConnectionInfo(client.Id) : client;
+                                        if (connectionInfo != null)
+                                        {
+                                            EditorGUILayout.LabelField("Connection ID", connectionInfo.Id.ToString());
+                                            EditorGUILayout.LabelField("State", connectionInfo.State.ToString());
+                                            EditorGUILayout.LabelField("Bytes Received", connectionInfo.BytesReceived.ToString() ?? "Unknown");
+                                            EditorGUILayout.LabelField("Bytes Sent", connectionInfo.BytesSent.ToString());
+                                            EditorGUILayout.LabelField("Last Ping", $"{connectionInfo.Ping}ms");
+                                            EditorGUILayout.LabelField("Packet Loss", connectionInfo.PacketLoss.ToString());
+                                            EditorGUILayout.LabelField("Connected Since", connectionInfo.ConnectedSince.ToString("HH:mm:ss"));
+                                        }
+                                        EditorGUI.indentLevel--;
+                                    }
+                                }
+                                EditorGUI.indentLevel--;
+                            }
+                        }
+                        else
+                        {
+                            EditorGUILayout.LabelField("No clients connected");
                         }
                     }
                     else
                     {
-                        EditorGUILayout.LabelField("No clients connected");
+                        var connectionInfo = Application.isPlaying ? NetManager.GetConnectionInfo() : (lastKnownClients?.FirstOrDefault());
+                        if (connectionInfo != null)
+                        {
+                            EditorGUILayout.LabelField("Connection ID", connectionInfo.Id.ToString());
+                            EditorGUILayout.LabelField("State", connectionInfo.State.ToString());
+                            EditorGUILayout.LabelField("Bytes Received", connectionInfo.BytesReceived.ToString() ?? "Unknown");
+                            EditorGUILayout.LabelField("Bytes Sent", connectionInfo.BytesSent.ToString());
+                            EditorGUILayout.LabelField("Last Ping", $"{connectionInfo.Ping}ms");
+                            EditorGUILayout.LabelField("Packet Loss", connectionInfo.PacketLoss.ToString());
+                            EditorGUILayout.LabelField("Connected Since", connectionInfo.ConnectedSince.ToString("HH:mm:ss"));
+                        }
+                        else
+                        {
+                            EditorGUILayout.LabelField("Not connected");
+                        }
                     }
-                    EditorGUI.indentLevel--;
                 }
-                else
+                catch (System.Exception)
                 {
-                    EditorGUILayout.LabelField("Client Information", EditorStyles.boldLabel);
-                    EditorGUI.indentLevel++;
-                    var connectionInfo = Application.isPlaying ? NetManager.GetConnectionInfo() : (lastKnownClients?.FirstOrDefault());
-                    if (connectionInfo != null)
-                    {
-                        EditorGUILayout.LabelField("Connection ID", connectionInfo.Id.ToString());
-                        EditorGUILayout.LabelField("State", connectionInfo.State.ToString());
-                        EditorGUILayout.LabelField("Bytes Received", connectionInfo.BytesReceived.ToString() ?? "Unknown");
-                        EditorGUILayout.LabelField("Bytes Sent", connectionInfo.BytesSent.ToString());
-                        EditorGUILayout.LabelField("Last Ping", $"{connectionInfo.Ping}ms");
-                        EditorGUILayout.LabelField("Packet Loss", connectionInfo.PacketLoss.ToString());
-                        EditorGUILayout.LabelField("Connected Since", connectionInfo.ConnectedSince.ToString("HH:mm:ss"));
-                    }
-                    else
-                    {
-                        EditorGUILayout.LabelField("Not connected");
-                    }
-                    EditorGUI.indentLevel--;
+                    EditorGUILayout.LabelField("Unable to retrieve client information");
                 }
-            }
-            catch (System.Exception)
-            {
-                EditorGUILayout.LabelField("Unable to retrieve client information");
+                EditorGUI.indentLevel--;
             }
         }
 

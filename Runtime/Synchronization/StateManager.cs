@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using NetPackage.Network;
 using NetPackage.Messages;
@@ -9,10 +10,9 @@ namespace NetPackage.Synchronization
     public static class StateManager
     {
         //Object id - state
-        private static Dictionary<int, ObjectState> snapshot = new();
+        private static ConcurrentDictionary<int, ObjectState> snapshot = new();
         public static void Register(int netId, ObjectState state)
         {
-
             if (state == null)
             {
                 return;
@@ -21,27 +21,24 @@ namespace NetPackage.Synchronization
         }
         public static void Register(int netId, object obj)
         {
-
             if (snapshot.TryGetValue(netId, out ObjectState state))
             {
                 state.Register(netId, obj);
             }
             else
                 DebugQueue.AddMessage("Not Registered state :" + obj.GetType().Name, DebugQueue.MessageType.State);
-
         }
         public static void Unregister(int netId, object obj)
         {
             if (snapshot.TryGetValue(netId, out ObjectState state))
             {
                 state.Unregister(obj);
-                
             }
         }
 
         public static void Unregister(int netId)
         {
-            snapshot.Remove(netId);
+            snapshot.TryRemove(netId, out _);
         }
         public static void Clear()
         {
@@ -87,11 +84,12 @@ namespace NetPackage.Synchronization
             }
             else if (snapshot.TryGetValue(syncMessage.ObjectID, out ObjectState state))
             {
-                    state.SetChange(syncMessage.ComponentId, syncMessage.changedValues);
+                state.SetChange(syncMessage.ComponentId, syncMessage.changedValues);
             }
             else DebugQueue.AddMessage(
                 $"Not SetSync: {syncMessage.ObjectID} Objects: {string.Join(", ", snapshot.Select(kv => $"{kv.Key}: {kv.Value}"))}",
                 DebugQueue.MessageType.Error
-            );}
+            );
+        }
     }
 }

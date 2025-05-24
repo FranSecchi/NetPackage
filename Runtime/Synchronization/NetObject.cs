@@ -59,19 +59,21 @@ namespace NetPackage.Synchronization
         /// <param name="ownerId">The ID of the client that should become the new owner.</param>
         internal void GiveOwner(int ownerId)
         {
+            if (_ownerId == ownerId) return;
             if (!NetManager.AllPlayers.Contains(ownerId)) return;
-            NetMessage msg = new OwnershipMessage(NetId, ownerId);
-            NetManager.Send(msg);
-            if(!NetManager.IsHost)
-            {
-                NetClient.Send(msg);
-                return;
-            }
             _ownerId = ownerId;
+            if(NetManager.IsHost)
+                EnableRollback();
+            
+            NetMessage msg = new OwnershipMessage(NetId, ownerId, NetManager.ConnectionId());
+            NetManager.Send(msg);
+        }
+
+        internal void EnableRollback()
+        {
             foreach (var b in _behaviours)
                 b.EnablePrediction(true);
         }
-
         internal void Register(NetBehaviour obj)
         {
             if (!_behaviours.Contains(obj))

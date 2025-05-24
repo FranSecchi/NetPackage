@@ -94,7 +94,15 @@ namespace NetPackage.Network
             var netObj = GetNetObject(msg.netObjectId);
             if (netObj != null)
             {
-                if(NetManager.IsHost) netObj.GiveOwner(msg.newOwnerId);
+                if(msg.senderID == NetManager.ConnectionId())
+                {
+                    netObj.EnableRollback();
+                    return;
+                }
+                if(NetManager.IsHost)
+                {
+                    netObj.GiveOwner(msg.newOwnerId);
+                }
                 else netObj.OwnerId = msg.newOwnerId;
             }
         }
@@ -281,7 +289,6 @@ namespace NetPackage.Network
                 NetObject netObj = netObject.Value;
                 if (id == netObj.OwnerId)
                 {
-                    netObj.GiveOwner(-1);
                     netObj.Disconnect();
                 }
             }

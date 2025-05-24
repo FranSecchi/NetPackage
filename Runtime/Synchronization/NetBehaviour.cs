@@ -275,8 +275,8 @@ namespace NetPackage.Synchronization
         protected virtual void Predict(float deltaTime){ }
         public virtual void PausePrediction(){ }
         public virtual void ResumePrediction(){ }
-        
-        protected abstract bool IsDesynchronized(Dictionary<string, object> changes);
+
+        protected virtual bool IsDesynchronized(Dictionary<string, object> changes){ return false; }
         
         protected virtual T GetFieldValue<T>(string fieldName)
         {

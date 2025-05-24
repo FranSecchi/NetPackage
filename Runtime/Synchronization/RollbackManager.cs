@@ -84,26 +84,17 @@ namespace NetPackage.Synchronization
         private static void CleanupOldStates()
         {
             float cutoffTime = Time.time - _rollbackWindow;
-            int removedStates = 0;
             
             while (_stateHistory.Count > 0 && _stateHistory.Peek().Timestamp < cutoffTime)
             {
                 var oldState = _stateHistory.Dequeue();
                 oldState.Snapshot.Clear();
                 oldState.Inputs.Clear();
-                removedStates++;
             }
             
-            int removedInputs = 0;
             while (_inputBuffer.Count > 0 && _inputBuffer.Peek().Timestamp < cutoffTime)
             {
                 _inputBuffer.Dequeue();
-                removedInputs++;
-            }
-
-            if (removedStates > 0 || removedInputs > 0)
-            {
-                DebugQueue.AddMessage($"Cleaned up {removedStates} states and {removedInputs} inputs older than {cutoffTime:F3}s", DebugQueue.MessageType.Rollback);
             }
         }
         

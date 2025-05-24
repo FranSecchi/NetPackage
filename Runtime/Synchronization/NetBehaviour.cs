@@ -60,11 +60,17 @@ namespace NetPackage.Synchronization
                 DebugQueue.AddMessage($"Spawned {GetType().Name} | {gameObject.name}.", DebugQueue.MessageType.Warning);
 
                 spawned = true;
-                if (NetManager.Rollback) 
-                    RollbackManager.UpdatePrediction += UpdatePrediction;
                 OnNetSpawn();
             }
-            else OnNetEnable();
+            else 
+            {
+                OnNetEnable();
+            }
+            if (NetManager.Rollback && isOwned)
+            {
+                RollbackManager.UpdatePrediction += UpdatePrediction;
+                if(!_isPredicting) StartPrediction();
+            }
         }
 
         private void OnDisable()
@@ -73,9 +79,12 @@ namespace NetPackage.Synchronization
                 return;
             StateManager.Unregister(NetObject.NetId, this);
             RPCManager.Unregister(NetObject.NetId, this);
-            if (NetManager.Rollback) 
-                RollbackManager.UpdatePrediction -= UpdatePrediction;
             OnNetDisable();
+            if (NetManager.Rollback && isOwned && _isPredicting)
+            {
+                RollbackManager.UpdatePrediction -= UpdatePrediction;
+                if(_isPredicting) StopPrediction();
+            }
         }
 
         private void Start()
@@ -193,6 +202,7 @@ namespace NetPackage.Synchronization
             // Stop prediction if we've predicted too far ahead
             if (timeSinceLastPrediction > _maxPredictionTime)
             {
+                DebugQueue.AddMessage($"Prediction timeout for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
                 StopPrediction();
                 return;
             }
@@ -218,6 +228,8 @@ namespace NetPackage.Synchronization
             if (!isOwned) return;
             _isPredicting = true;
             _lastPredictionTime = Time.time;
+            _lastReconcileTime = Time.time;
+            DebugQueue.AddMessage($"Started prediction for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
             OnPredictionStart();
         }
         
@@ -225,6 +237,7 @@ namespace NetPackage.Synchronization
         {
             if (!isOwned) return;
             _isPredicting = false;
+            DebugQueue.AddMessage($"Stopped prediction for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
             OnPredictionStop();
         }
         
@@ -240,6 +253,7 @@ namespace NetPackage.Synchronization
             {
                 if (IsDesynchronized(changes))
                 {
+                    DebugQueue.AddMessage($"Desync detected for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
                     DebugQueue.AddRollback(NetID, _lastReconcileTime, "State desync detected at " + GetType().Name);
                     RollbackManager.RollbackToTime(NetID, id, _lastReconcileTime, changes);
                 }

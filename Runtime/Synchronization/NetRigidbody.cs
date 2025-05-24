@@ -181,7 +181,6 @@ namespace NetPackage.Synchronization
         {
             if (!NetManager.Active || !NetManager.Running || !_isSynchronized)
                 return;
-
             
             SetState();
             if (isOwned)

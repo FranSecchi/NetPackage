@@ -51,7 +51,7 @@ namespace NetPackage.Synchronization
             set => _syncScale = value;
         }
 
-        public void ResetPrediction()
+        public override void PausePrediction()
         {
             _isSynchronized = false;
             _hasTargetState = false;
@@ -69,7 +69,7 @@ namespace NetPackage.Synchronization
             _scaleZ = transform.localScale.z;
         }
 
-        public void ResumeSynchronization()
+        public override void ResumePrediction()
         {
             _isSynchronized = true;
         }

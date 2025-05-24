@@ -9,16 +9,28 @@ namespace NetPackage.Editor
         [MenuItem("GameObject/NetPackage/NetTransform", false, 0)]
         public static void CreateNetTransform()
         {
-            // Create a new GameObject
             GameObject go = new GameObject("NetTransform");
-            
-            // Add the NetTransform component
             go.AddComponent<NetTransform>();
             
-            // Register the object in the scene
             Selection.activeGameObject = go;
+            EditorGUIUtility.PingObject(go);
+        }
+        [MenuItem("GameObject/NetPackage/NetRigidbody", false, 1)]
+        public static void CreateNetRigidBody()
+        {
+            GameObject go = new GameObject("NetRigidBody");
+            go.AddComponent<NetRigidBody>();
             
-            // Make sure the object is selected in the hierarchy
+            Selection.activeGameObject = go;
+            EditorGUIUtility.PingObject(go);
+        }
+        [MenuItem("GameObject/NetPackage/NetRigidBody2D", false, 2)]
+        public static void CreateNetRigidbody2D()
+        {
+            GameObject go = new GameObject("NetRigidBody2D");
+            go.AddComponent<NetRigidBody2D>();
+            
+            Selection.activeGameObject = go;
             EditorGUIUtility.PingObject(go);
         }
     }

@@ -273,11 +273,9 @@ namespace NetPackage.Synchronization
         protected virtual void OnStateReconcile(Dictionary<string, object> changes) { }
         
         // New virtual methods for prediction and desync detection
-        protected virtual void Predict(float deltaTime)
-        {
-            // Override this method to implement prediction logic
-            // This is called during prediction phase
-        }
+        protected virtual void Predict(float deltaTime){ }
+        public virtual void PausePrediction(){ }
+        public virtual void ResumePrediction(){ }
         
         protected virtual bool IsDesynchronized(Dictionary<string, object> changes)
         {

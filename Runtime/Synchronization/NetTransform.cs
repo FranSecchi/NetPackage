@@ -51,7 +51,7 @@ namespace NetPackage.Synchronization
             set => _syncScale = value;
         }
 
-        public void Reset()
+        public void ResetPrediction()
         {
             _isSynchronized = false;
             _hasTargetState = false;

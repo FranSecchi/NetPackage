@@ -5,7 +5,7 @@ using UnityEngine;
 namespace NetPackage.Synchronization
 {
     [RequireComponent(typeof(Rigidbody))]
-    public class NetRigidBody : NetBehaviour
+    public class NetRigidbody : NetBehaviour
     {
         [Header("Synchronization Settings")]
         [SerializeField] private bool _syncPosition = true;
@@ -13,6 +13,12 @@ namespace NetPackage.Synchronization
         [SerializeField] private bool _syncVelocity = true;
         [SerializeField] private bool _syncAngularVelocity = true;
         [SerializeField] private bool _syncProperties = true;
+
+        [Header("Desync Thresholds")]
+        [SerializeField] private float _positionThreshold = 0.01f;
+        [SerializeField] private float _rotationThreshold = 0.01f;
+        [SerializeField] private float _velocityThreshold = 0.1f;
+        [SerializeField] private float _angularVelocityThreshold = 0.1f;
 
         [Sync] private float _positionX;
         [Sync] private float _positionY;
@@ -213,35 +219,30 @@ namespace NetPackage.Synchronization
         {
             if (!isOwned) return false;
 
-            float positionThreshold = _desyncThreshold;
-            float rotationThreshold = _desyncThreshold;
-            float velocityThreshold = _desyncThreshold;
-            float angularVelocityThreshold = _desyncThreshold;
-
             if (_syncPosition)
             {
-                if (changes.ContainsKey("_positionX") && Mathf.Abs((float)changes["_positionX"] - _rigidbody.position.x) > positionThreshold) return true;
-                if (changes.ContainsKey("_positionY") && Mathf.Abs((float)changes["_positionY"] - _rigidbody.position.y) > positionThreshold) return true;
-                if (changes.ContainsKey("_positionZ") && Mathf.Abs((float)changes["_positionZ"] - _rigidbody.position.z) > positionThreshold) return true;
+                if (changes.ContainsKey("_positionX") && Mathf.Abs((float)changes["_positionX"] - _rigidbody.position.x) > _positionThreshold) return true;
+                if (changes.ContainsKey("_positionY") && Mathf.Abs((float)changes["_positionY"] - _rigidbody.position.y) > _positionThreshold) return true;
+                if (changes.ContainsKey("_positionZ") && Mathf.Abs((float)changes["_positionZ"] - _rigidbody.position.z) > _positionThreshold) return true;
             }
             if (_syncRotation)
             {
-                if (changes.ContainsKey("_rotationX") && Mathf.Abs((float)changes["_rotationX"] - _rigidbody.rotation.x) > rotationThreshold) return true;
-                if (changes.ContainsKey("_rotationY") && Mathf.Abs((float)changes["_rotationY"] - _rigidbody.rotation.y) > rotationThreshold) return true;
-                if (changes.ContainsKey("_rotationZ") && Mathf.Abs((float)changes["_rotationZ"] - _rigidbody.rotation.z) > rotationThreshold) return true;
-                if (changes.ContainsKey("_rotationW") && Mathf.Abs((float)changes["_rotationW"] - _rigidbody.rotation.w) > rotationThreshold) return true;
+                if (changes.ContainsKey("_rotationX") && Mathf.Abs((float)changes["_rotationX"] - _rigidbody.rotation.x) > _rotationThreshold) return true;
+                if (changes.ContainsKey("_rotationY") && Mathf.Abs((float)changes["_rotationY"] - _rigidbody.rotation.y) > _rotationThreshold) return true;
+                if (changes.ContainsKey("_rotationZ") && Mathf.Abs((float)changes["_rotationZ"] - _rigidbody.rotation.z) > _rotationThreshold) return true;
+                if (changes.ContainsKey("_rotationW") && Mathf.Abs((float)changes["_rotationW"] - _rigidbody.rotation.w) > _rotationThreshold) return true;
             }
             if (_syncVelocity)
             {
-                if (changes.ContainsKey("_velocityX") && Mathf.Abs((float)changes["_velocityX"] - _rigidbody.velocity.x) > velocityThreshold) return true;
-                if (changes.ContainsKey("_velocityY") && Mathf.Abs((float)changes["_velocityY"] - _rigidbody.velocity.y) > velocityThreshold) return true;
-                if (changes.ContainsKey("_velocityZ") && Mathf.Abs((float)changes["_velocityZ"] - _rigidbody.velocity.z) > velocityThreshold) return true;
+                if (changes.ContainsKey("_velocityX") && Mathf.Abs((float)changes["_velocityX"] - _rigidbody.velocity.x) > _velocityThreshold) return true;
+                if (changes.ContainsKey("_velocityY") && Mathf.Abs((float)changes["_velocityY"] - _rigidbody.velocity.y) > _velocityThreshold) return true;
+                if (changes.ContainsKey("_velocityZ") && Mathf.Abs((float)changes["_velocityZ"] - _rigidbody.velocity.z) > _velocityThreshold) return true;
             }
             if (_syncAngularVelocity)
             {
-                if (changes.ContainsKey("_angularVelocityX") && Mathf.Abs((float)changes["_angularVelocityX"] - _rigidbody.angularVelocity.x) > angularVelocityThreshold) return true;
-                if (changes.ContainsKey("_angularVelocityY") && Mathf.Abs((float)changes["_angularVelocityY"] - _rigidbody.angularVelocity.y) > angularVelocityThreshold) return true;
-                if (changes.ContainsKey("_angularVelocityZ") && Mathf.Abs((float)changes["_angularVelocityZ"] - _rigidbody.angularVelocity.z) > angularVelocityThreshold) return true;
+                if (changes.ContainsKey("_angularVelocityX") && Mathf.Abs((float)changes["_angularVelocityX"] - _rigidbody.angularVelocity.x) > _angularVelocityThreshold) return true;
+                if (changes.ContainsKey("_angularVelocityY") && Mathf.Abs((float)changes["_angularVelocityY"] - _rigidbody.angularVelocity.y) > _angularVelocityThreshold) return true;
+                if (changes.ContainsKey("_angularVelocityZ") && Mathf.Abs((float)changes["_angularVelocityZ"] - _rigidbody.angularVelocity.z) > _angularVelocityThreshold) return true;
             }
 
             return false;

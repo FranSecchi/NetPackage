@@ -12,6 +12,11 @@ namespace NetPackage.Synchronization
         [SerializeField] private bool _syncRotation = true;
         [SerializeField] private bool _syncScale = true;
 
+        [Header("Desync Thresholds")]
+        [SerializeField] private float _positionThreshold = 0.01f;
+        [SerializeField] private float _rotationThreshold = 0.01f;
+        [SerializeField] private float _scaleThreshold = 0.01f;
+
         [Sync] private float _positionX;
         [Sync] private float _positionY;
         [Sync] private float _positionZ;
@@ -133,30 +138,26 @@ namespace NetPackage.Synchronization
         {
             if (!isOwned) return false;
 
-            float positionThreshold = _desyncThreshold;
-            float rotationThreshold = _desyncThreshold;
-            float scaleThreshold = _desyncThreshold;
-
             if (_syncPosition)
             {
-                if (changes.ContainsKey("_positionX") && Mathf.Abs((float)changes["_positionX"] - transform.position.x) > positionThreshold) return true;
-                if (changes.ContainsKey("_positionY") && Mathf.Abs((float)changes["_positionY"] - transform.position.y) > positionThreshold) return true;
-                if (changes.ContainsKey("_positionZ") && Mathf.Abs((float)changes["_positionZ"] - transform.position.z) > positionThreshold) return true;
+                if (changes.ContainsKey("_positionX") && Mathf.Abs((float)changes["_positionX"] - transform.position.x) > _positionThreshold) return true;
+                if (changes.ContainsKey("_positionY") && Mathf.Abs((float)changes["_positionY"] - transform.position.y) > _positionThreshold) return true;
+                if (changes.ContainsKey("_positionZ") && Mathf.Abs((float)changes["_positionZ"] - transform.position.z) > _positionThreshold) return true;
             }
             
             if (_syncRotation)
             {
-                if (changes.ContainsKey("_rotationX") && Mathf.Abs((float)changes["_rotationX"] - transform.rotation.x) > rotationThreshold) return true;
-                if (changes.ContainsKey("_rotationY") && Mathf.Abs((float)changes["_rotationY"] - transform.rotation.y) > rotationThreshold) return true;
-                if (changes.ContainsKey("_rotationZ") && Mathf.Abs((float)changes["_rotationZ"] - transform.rotation.z) > rotationThreshold) return true;
-                if (changes.ContainsKey("_rotationW") && Mathf.Abs((float)changes["_rotationW"] - transform.rotation.w) > rotationThreshold) return true;
+                if (changes.ContainsKey("_rotationX") && Mathf.Abs((float)changes["_rotationX"] - transform.rotation.x) > _rotationThreshold) return true;
+                if (changes.ContainsKey("_rotationY") && Mathf.Abs((float)changes["_rotationY"] - transform.rotation.y) > _rotationThreshold) return true;
+                if (changes.ContainsKey("_rotationZ") && Mathf.Abs((float)changes["_rotationZ"] - transform.rotation.z) > _rotationThreshold) return true;
+                if (changes.ContainsKey("_rotationW") && Mathf.Abs((float)changes["_rotationW"] - transform.rotation.w) > _rotationThreshold) return true;
             }
             
             if (_syncScale)
             {
-                if (changes.ContainsKey("_scaleX") && Mathf.Abs((float)changes["_scaleX"] - transform.localScale.x) > scaleThreshold) return true;
-                if (changes.ContainsKey("_scaleY") && Mathf.Abs((float)changes["_scaleY"] - transform.localScale.y) > scaleThreshold) return true;
-                if (changes.ContainsKey("_scaleZ") && Mathf.Abs((float)changes["_scaleZ"] - transform.localScale.z) > scaleThreshold) return true;
+                if (changes.ContainsKey("_scaleX") && Mathf.Abs((float)changes["_scaleX"] - transform.localScale.x) > _scaleThreshold) return true;
+                if (changes.ContainsKey("_scaleY") && Mathf.Abs((float)changes["_scaleY"] - transform.localScale.y) > _scaleThreshold) return true;
+                if (changes.ContainsKey("_scaleZ") && Mathf.Abs((float)changes["_scaleZ"] - transform.localScale.z) > _scaleThreshold) return true;
             }
 
             return false;

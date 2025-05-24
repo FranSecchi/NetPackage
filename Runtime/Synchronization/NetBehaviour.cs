@@ -39,7 +39,6 @@ namespace NetPackage.Synchronization
         protected float _lastPredictionTime;
         protected float _lastReconcileTime;
         protected float _predictionDelay = 0.1f;
-        protected float _desyncThreshold = 0.01f;
         protected float _maxPredictionTime = 0.5f; // Maximum time to predict ahead
         public bool IsPredicting => _isPredicting;
         /// <summary>
@@ -277,23 +276,7 @@ namespace NetPackage.Synchronization
         public virtual void PausePrediction(){ }
         public virtual void ResumePrediction(){ }
         
-        protected virtual bool IsDesynchronized(Dictionary<string, object> changes)
-        {
-            if (!isOwned || changes == null) return false;
-
-            foreach (var change in changes)
-            {
-                if (change.Value is IComparable comparable)
-                {
-                    var currentValue = GetFieldValue(change.Key);
-                    if (currentValue != null && comparable.CompareTo(currentValue) != 0)
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
+        protected abstract bool IsDesynchronized(Dictionary<string, object> changes);
         
         protected virtual T GetFieldValue<T>(string fieldName)
         {

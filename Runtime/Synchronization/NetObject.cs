@@ -59,17 +59,17 @@ namespace NetPackage.Synchronization
         /// <param name="ownerId">The ID of the client that should become the new owner.</param>
         internal void GiveOwner(int ownerId)
         {
-            if (_ownerId == ownerId)
-            {
-                foreach (var b in _behaviours)
-                    b.EnablePrediction(true);
-                return;
-            }
             if (!NetManager.AllPlayers.Contains(ownerId)) return;
-            _ownerId = ownerId;
-            
             NetMessage msg = new OwnershipMessage(NetId, ownerId);
             NetManager.Send(msg);
+            if(!NetManager.IsHost)
+            {
+                NetClient.Send(msg);
+                return;
+            }
+            _ownerId = ownerId;
+            foreach (var b in _behaviours)
+                b.EnablePrediction(true);
         }
 
         internal void Register(NetBehaviour obj)

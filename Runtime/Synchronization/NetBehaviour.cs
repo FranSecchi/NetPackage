@@ -53,15 +53,15 @@ namespace NetPackage.Synchronization
         {
             if (NetObject == null)
                 return;
-                StateManager.Register(NetObject.NetId, this);
-                RPCManager.Register(NetObject.NetId, this);
-                RollbackManager.UpdatePrediction += UpdatePrediction;
+            StateManager.Register(NetObject.NetId, this);
+            RPCManager.Register(NetObject.NetId, this);
             if (!spawned)
             {
                 DebugQueue.AddMessage($"Spawned {GetType().Name} | {gameObject.name}.", DebugQueue.MessageType.Warning);
 
                 spawned = true;
                 if (NetManager.Rollback) 
+                    RollbackManager.UpdatePrediction += UpdatePrediction;
                 OnNetSpawn();
             }
             else OnNetEnable();
@@ -73,7 +73,8 @@ namespace NetPackage.Synchronization
                 return;
             StateManager.Unregister(NetObject.NetId, this);
             RPCManager.Unregister(NetObject.NetId, this);
-            RollbackManager.UpdatePrediction += UpdatePrediction;
+            if (NetManager.Rollback) 
+                RollbackManager.UpdatePrediction -= UpdatePrediction;
             OnNetDisable();
         }
 

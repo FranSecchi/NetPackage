@@ -43,6 +43,7 @@ namespace NetPackage.Synchronization
             _stateHistory.Clear();
             _inputBuffer.Clear();
             _isRollingBack = false;
+            DebugQueue.AddMessage("RollbackManager initialized", DebugQueue.MessageType.Rollback);
         }
         
         public static void Update()
@@ -62,6 +63,7 @@ namespace NetPackage.Synchronization
                 var oldState = _stateHistory.Dequeue();
                 oldState.Snapshot.Clear();
                 oldState.Inputs.Clear();
+                DebugQueue.AddMessage($"State history limit reached ({_maxStates}), oldest state removed", DebugQueue.MessageType.Rollback);
             }
             
             var currentState = new GameState
@@ -82,17 +84,26 @@ namespace NetPackage.Synchronization
         private static void CleanupOldStates()
         {
             float cutoffTime = Time.time - _rollbackWindow;
+            int removedStates = 0;
             
             while (_stateHistory.Count > 0 && _stateHistory.Peek().Timestamp < cutoffTime)
             {
                 var oldState = _stateHistory.Dequeue();
                 oldState.Snapshot.Clear();
                 oldState.Inputs.Clear();
+                removedStates++;
             }
             
+            int removedInputs = 0;
             while (_inputBuffer.Count > 0 && _inputBuffer.Peek().Timestamp < cutoffTime)
             {
                 _inputBuffer.Dequeue();
+                removedInputs++;
+            }
+
+            if (removedStates > 0 || removedInputs > 0)
+            {
+                DebugQueue.AddMessage($"Cleaned up {removedStates} states and {removedInputs} inputs older than {cutoffTime:F3}s", DebugQueue.MessageType.Rollback);
             }
         }
         
@@ -122,13 +133,14 @@ namespace NetPackage.Synchronization
             var targetState = GetStateAtTime(targetTime);
             if (!targetState.HasValue)
             {
+                DebugQueue.AddMessage($"Failed to find state for rollback at time {targetTime:F3}s", DebugQueue.MessageType.Rollback);
                 return;
             }
             
             _isRollingBack = true;
             _lastRollbackTime = Time.time;
             
-            DebugQueue.AddMessage($"Rollback to {targetTime:F3}s", DebugQueue.MessageType.Rollback);
+            DebugQueue.AddMessage($"Starting rollback to {targetTime:F3}s", DebugQueue.MessageType.Rollback);
             
             foreach (var kvp in targetState.Value.Snapshot)
             {
@@ -142,39 +154,45 @@ namespace NetPackage.Synchronization
             }
             
             _isRollingBack = false;
+            DebugQueue.AddMessage($"Rollback completed, replaying {inputsToReplay.Count} inputs", DebugQueue.MessageType.Rollback);
         }
 
         public static void RollbackToTime(int netId, int id, float targetTime, Dictionary<string, object> changes)
         {
             if (_isRollingBack || _stateHistory.Count == 0)
             {
-                DebugQueue.AddMessage($"Object {netId} failed to roll back to {targetTime:F3}s", DebugQueue.MessageType.Warning);
+                DebugQueue.AddMessage($"Object {netId} failed to roll back to {targetTime:F3}s - Invalid state", DebugQueue.MessageType.Rollback);
                 return;
             }
             
             var targetState = GetStateAtTime(targetTime);
             if (!targetState.HasValue)
             {
+                DebugQueue.AddMessage($"Object {netId} failed to roll back to {targetTime:F3}s - No state found", DebugQueue.MessageType.Rollback);
                 return;
             }
             
             _isRollingBack = true;
             _lastRollbackTime = Time.time;
             
+            DebugQueue.AddMessage($"Starting object-specific rollback for {netId} to {targetTime:F3}s", DebugQueue.MessageType.Rollback);
+            
             if (targetState.Value.Snapshot.TryGetValue(netId, out var state))
             {
                 StateManager.RestoreState(netId, state);
                 
                 var inputsToReplay = GetInputsAtTime(targetTime);
+                int replayedInputs = 0;
                 foreach (var input in inputsToReplay)
                 {
                     if (input.NetId == netId)
                     {
-                        DebugQueue.AddMessage($"Re-applied input {input.MethodName}", DebugQueue.MessageType.Rollback);
                         RPCManager.CallRPC(input.NetId, input.MethodName, input.Parameters);
+                        replayedInputs++;
                     }
                 }
                 state.SetChange(id, changes);
+                DebugQueue.AddMessage($"Object {netId} rollback completed, replayed {replayedInputs} inputs", DebugQueue.MessageType.Rollback);
             }
             
             _isRollingBack = false;
@@ -182,6 +200,9 @@ namespace NetPackage.Synchronization
         
         public static void Clear()
         {
+            int stateCount = _stateHistory.Count;
+            int inputCount = _inputBuffer.Count;
+            
             foreach (var state in _stateHistory)
             {
                 state.Snapshot.Clear();
@@ -190,6 +211,8 @@ namespace NetPackage.Synchronization
             _stateHistory.Clear();
             _inputBuffer.Clear();
             _isRollingBack = false;
+            
+            DebugQueue.AddMessage($"RollbackManager cleared: {stateCount} states and {inputCount} inputs removed", DebugQueue.MessageType.Rollback);
         }
 
         private static GameState? GetStateAtTime(float targetTime)
@@ -206,7 +229,7 @@ namespace NetPackage.Synchronization
             
             if (targetState == null)
             {
-                DebugQueue.AddMessage($"Failed to find state to roll back to at time {targetTime:F3}s", DebugQueue.MessageType.Warning);
+                DebugQueue.AddMessage($"Failed to find state to roll back to at time {targetTime:F3}s", DebugQueue.MessageType.Rollback);
             }
             
             return targetState;

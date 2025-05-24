@@ -154,17 +154,14 @@ namespace NetPackage.Synchronization
         public void Own(int ownerId, bool ownChildren = false)
         {
             if(NetObject == null) return;
-            DebugQueue.AddMessage($"Transferring ownership of {gameObject.name} to {ownerId}", DebugQueue.MessageType.Warning);
             NetObject.GiveOwner(ownerId);
             if (ownChildren)
             {
                 var childs = GetComponentsInChildren<NetBehaviour>();
-                DebugQueue.AddMessage($"Found {childs.Length} NetBehaviours in children of {gameObject.name}", DebugQueue.MessageType.Warning);
                 foreach (var child in childs)
                 {
                     if (child == this) continue; // Skip self to prevent any potential circular references
-                    DebugQueue.AddMessage($"Transferring ownership of child {child.gameObject.name} to {ownerId}", DebugQueue.MessageType.Warning);
-                    child.Own(ownerId, true);
+                    child.NetObject.GiveOwner(ownerId);
                 }
             }
         }

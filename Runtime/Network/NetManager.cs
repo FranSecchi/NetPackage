@@ -303,7 +303,7 @@ namespace NetPackage.Network
         /// <returns>The connection ID if connected as a client, -1 if hosting.</returns>
         public static int ConnectionId()
         {
-            if (!IsHost) return NetClient.Connection.Id;
+            if (!IsHost) return Connected ? NetClient.Connection.Id : -2;
             return -1;
         }
         /// <summary>

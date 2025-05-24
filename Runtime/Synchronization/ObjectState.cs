@@ -171,7 +171,7 @@ namespace NetPackage.Synchronization
             {
                 if (obj is NetBehaviour netBehaviour)
                 {
-                    netBehaviour.OnStateReceived(id, changes);
+                    NetManager.EnqueueMainThread(() => netBehaviour.OnStateReceived(id, changes));
                 }
             }
             else

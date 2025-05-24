@@ -57,7 +57,7 @@ namespace NetPackage.Synchronization
         /// Transfers ownership of this networked object to the specified client.
         /// </summary>
         /// <param name="ownerId">The ID of the client that should become the new owner.</param>
-        public void GiveOwner(int ownerId)
+        internal void GiveOwner(int ownerId)
         {
             if (_ownerId == ownerId) return;
             if (!NetManager.AllPlayers.Contains(ownerId)) return;

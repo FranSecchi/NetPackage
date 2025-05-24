@@ -52,6 +52,11 @@ namespace NetPackage.Network
         public static List<int> AllPlayers;
         
         /// <summary>
+        /// The address of the server to connect to.
+        /// </summary>
+        [Tooltip("The address of the server to connect to")]
+        public string address = "localhost";
+        /// <summary>
         /// The name of the server.
         /// </summary>
         [Tooltip("The name of the server that will be displayed to clients")]
@@ -131,11 +136,6 @@ namespace NetPackage.Network
             set => _manager.useLAN = value;
         }
 
-        /// <summary>
-        /// The address of the server to connect to.
-        /// </summary>
-        [Tooltip("The address of the server to connect to")]
-        public string address = "localhost";
 
         /// <summary>
         /// Sets the transport layer implementation for network communication.

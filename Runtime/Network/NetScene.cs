@@ -280,10 +280,7 @@ namespace NetPackage.Network
                 if (id == netObj.OwnerId)
                 {
                     netObj.GiveOwner(-1);
-                    foreach (var netBehaviour in netObj._behaviours)
-                    {
-                        netBehaviour.Disconnect();
-                    }
+                    netObj.Disconnect();
                 }
             }
         }

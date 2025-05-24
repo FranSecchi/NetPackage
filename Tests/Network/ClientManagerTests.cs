@@ -36,7 +36,7 @@ namespace NetPackage.Network.Tests
             NetManager.StartClient();
             yield return WaitClientConnection(0);
 
-            Assert.IsTrue(NetManager.allPlayers.Count == 2, "Client did not start correctly");
+            Assert.IsTrue(NetManager.AllPlayers.Count == 2, "Client did not start correctly");
         }
 
 
@@ -51,7 +51,7 @@ namespace NetPackage.Network.Tests
             NetManager.StopNet();
             yield return new WaitForSeconds(0.5f);
             
-            Assert.IsTrue(NetManager.allPlayers.Count == 0, "Client did not stop correctly");
+            Assert.IsTrue(NetManager.AllPlayers.Count == 0, "Client did not stop correctly");
         }
         
         [UnityTest]
@@ -75,8 +75,8 @@ namespace NetPackage.Network.Tests
             }
             
             yield return new WaitForSeconds(0.2f);
-            Assert.AreEqual(NetManager.allPlayers.Count, 5, "Client did not add 5 players");
-            Assert.IsTrue(NetManager.allPlayers.Contains(3), "Client did not add correctly");
+            Assert.AreEqual(NetManager.AllPlayers.Count, 5, "Client did not add 5 players");
+            Assert.IsTrue(NetManager.AllPlayers.Contains(3), "Client did not add correctly");
             foreach (ITransport client in clients)
             {
                 client.Stop();

@@ -15,7 +15,7 @@ namespace NetPackage.Network
         internal static void StartHost()
         {
             NetManager.Transport.Start();
-            NetManager.allPlayers.Add(-1);
+            NetManager.AllPlayers.Add(-1);
             NetScene.Init();
             RPCManager.Init();
             ITransport.OnClientConnected += OnClientConnected;;
@@ -26,7 +26,7 @@ namespace NetPackage.Network
 
         private static void OnConnMessage(ConnMessage obj)
         {
-            if(!obj.AllConnected.Count.Equals(NetManager.allPlayers.Count))
+            if(!obj.AllConnected.Count.Equals(NetManager.AllPlayers.Count))
                 UpdatePlayers(obj.CurrentConnected);
         }
 
@@ -36,7 +36,7 @@ namespace NetPackage.Network
             if(Clients.TryRemove(id, out _))
             {
                 DebugQueue.AddMessage($"Client {id} disconnected. Clients count: {Clients.Count}", DebugQueue.MessageType.Network);
-                NetManager.allPlayers.Remove(id);
+                NetManager.AllPlayers.Remove(id);
                 UpdatePlayers(id);
                 NetManager.EnqueueMainThread(() => NetScene.DisconnectClient(id));
             }
@@ -48,7 +48,7 @@ namespace NetPackage.Network
             if (Clients.TryAdd(id, new NetConn(id, true)))
             {
                 DebugQueue.AddMessage($"Client {id} connected. Clients count: {Clients.Count}", DebugQueue.MessageType.Network);
-                NetManager.allPlayers.Add(id);
+                NetManager.AllPlayers.Add(id);
                 UpdatePlayers(id);
                 //NetScene.SendScene(id);
             }
@@ -61,7 +61,7 @@ namespace NetPackage.Network
             ServerInfo info = NetManager.GetServerInfo();
             info.CurrentPlayers = NetManager.PlayerCount;
             NetManager.Transport.SetServerInfo(info);
-            NetMessage msg = new ConnMessage(id, NetManager.allPlayers, info);
+            NetMessage msg = new ConnMessage(id, NetManager.AllPlayers, info);
             Send(msg);
         }
 

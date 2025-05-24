@@ -37,7 +37,7 @@ namespace NetPackage.Synchronization
         public void GiveOwner(int ownerId)
         {
             if (_ownerId == ownerId) return;
-            if (!NetManager.allPlayers.Contains(ownerId)) return;
+            if (!NetManager.AllPlayers.Contains(ownerId)) return;
             _ownerId = ownerId;
             
             NetMessage msg = new OwnershipMessage(NetId, ownerId);

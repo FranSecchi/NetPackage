@@ -194,7 +194,7 @@ namespace NetPackage.Synchronization
                             if(NetManager.IsHost && targetIds.Contains(-1)) CallRPC(netId, methodName, parameters);
                             break;
                         case Send.Others:
-                            targetIds = new List<int>(NetManager.allPlayers);
+                            targetIds = new List<int>(NetManager.AllPlayers);
                             targetIds.Remove(NetManager.ConnectionId());
                             break;
                         case Send.All:

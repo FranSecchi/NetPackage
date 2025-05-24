@@ -29,7 +29,7 @@ namespace NetPackage.Network.Tests
             client.Connect("127.0.0.1");
             yield return new WaitForSeconds(0.2f);
             
-            Assert.IsTrue(NetManager.allPlayers.Count == 2, "Server did not add one player");
+            Assert.IsTrue(NetManager.AllPlayers.Count == 2, "Server did not add one player");
         }
         [UnityTest]
         public IEnumerator TestStopServer()
@@ -41,7 +41,7 @@ namespace NetPackage.Network.Tests
             NetManager.StopNet();
             yield return new WaitForSeconds(0.2f);
             
-            Assert.IsTrue(NetManager.allPlayers.Count == 0, "Server did not stop correctly");
+            Assert.IsTrue(NetManager.AllPlayers.Count == 0, "Server did not stop correctly");
         }
         [UnityTest]
         public IEnumerator TestKickPlayer()
@@ -49,11 +49,11 @@ namespace NetPackage.Network.Tests
             yield return new WaitForSeconds(0.2f);
             client.Connect("127.0.0.1");
             yield return new WaitForSeconds(0.2f);
-            int key = NetManager.allPlayers[1];
+            int key = NetManager.AllPlayers[1];
             NetHost.Kick(key);
             yield return new WaitForSeconds(0.2f);
             
-            Assert.IsTrue(NetManager.allPlayers.Count == 1, "Server did not kick correctly " + NetManager.allPlayers.Count);
+            Assert.IsTrue(NetManager.AllPlayers.Count == 1, "Server did not kick correctly " + NetManager.AllPlayers.Count);
         }
         [UnityTest]
         public IEnumerator TestMultipleClients()
@@ -73,8 +73,8 @@ namespace NetPackage.Network.Tests
             }
             
             
-            Assert.AreEqual(5 ,NetManager.allPlayers.Count, "Server did not add 5 players");
-            Assert.IsTrue(NetManager.allPlayers.Contains(3), "Server did not add correctly");
+            Assert.AreEqual(5 ,NetManager.AllPlayers.Count, "Server did not add 5 players");
+            Assert.IsTrue(NetManager.AllPlayers.Contains(3), "Server did not add correctly");
 
             foreach (ITransport client in clients)
             {
@@ -103,7 +103,7 @@ namespace NetPackage.Network.Tests
             var hostConnectionInfo = NetManager.GetConnectionInfo();
             Assert.IsNotNull(hostConnectionInfo, "Host connection info should not be null");
             
-            var clientId = NetManager.allPlayers[1];
+            var clientId = NetManager.AllPlayers[1];
             var clientConnectionInfo = NetManager.GetConnectionInfo(clientId);
             Assert.IsNotNull(clientConnectionInfo, "Client connection info should not be null");
             Assert.AreEqual(clientId, clientConnectionInfo.Id, "Connection info ID should match client ID");
@@ -120,7 +120,7 @@ namespace NetPackage.Network.Tests
             Assert.IsNotNull(hostConnectionState, "Host connection state should not be null");
             Assert.AreEqual(ConnectionState.Connected, hostConnectionState, "Host should be in Connected state");
             
-            var clientId = NetManager.allPlayers[1];
+            var clientId = NetManager.AllPlayers[1];
             var clientConnectionState = NetManager.GetConnectionState(clientId);
             Assert.IsNotNull(clientConnectionState, "Client connection state should not be null");
             Assert.AreEqual(ConnectionState.Connected, clientConnectionState, "Client should be in Connected state");

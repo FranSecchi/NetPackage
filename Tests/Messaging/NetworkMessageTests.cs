@@ -179,7 +179,7 @@ namespace NetPackage.Messaging.Tests
 
         private void TransportOnOnClientConnected(int id, ITransport server)
         {
-            NetMessage msg = new ConnMessage(id, NetManager.allPlayers, NetManager.GetServerInfo());
+            NetMessage msg = new ConnMessage(id, NetManager.AllPlayers, NetManager.GetServerInfo());
             server.Send(NetSerializer.Serialize(msg));
         }
 

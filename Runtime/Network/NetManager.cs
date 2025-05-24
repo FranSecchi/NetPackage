@@ -49,7 +49,7 @@ namespace NetPackage.Network
         /// <summary>
         /// List of all connected player IDs.
         /// </summary>
-        public static List<int> allPlayers;
+        public static List<int> AllPlayers;
         
         /// <summary>
         /// The name of the server.
@@ -105,7 +105,7 @@ namespace NetPackage.Network
         /// <summary>
         /// Gets the current number of connected players.
         /// </summary>
-        public static int PlayerCount => allPlayers.Count;
+        public static int PlayerCount => AllPlayers.Count;
 
         /// <summary>
         /// Gets whether the network system is currently running.
@@ -152,7 +152,7 @@ namespace NetPackage.Network
                 Destroy(this);
             else _manager = this;
             Transport ??= new UDPSolution();
-            allPlayers = new List<int>();
+            AllPlayers = new List<int>();
             if(NetPrefabs != null) NetScene.RegisterPrefabs(NetPrefabs.prefabs);
             _running = false;
             DontDestroyOnLoad(this);
@@ -283,7 +283,7 @@ namespace NetPackage.Network
             if (UseLan) StopLan();
             if (IsHost) NetHost.Stop();
             else NetClient.Disconnect();
-            allPlayers.Clear();
+            AllPlayers.Clear();
             NetScene.CleanUp();
             Messager.ClearHandlers();
             ITransport.OnDataReceived -= Receive;
@@ -449,7 +449,7 @@ namespace NetPackage.Network
         {
             if(!IsHost) return null;
             List<ConnectionInfo> clients = new List<ConnectionInfo>();
-            for (int i = 0; i < allPlayers.Count - 1; i++)
+            for (int i = 0; i < AllPlayers.Count - 1; i++)
             {
                 ConnectionInfo client = Transport.GetConnectionInfo(i);
                 if(client != null) clients.Add(client);

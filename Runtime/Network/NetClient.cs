@@ -43,7 +43,7 @@ namespace NetPackage.Network
                 Connection = new NetConn(connection.CurrentConnected, false);
                 NetManager.Transport.SetConnectionId(0, Connection.Id);
             }
-            NetManager.allPlayers = connection.AllConnected;
+            NetManager.AllPlayers = connection.AllConnected;
             NetManager.SetServerInfo(connection.ServerInfo);
         }
 

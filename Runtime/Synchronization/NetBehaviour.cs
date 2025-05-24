@@ -154,19 +154,6 @@ namespace NetPackage.Synchronization
         public void Own(int ownerId, bool ownChildren = false)
         {
             if(NetObject == null) return;
-            if (NetManager.Rollback)
-            {
-                if(isOwned)
-                {
-                    RollbackManager.UpdatePrediction -= UpdatePrediction;
-                    if (_isPredicting) StopPrediction();
-                }
-                else
-                {
-                    RollbackManager.UpdatePrediction += UpdatePrediction;
-                    if (!_isPredicting) StartPrediction();
-                }
-            }
             NetObject.GiveOwner(ownerId);
             if (ownChildren)
             {

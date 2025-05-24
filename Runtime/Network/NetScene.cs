@@ -224,8 +224,10 @@ namespace NetPackage.Network
         private static void Register(NetObject obj)
         {
             if (netObjects.ContainsKey(obj.NetId)) return;
-            netObjects[obj.NetId] = obj;            
-            StateManager.Register(obj.NetId, new ObjectState());
+            netObjects[obj.NetId] = obj;     
+            ObjectState state = new ObjectState();
+            StateManager.Register(obj.NetId, state);
+            obj.State = state;
 
         }
 

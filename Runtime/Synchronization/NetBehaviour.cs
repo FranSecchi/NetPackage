@@ -39,6 +39,8 @@ namespace NetPackage.Synchronization
         protected float _lastPredictionTime;
         protected float _lastReconcileTime;
         protected float _predictionDelay = 0.1f;
+        protected float _desyncThreshold = 0.01f;
+        protected float _maxPredictionTime = 0.5f; // Maximum time to predict ahead
         public bool IsPredicting => _isPredicting;
         /// <summary>
         /// Override - use only for declaring and initializing, network calls are not consistent.
@@ -154,9 +156,8 @@ namespace NetPackage.Synchronization
         }
         private void RegisterAsSceneObject()
         {
-            if (!NetManager.Active || !NetManager.Running)
-                return;
-            if (registered) return;
+            if (!NetManager.Active || !NetManager.Running || registered) return;
+            
             registered = true;
             enabled = false;                
             DebugQueue.AddMessage($"Disable {GetType().Name} | {gameObject.name}.", DebugQueue.MessageType.Warning);
@@ -186,12 +187,28 @@ namespace NetPackage.Synchronization
             if (!isOwned || !_isPredicting) return;
             
             float currentTime = Time.time;
-            if (currentTime - _lastPredictionTime >= _predictionDelay)
+            float timeSinceLastPrediction = currentTime - _lastPredictionTime;
+            
+            // Stop prediction if we've predicted too far ahead
+            if (timeSinceLastPrediction > _maxPredictionTime)
             {
-                Predict(currentTime - _lastPredictionTime);
-                _lastPredictionTime = currentTime;
+                StopPrediction();
+                return;
             }
-            else StopPrediction();
+
+            if (timeSinceLastPrediction >= _predictionDelay)
+            {
+                try
+                {
+                    Predict(timeSinceLastPrediction);
+                    _lastPredictionTime = currentTime;
+                }
+                catch (Exception e)
+                {
+                    DebugQueue.AddMessage($"Prediction failed for {GetType().Name}: {e.Message}", DebugQueue.MessageType.Error);
+                    StopPrediction();
+                }
+            }
         }
         
         // Prediction methods
@@ -216,27 +233,23 @@ namespace NetPackage.Synchronization
         // Called by StateManager when state changes are received
         public void OnStateReceived(int id, Dictionary<string, object> changes)
         {
+            if (changes == null || changes.Count == 0) return;
+
             if (isOwned && _isPredicting)
             {
-                // Check for desync with the new state changes
                 if (IsDesynchronized(changes))
                 {
-                    // Log the desync
                     DebugQueue.AddRollback(NetID, _lastReconcileTime, "State desync detected at " + GetType().Name);
-                    
-                    // Trigger rollback
                     RollbackManager.RollbackToTime(NetID, id, _lastReconcileTime, changes);
                 }
                 else
                 {
-                    // Handle state reconciliation
                     _lastReconcileTime = Time.time;
                     OnStateReconcile(changes);
                 }
             }
             else
             {
-                // For non-owned objects, just apply the changes
                 OnStateReconcile(changes);
             }
         }
@@ -252,12 +265,32 @@ namespace NetPackage.Synchronization
         
         protected virtual bool IsDesynchronized(Dictionary<string, object> changes)
         {
-            // Override this method to implement desync detection logic
-            // Return true if the current state differs from the authoritative state
+            if (!isOwned || changes == null) return false;
+
+            foreach (var change in changes)
+            {
+                if (change.Value is IComparable comparable)
+                {
+                    var currentValue = GetFieldValue(change.Key);
+                    if (currentValue != null && comparable.CompareTo(currentValue) != 0)
+                    {
+                        return true;
+                    }
+                }
+            }
             return false;
         }
         
-        
-        
+        protected virtual T GetFieldValue<T>(string fieldName)
+        {
+            if (NetObject?.State == null) return default;
+            return NetObject.State.GetFieldValue<T>(this, fieldName);
+        }
+
+        protected virtual object GetFieldValue(string fieldName)
+        {
+            if (NetObject?.State == null) return null;
+            return NetObject.State.GetFieldValue<object>(this, fieldName);
+        }
     }
 }

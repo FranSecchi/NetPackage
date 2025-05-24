@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using NetPackage.Network;
 using NetPackage.Utilities;
 using UnityEngine;
@@ -10,35 +11,61 @@ namespace NetPackage.Synchronization
 {
     [AttributeUsage(AttributeTargets.Field)]
     public class Sync : Attribute { }
-    internal class ObjectState
+
+    public class ObjectState
     {
         private readonly object _syncLock = new object();
         //Component_instance - (Var_info - Var_value)
         private Dictionary<object, Dictionary<FieldInfo, object>> _trackedSyncVars;
         private Dictionary<int, object> _objectIds;
         private int _nextId;
+        private Dictionary<object, Dictionary<string, FieldInfo>> _fieldCache;
         public Dictionary<object, Dictionary<FieldInfo, object>> TrackedSyncVars => _trackedSyncVars;
-
         public Dictionary<int, object> ObjectIds => _objectIds;
 
         public ObjectState()
         {
             _trackedSyncVars = new();
             _objectIds = new();
+            _fieldCache = new();
             _nextId = 0;
         }
+
+        public T GetFieldValue<T>(object obj, string fieldName)
+        {
+            if (obj == null) return default;
+
+            // Try to get from cache first
+            if (_fieldCache.TryGetValue(obj, out var fields) && 
+                fields.TryGetValue(fieldName, out var field))
+            {
+                lock (_syncLock)
+                {
+                    if (_trackedSyncVars.TryGetValue(obj, out var values) && 
+                        values.TryGetValue(field, out var value))
+                    {
+                        return (T)value;
+                    }
+                }
+            }
+            return default;
+        }
+
         public void Register(int netId, object obj)
         {
+            if (obj == null) return;
+
             Type type = obj.GetType();
             FieldInfo[] fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             bool hasSyncFields = false;
+            Dictionary<string, FieldInfo> fieldMap = new();
 
             foreach (FieldInfo field in fields)
             {
                 if (Attribute.IsDefined(field, typeof(Sync)))
                 {
                     hasSyncFields = true;
-                    break;
+                    fieldMap[field.Name] = field;
                 }
             }
             
@@ -51,19 +78,17 @@ namespace NetPackage.Synchronization
                         _trackedSyncVars[obj] = new Dictionary<FieldInfo, object>();
                         int id = _nextId++;
                         _objectIds[id] = obj;
+                        _fieldCache[obj] = fieldMap;
                         DebugQueue.AddMessage($"Added ObjectState {((NetBehaviour)obj).gameObject.name} with ID {netId}, component {obj.GetType().Name} with ID {id}", DebugQueue.MessageType.State);
                     }
-                    foreach (FieldInfo field in fields)
+                    foreach (var field in fieldMap.Values)
                     {
-                        if (Attribute.IsDefined(field, typeof(Sync)))
-                        {
-                            _trackedSyncVars[obj][field] = field.GetValue(obj);
-                        }
+                        _trackedSyncVars[obj][field] = field.GetValue(obj);
                     }
                 }
             }
         }
-        //Dictionary of changed objects this frame with its changes
+
         public Dictionary<int, Dictionary<string, object>> Update()
         {
             Dictionary<int, Dictionary<string, object>> allChanges = new();
@@ -113,27 +138,35 @@ namespace NetPackage.Synchronization
 
         public void SetChange(int id, Dictionary<string, object> changes)
         {
+            if (changes == null || changes.Count == 0) return;
+
             lock (_syncLock)
             {
-                if (_objectIds.TryGetValue(id, out object obj))
+                if (_objectIds.TryGetValue(id, out object obj) && 
+                    _fieldCache.TryGetValue(obj, out var fields))
                 {
                     foreach (var change in changes)
                     {
-                        FieldInfo field = _trackedSyncVars[obj].Keys.FirstOrDefault(f => f.Name == change.Key);
-                    
-                        if (field != null && field.GetValue(obj) != change.Value)
+                        if (fields.TryGetValue(change.Key, out var field))
                         {
-                            field.SetValue(obj, change.Value);
+                            if (field.GetValue(obj) != change.Value)
+                            {
+                                field.SetValue(obj, change.Value);
+                            }
                         }
                     }
                 }
                 else
+                {
                     DebugQueue.AddMessage($"No component {id} found", DebugQueue.MessageType.Warning);
+                }
             }
         }
         
         public void Reconcile(int netId, int id, Dictionary<string, object> changes)
         {
+            if (changes == null || changes.Count == 0) return;
+
             if (_objectIds.TryGetValue(id, out object obj))
             {
                 if (obj is NetBehaviour netBehaviour)
@@ -142,14 +175,21 @@ namespace NetPackage.Synchronization
                 }
             }
             else
+            {
                 DebugQueue.AddMessage($"No object {netId} with component {id} found", DebugQueue.MessageType.Warning);
+            }
         }
+
         public Dictionary<FieldInfo, object> GetField(object obj)
         {
-            if (_trackedSyncVars.TryGetValue(obj, out var field))
-                return field;
-            return null;
+            if (obj == null) return null;
+
+            lock (_syncLock)
+            {
+                return _trackedSyncVars.TryGetValue(obj, out var fields) ? fields : null;
+            }
         }
+
         public ObjectState Clone()
         {
             ObjectState clone = new ObjectState();
@@ -168,6 +208,7 @@ namespace NetPackage.Synchronization
                     }
                     
                     clone._trackedSyncVars[obj.Value] = clonedFields;
+                    clone._fieldCache[obj.Value] = _fieldCache[obj.Value];
                 }
                 clone._objectIds = clonedIds;
             }
@@ -181,11 +222,13 @@ namespace NetPackage.Synchronization
                 DebugQueue.AddMessage("Attempted to unregister a null object", DebugQueue.MessageType.Warning);
                 return;
             }
+
             DebugQueue.AddMessage($"Unregister {o.GetType().Name} state", DebugQueue.MessageType.State);
 
             lock (_syncLock)
             {
                 _trackedSyncVars.Remove(o);
+                _fieldCache.Remove(o);
 
                 int? keyToRemove = null;
                 foreach (var pair in _objectIds)
@@ -203,6 +246,5 @@ namespace NetPackage.Synchronization
                 }
             }
         }
-
     }
 }

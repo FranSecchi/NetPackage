@@ -39,6 +39,8 @@ namespace NetPackage.Synchronization
         /// </summary>
         public string SceneId { get; set; }
 
+        public ObjectState State { get; set; }
+
         internal NetObject(int netId, NetBehaviour behaviour, int ownerId = -1)
         {
             NetId = netId;

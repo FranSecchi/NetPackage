@@ -66,9 +66,10 @@ namespace NetPackage.Synchronization
             {
                 OnNetEnable();
             }
-            if (isOwned)
+            if (NetManager.Rollback && isOwned)
             {
-                EnablePrediction(false);
+                RollbackManager.UpdatePrediction += UpdatePrediction;
+                if(!_isPredicting) StartPrediction();
             }
         }
 
@@ -79,9 +80,10 @@ namespace NetPackage.Synchronization
             StateManager.Unregister(NetObject.NetId, this);
             RPCManager.Unregister(NetObject.NetId, this);
             OnNetDisable();
-            if (isOwned)
+            if (NetManager.Rollback && isOwned && _isPredicting)
             {
-                EnablePrediction(false);
+                RollbackManager.UpdatePrediction -= UpdatePrediction;
+                if(_isPredicting) StopPrediction();
             }
         }
 
@@ -151,23 +153,10 @@ namespace NetPackage.Synchronization
         /// <param name="ownChildren">Whether to transfer ownership of child network objects as well.</param>
         public void Own(int ownerId, bool ownChildren = false)
         {
-            if(NetObject == null || isOwned) return;
-            NetObject.GiveOwner(ownerId);
-            if (ownChildren)
-            {
-                var childs = GetComponentsInChildren<NetBehaviour>();
-                foreach (var child in childs)
-                {
-                    child.Own(ownerId, true);
-                }
-            }
-        }
-
-        internal void EnablePrediction(bool enable)
-        {
+            if(NetObject == null) return;
             if (NetManager.Rollback)
             {
-                if(enable)
+                if(isOwned)
                 {
                     RollbackManager.UpdatePrediction -= UpdatePrediction;
                     if (_isPredicting) StopPrediction();
@@ -176,6 +165,15 @@ namespace NetPackage.Synchronization
                 {
                     RollbackManager.UpdatePrediction += UpdatePrediction;
                     if (!_isPredicting) StartPrediction();
+                }
+            }
+            NetObject.GiveOwner(ownerId);
+            if (ownChildren)
+            {
+                var childs = GetComponentsInChildren<NetBehaviour>();
+                foreach (var child in childs)
+                {
+                    child.Own(ownerId, true);
                 }
             }
         }

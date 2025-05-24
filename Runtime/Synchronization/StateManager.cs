@@ -12,7 +12,8 @@ namespace NetPackage.Synchronization
     {
         private static readonly ConcurrentDictionary<int, ObjectState> snapshot = new();
         private static readonly Dictionary<int, HashSet<object>> _componentCache = new();
-
+        private static readonly ConcurrentDictionary<int, List<(SyncMessage, float)>> _pendingSyncs = new();
+        private static float _pendingSyncTimeout = 3f;
         public static void Register(int netId, ObjectState state)
         {
             if (state == null) return;
@@ -22,7 +23,6 @@ namespace NetPackage.Synchronization
         public static void Register(int netId, object obj)
         {
             if (obj == null) return;
-
             if (snapshot.TryGetValue(netId, out ObjectState state))
             {
                 state.Register(netId, obj);
@@ -33,7 +33,8 @@ namespace NetPackage.Synchronization
                     components = new HashSet<object>();
                     _componentCache[netId] = components;
                 }
-                components.Add(obj);
+                components.Add(obj);            
+                CheckPendingSyncs(netId);
             }
             else
             {
@@ -71,6 +72,7 @@ namespace NetPackage.Synchronization
         {
             snapshot.Clear();
             _componentCache.Clear();
+            _pendingSyncs.Clear();
         }
 
         public static ObjectState GetState(int objectId)
@@ -160,6 +162,7 @@ namespace NetPackage.Synchronization
         public static void SetSync(SyncMessage syncMessage)
         {
             if (syncMessage == null) return;
+            CleanupPendingSyncs();
 
             if (snapshot.TryGetValue(syncMessage.ObjectID, out ObjectState state))
             {
@@ -174,10 +177,51 @@ namespace NetPackage.Synchronization
             }
             else 
             {
+                if (!_pendingSyncs.ContainsKey(syncMessage.ObjectID))
+                    _pendingSyncs[syncMessage.ObjectID] = new List<(SyncMessage, float)>();
+                _pendingSyncs[syncMessage.ObjectID].Add((syncMessage, Time.time));
+
                 DebugQueue.AddMessage(
                     $"Not SetSync: {syncMessage.ObjectID} Objects: {string.Join(", ", snapshot.Select(kv => $"{kv.Key}: {kv.Value}"))}",
                     DebugQueue.MessageType.Error
                 );
+            }
+        }
+        private static void CleanupPendingSyncs()
+        {
+            float now = Time.time;
+            var expired = new List<(int, int)>(); // (objectId, index)
+
+            foreach (var kvp in _pendingSyncs)
+            {
+                for (int i = kvp.Value.Count - 1; i >= 0; i--)
+                {
+                    if (now - kvp.Value[i].Item2 > _pendingSyncTimeout)
+                    {
+                        expired.Add((kvp.Key, i));
+                    }
+                }
+            }
+
+            foreach (var (objectId, idx) in expired)
+            {
+                var msg = _pendingSyncs[objectId][idx].Item1;
+                DebugQueue.AddMessage(
+                    $"Dropped expired pending SetSync for object {objectId} after {_pendingSyncTimeout}s",
+                    DebugQueue.MessageType.State
+                );
+                _pendingSyncs[objectId].RemoveAt(idx);
+                if (_pendingSyncs[objectId].Count == 0)
+                    _pendingSyncs.TryRemove(objectId, out _);
+            }
+        }
+        private static void CheckPendingSyncs(int objectId)
+        {
+            if (_pendingSyncs.TryGetValue(objectId, out var syncs))
+            {
+                foreach (var (sync, timestamp) in syncs)
+                    SetSync(sync);
+                _pendingSyncs.Remove(objectId, out _);
             }
         }
     }

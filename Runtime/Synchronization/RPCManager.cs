@@ -4,11 +4,12 @@ using System.Reflection;
 using NetPackage.Network;
 using NetPackage.Serializer;
 using NetPackage.Messages;
+using NetPackage.Utilities;
 using UnityEngine;
 
 namespace NetPackage.Synchronization
 {
-    public class RPCManager
+    internal class RPCManager
     {
         private static Dictionary<int, List<object>> _rpcTargets = new();
         private static Dictionary<int, Dictionary<string, List<MethodInfo>>> _rpcMethods = new();
@@ -19,30 +20,37 @@ namespace NetPackage.Synchronization
         }
         public static void Register(int netId, object target)
         {
-            if (!_rpcTargets.ContainsKey(netId))
-            {
-                _rpcTargets[netId] = new List<object>();
-                _rpcMethods[netId] = new Dictionary<string, List<MethodInfo>>();
-            }
-
-            if (_rpcTargets[netId].Contains(target))
-                return;
-
-            _rpcTargets[netId].Add(target);
-
             var methods = target.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            DebugQueue.AddMessage($"Registering RPCs for {target.GetType().Name} with netId {netId}. Found {methods.Length} methods.", DebugQueue.MessageType.RPC);
+
             foreach (var method in methods)
             {
                 var rpcAttr = method.GetCustomAttribute<NetRPC>();
                 if (rpcAttr != null)
                 {
+                    if (!_rpcMethods.ContainsKey(netId))
+                        _rpcMethods.Add(netId, new Dictionary<string, List<MethodInfo>>());
                     if (!_rpcMethods[netId].ContainsKey(method.Name))
                     {
                         _rpcMethods[netId][method.Name] = new List<MethodInfo>();
                     }
+                    DebugQueue.AddMessage($"RPC registered {netId} | {method.Name} | Direction: {rpcAttr.Direction}", DebugQueue.MessageType.RPC);
+
                     _rpcMethods[netId][method.Name].Add(method);
                 }
             }
+
+            if (methods.Length <= 0) return;
+
+            if (!_rpcTargets.ContainsKey(netId))
+                _rpcTargets[netId] = new List<object>();
+            if (!_rpcMethods.ContainsKey(netId))
+                _rpcMethods[netId] = new Dictionary<string, List<MethodInfo>>();
+
+            if (_rpcTargets[netId].Contains(target))
+                return;
+
+            _rpcTargets[netId].Add(target);
         }
 
         public static void Unregister(int netId, object target)
@@ -83,9 +91,7 @@ namespace NetPackage.Synchronization
             {
                 if(message.target == null || message.target.Contains(-1)) 
                     CallRPC(message.ObjectId, message.MethodName, message.Parameters);
-                List<int> targets = new List<int>();
-                if (message.target != null) targets.Remove(message.SenderID); 
-                message.target = targets;
+                
                 DebugQueue.AddMessage($"{message.SenderID} sent RPC {message.MethodName} | {message.ObjectId}", DebugQueue.MessageType.RPC);
                 NetManager.Send(message);
             }
@@ -132,7 +138,7 @@ namespace NetPackage.Synchronization
                                 convertedParams[i] = NetSerializer._Serializer.Deserialize(bytes, paramTypes[i].ParameterType);
                             }
                         }
-                        DebugQueue.AddMessage($"Invoked RPC {methodName} | Obj: {netId}", DebugQueue.MessageType.RPC);
+                        DebugQueue.AddRPC(methodName, netId, NetManager.ConnectionId());
                         NetManager.EnqueueMainThread(()=>method.Invoke(target, convertedParams));
                     }
                 }
@@ -145,6 +151,8 @@ namespace NetPackage.Synchronization
 
         public static void SendRPC(int netId, string methodName, params object[] parameters)
         {
+            DebugQueue.AddMessage($"Attempting to send RPC {methodName} for netId {netId}", DebugQueue.MessageType.RPC);
+            
             if (!_rpcTargets.ContainsKey(netId))
             {
                 DebugQueue.AddMessage($"No RPC targets found for netId {netId}", DebugQueue.MessageType.Error);
@@ -153,7 +161,7 @@ namespace NetPackage.Synchronization
 
             if (!_rpcMethods[netId].ContainsKey(methodName))
             {
-                DebugQueue.AddMessage($"No RPC method {methodName} found for netId {netId}", DebugQueue.MessageType.Error);
+                DebugQueue.AddMessage($"No RPC method {methodName} found for netId {netId}. Available methods: {string.Join(", ", _rpcMethods[netId].Keys)}", DebugQueue.MessageType.Error);
                 return;
             }
             List<int> targetIds = null;
@@ -186,7 +194,7 @@ namespace NetPackage.Synchronization
                             if(NetManager.IsHost && targetIds.Contains(-1)) CallRPC(netId, methodName, parameters);
                             break;
                         case Send.Others:
-                            targetIds = new List<int>(NetManager.allPlayers);
+                            targetIds = new List<int>(NetManager.AllPlayers);
                             targetIds.Remove(NetManager.ConnectionId());
                             break;
                         case Send.All:
@@ -195,7 +203,6 @@ namespace NetPackage.Synchronization
                     }
                 }
             }
-            DebugQueue.AddRPC(methodName, netId, NetManager.ConnectionId());
             var message = new RPCMessage(NetManager.ConnectionId(), netId, methodName, targetIds, parameters);
             DebugQueue.AddMessage($"{message.SenderID} sent RPC {methodName} | Obj: {netId}", DebugQueue.MessageType.RPC);
 

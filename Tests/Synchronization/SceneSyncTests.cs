@@ -1,67 +1,47 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using NUnit.Framework;
 using NetPackage.Network;
 using NetPackage.Serializer;
 using NetPackage.Messages;
-using NetPackage.Synchronization;
-using NetPackage.Transport;
-using NetPackage.Transport.UDP;
-using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.TestTools;
-using UnityEngine.SceneManagement;
 
-namespace SynchronizationTest
+namespace NetPackage.Synchronization.Tests
 {
-    public class SceneSyncTests
+    public class SceneSyncTests : SynchronizationTestBase
     {
-        private ITransport client;
-        private const int CLIENT_ID = 0;
-        private const string TEST_SCENE_NAME = "TestScene";
-        private NetMessage received;
-
-
-        [UnitySetUp]
-        public IEnumerator SetUp()
+        protected override IEnumerator SetUp()
         {
-            // Setup networking
-            var managerObj = new GameObject();
-            var manager = managerObj.AddComponent<NetManager>();
-            NetManager.StartHost();
-            
+            StartHost(true);
             yield return new WaitForSeconds(0.2f);
             
-            client = new UDPSolution();
-            client.Setup(NetManager.Port, false);
-            client.Start();
+            StartClient(false);
+            yield return new WaitForSeconds(0.2f);
+        }
+
+        protected override IEnumerator Teardown()
+        {
             yield return null;
         }
 
         [UnityTest]
         public IEnumerator SceneSynchronizationTest()
         {
-            // Connect client to host
             yield return WaitConnection();
             
             NetManager.LoadScene(TEST_SCENE_NAME);
-            yield return new WaitForSeconds(0.5f); // Wait for scene to load
+            yield return new WaitForSeconds(0.5f);
 
-            // Verify that the scene was loaded in the host
             var hostObjects = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.Greater(hostObjects.Length, 0, "No NetBehaviour objects found in host scene");
-            Debug.Log($"Count; {hostObjects.Length} | {hostObjects[0].GetComponent<SceneObjectId>().sceneId} | {hostObjects[1].GetComponent<SceneObjectId>().sceneId}");
-            // Wait for scene synchronization
             yield return WaitValidate(typeof(SceneLoadMessage));
             
             SceneLoadMessage scnMsg = (SceneLoadMessage)received;
             Assert.AreEqual(TEST_SCENE_NAME, scnMsg.sceneName, "Wrong scene name");
             scnMsg.isLoaded = true; scnMsg.requesterId = CLIENT_ID;
             NetMessage answerMsg = scnMsg;
-            client.Send(NetSerializer.Serialize(answerMsg));
-            yield return new WaitForSeconds(0.5f); // Wait for scene to load
+            _client.Send(NetSerializer.Serialize(answerMsg));
+            yield return new WaitForSeconds(0.5f);
             
             yield return WaitValidate(typeof(SpawnMessage));
             SpawnMessage spwMsg = (SpawnMessage)received;
@@ -74,12 +54,11 @@ namespace SynchronizationTest
                 Assert.IsNotNull(hostNetObj, "Host object missing NetObject component");
                 SpawnMessage spw = hostNetObj.NetId != spwMsg.netObjectId ? spwMsg2 : spwMsg;
                 
-                // Verify object properties are synchronized
                 Assert.AreEqual(hostObj.transform.position, spw.position, "Object positions don't match");
                 Assert.AreEqual(hostNetObj.NetId, spw.netObjectId, "Object NetId doesn't match");
                 Assert.AreEqual(hostNetObj.SceneId, spw.sceneId, "Object sceneId doesn't match");
                 received = spw;
-                client.Send(NetSerializer.Serialize(received));
+                _client.Send(NetSerializer.Serialize(received));
                 yield return new WaitForSeconds(0.2f);
             }
             
@@ -94,50 +73,11 @@ namespace SynchronizationTest
             Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message");
         }
 
-        private IEnumerator WaitConnection()
+        protected override IEnumerator WaitConnection()
         {
             yield return new WaitForSeconds(0.2f);
-            client.Connect("localhost");
+            _client.Connect("localhost");
             yield return new WaitForSeconds(1f);
-        }
-
-        private IEnumerator WaitValidate(Type expectedType)
-        {
-            byte[] data = null;
-            float startTime = Time.time;
-            NetMessage msg = null;
-            while (Time.time - startTime < 1f)
-            {
-                data = client.Receive();
-                if (data != null)
-                {
-                    msg = NetSerializer.Deserialize<NetMessage>(data);
-                    if (msg.GetType() == expectedType)
-                    {
-                        received = msg;
-                        yield break;
-                    }
-                }
-                yield return null;
-            }
-            
-            Assert.IsTrue(msg != null && msg.GetType() == expectedType, 
-                $"Expected message of type {expectedType.Name} but got {(msg == null ? "null" : msg.GetType().Name)}");
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            NetManager.StopNet();
-            client.Stop();
-            Messager.ClearHandlers();
-            StateManager.Clear();
-            
-            var objects = GameObject.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            foreach (var obj in objects)
-            {
-                GameObject.DestroyImmediate(obj);
-            }
         }
     }
 } 

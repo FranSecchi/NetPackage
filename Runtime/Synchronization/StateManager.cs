@@ -1,15 +1,17 @@
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using NetPackage.Network;
 using NetPackage.Messages;
+using NetPackage.Utilities;
 using UnityEngine;
 
 namespace NetPackage.Synchronization
 {
-    public static class StateManager
+    internal class StateManager
     {
         //Object id - state
-        private static Dictionary<int, ObjectState> snapshot = new();
+        private static ConcurrentDictionary<int, ObjectState> snapshot = new();
         public static void Register(int netId, ObjectState state)
         {
             if (state == null)
@@ -20,27 +22,24 @@ namespace NetPackage.Synchronization
         }
         public static void Register(int netId, object obj)
         {
-
             if (snapshot.TryGetValue(netId, out ObjectState state))
             {
                 state.Register(netId, obj);
             }
             else
                 DebugQueue.AddMessage("Not Registered state :" + obj.GetType().Name, DebugQueue.MessageType.State);
-
         }
         public static void Unregister(int netId, object obj)
         {
             if (snapshot.TryGetValue(netId, out ObjectState state))
             {
                 state.Unregister(obj);
-                
             }
         }
 
         public static void Unregister(int netId)
         {
-            snapshot.Remove(netId);
+            snapshot.TryRemove(netId, out _);
         }
         public static void Clear()
         {
@@ -91,7 +90,9 @@ namespace NetPackage.Synchronization
                 
                 var changes = netObject.Value.Update();
                 if (changes.Count > 0)
+                {
                     Send(netObject.Key, changes);
+                }
             }
         }
 
@@ -122,6 +123,7 @@ namespace NetPackage.Synchronization
             else DebugQueue.AddMessage(
                 $"Not SetSync: {syncMessage.ObjectID} Objects: {string.Join(", ", snapshot.Select(kv => $"{kv.Key}: {kv.Value}"))}",
                 DebugQueue.MessageType.Error
-            );}
+            );
+        }
     }
 }

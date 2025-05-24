@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using NetPackage.Network;
+using NetPackage.Utilities;
 using UnityEngine;
 
 namespace NetPackage.Synchronization
 {
     [AttributeUsage(AttributeTargets.Field)]
     public class Sync : Attribute { }
-    public class ObjectState
+    internal class ObjectState
     {
+        private readonly object _syncLock = new object();
         //Component_instance - (Var_info - Var_value)
         private Dictionary<object, Dictionary<FieldInfo, object>> _trackedSyncVars;
         private Dictionary<int, object> _objectIds;
@@ -42,18 +44,21 @@ namespace NetPackage.Synchronization
             
             if (hasSyncFields)
             {
-                if (!_trackedSyncVars.ContainsKey(obj))
+                lock (_syncLock)
                 {
-                    _trackedSyncVars[obj] = new Dictionary<FieldInfo, object>();
-                    int id = _nextId++;
-                    _objectIds[id] = obj;
-                    DebugQueue.AddMessage($"Added ObjectState {((NetBehaviour)obj).gameObject.name} with ID {netId}, component {obj.GetType().Name} with ID {id}", DebugQueue.MessageType.State);
-                }
-                foreach (FieldInfo field in fields)
-                {
-                    if (Attribute.IsDefined(field, typeof(Sync)))
+                    if (!_trackedSyncVars.ContainsKey(obj))
                     {
-                        _trackedSyncVars[obj][field] = field.GetValue(obj);
+                        _trackedSyncVars[obj] = new Dictionary<FieldInfo, object>();
+                        int id = _nextId++;
+                        _objectIds[id] = obj;
+                        DebugQueue.AddMessage($"Added ObjectState {((NetBehaviour)obj).gameObject.name} with ID {netId}, component {obj.GetType().Name} with ID {id}", DebugQueue.MessageType.State);
+                    }
+                    foreach (FieldInfo field in fields)
+                    {
+                        if (Attribute.IsDefined(field, typeof(Sync)))
+                        {
+                            _trackedSyncVars[obj][field] = field.GetValue(obj);
+                        }
                     }
                 }
             }
@@ -61,37 +66,39 @@ namespace NetPackage.Synchronization
         //Dictionary of changed objects this frame with its changes
         public Dictionary<int, Dictionary<string, object>> Update()
         {
-
             Dictionary<int, Dictionary<string, object>> allChanges = new();
             Dictionary<object, Dictionary<FieldInfo, object>> updates = new();
-            foreach (var obj in _objectIds)
+
+            lock (_syncLock)
             {
-                var fields = _trackedSyncVars[obj.Value];
-                Dictionary<string, object> changes = new Dictionary<string, object>();
-
-                foreach (var fieldEntry in fields)
+                foreach (var obj in _objectIds)
                 {
-                    FieldInfo field = fieldEntry.Key;
-                    object oldValue = fieldEntry.Value;
-                    object newValue = field.GetValue(obj.Value);
+                    var fields = _trackedSyncVars[obj.Value];
+                    Dictionary<string, object> changes = new Dictionary<string, object>();
 
-                    if (!Equals(oldValue, newValue))
+                    foreach (var fieldEntry in fields)
                     {
-                        DebugQueue.AddMessage($"SyncVar {field.Name} changed from {oldValue} to {newValue}", DebugQueue.MessageType.State);
-                        changes[field.Name] = newValue;
-                        if (!updates.ContainsKey(obj.Value))
+                        FieldInfo field = fieldEntry.Key;
+                        object oldValue = fieldEntry.Value;
+                        object newValue = field.GetValue(obj.Value);
+
+                        if (!Equals(oldValue, newValue))
                         {
-                            updates[obj.Value] = new Dictionary<FieldInfo, object>();
+                            changes[field.Name] = newValue;
+                            if (!updates.ContainsKey(obj.Value))
+                            {
+                                updates[obj.Value] = new Dictionary<FieldInfo, object>();
+                            }
+                            updates[obj.Value][field] = newValue;
                         }
-                        updates[obj.Value][field] = newValue;
+                    }
+
+                    if (changes.Count > 0)
+                    {
+                        allChanges[obj.Key] = changes;
                     }
                 }
 
-                
-                if (changes.Count > 0)
-                {
-                    allChanges[obj.Key] = changes;
-                }
                 foreach (var updateEntry in updates)
                 {
                     foreach (var fieldUpdate in updateEntry.Value)
@@ -104,23 +111,25 @@ namespace NetPackage.Synchronization
             return allChanges;
         }
 
-        public void SetChange(int netId, int id, Dictionary<string, object> changes)
+        public void SetChange(int id, Dictionary<string, object> changes)
         {
-            if (_objectIds.TryGetValue(id, out object obj))
+            lock (_syncLock)
             {
-                foreach (var change in changes)
+                if (_objectIds.TryGetValue(id, out object obj))
                 {
-                    FieldInfo field = _trackedSyncVars[obj].Keys.FirstOrDefault(f => f.Name == change.Key);
-                
-                    if (field != null && field.GetValue(obj) != change.Value)
+                    foreach (var change in changes)
                     {
-                        DebugQueue.AddStateChange(netId, id, change.Key, change.Value);
-                        field.SetValue(obj, change.Value);
+                        FieldInfo field = _trackedSyncVars[obj].Keys.FirstOrDefault(f => f.Name == change.Key);
+                    
+                        if (field != null && field.GetValue(obj) != change.Value)
+                        {
+                            field.SetValue(obj, change.Value);
+                        }
                     }
                 }
+                else
+                    DebugQueue.AddMessage($"No component {id} found", DebugQueue.MessageType.Warning);
             }
-            else
-                DebugQueue.AddMessage($"No object {netId} with component {id} found", DebugQueue.MessageType.Warning);
         }
         
         public void Reconcile(int netId, int id, Dictionary<string, object> changes)
@@ -145,19 +154,23 @@ namespace NetPackage.Synchronization
         {
             ObjectState clone = new ObjectState();
             Dictionary<int, object> clonedIds = new();
-            foreach (var obj in _objectIds)
+
+            lock (_syncLock)
             {
-                var fields = _trackedSyncVars[obj.Value];
-                Dictionary<FieldInfo, object> clonedFields = new Dictionary<FieldInfo, object>();
-                clonedIds[obj.Key] = obj.Value;
-                foreach (var fieldEntry in fields)
+                foreach (var obj in _objectIds)
                 {
-                    clonedFields[fieldEntry.Key] = fieldEntry.Value;
+                    var fields = _trackedSyncVars[obj.Value];
+                    Dictionary<FieldInfo, object> clonedFields = new Dictionary<FieldInfo, object>();
+                    clonedIds[obj.Key] = obj.Value;
+                    foreach (var fieldEntry in fields)
+                    {
+                        clonedFields[fieldEntry.Key] = fieldEntry.Value;
+                    }
+                    
+                    clone._trackedSyncVars[obj.Value] = clonedFields;
                 }
-                
-                clone._trackedSyncVars[obj.Value] = clonedFields;
+                clone._objectIds = clonedIds;
             }
-            clone._objectIds = clonedIds;
             return clone;
         }
 
@@ -169,21 +182,25 @@ namespace NetPackage.Synchronization
                 return;
             }
             DebugQueue.AddMessage($"Unregister {o.GetType().Name} state", DebugQueue.MessageType.State);
-            _trackedSyncVars.Remove(o);
 
-            int? keyToRemove = null;
-            foreach (var pair in _objectIds)
+            lock (_syncLock)
             {
-                if (ReferenceEquals(pair.Value, o))
+                _trackedSyncVars.Remove(o);
+
+                int? keyToRemove = null;
+                foreach (var pair in _objectIds)
                 {
-                    keyToRemove = pair.Key;
-                    break;
+                    if (ReferenceEquals(pair.Value, o))
+                    {
+                        keyToRemove = pair.Key;
+                        break;
+                    }
                 }
-            }
 
-            if (keyToRemove.HasValue)
-            {
-                _objectIds.Remove(keyToRemove.Value);
+                if (keyToRemove.HasValue)
+                {
+                    _objectIds.Remove(keyToRemove.Value);
+                }
             }
         }
 

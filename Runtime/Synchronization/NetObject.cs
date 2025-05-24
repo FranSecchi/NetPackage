@@ -2,26 +2,44 @@ using System.Collections.Generic;
 using System.Linq;
 using NetPackage.Messages;
 using NetPackage.Network;
+using NetPackage.Utilities;
 using UnityEngine;
 
 namespace NetPackage.Synchronization
 {
+    /// <summary>
+    /// Represents a networked object that can be synchronized across the network.
+    /// Manages ownership, behaviours, and lifecycle of networked game objects.
+    /// </summary>
     public class NetObject
     {
+        /// <summary>
+        /// The unique network identifier for this object across all connected clients.
+        /// </summary>
         public readonly int NetId;
         private int _ownerId;
-        public List<NetBehaviour> _behaviours;
+        private List<NetBehaviour> _behaviours;
+
+        /// <summary>
+        /// Gets or sets the ID of the client that owns this networked object.
+        /// </summary>
         public int OwnerId
         {
             get => _ownerId;
             set => _ownerId = value;
         }
 
-        // Changed logic: object is owned if the current connection is the owner
+        /// <summary>
+        /// Indicates whether the local client owns this networked object.
+        /// </summary>
         public bool Owned => _ownerId == NetManager.ConnectionId();
+
+        /// <summary>
+        /// Gets or sets the scene identifier for this networked object.
+        /// </summary>
         public string SceneId { get; set; }
 
-        public NetObject(int netId, NetBehaviour behaviour, int ownerId = -1)
+        internal NetObject(int netId, NetBehaviour behaviour, int ownerId = -1)
         {
             NetId = netId;
             _ownerId = ownerId;
@@ -33,33 +51,50 @@ namespace NetPackage.Synchronization
             }
         }
 
+        /// <summary>
+        /// Transfers ownership of this networked object to the specified client.
+        /// </summary>
+        /// <param name="ownerId">The ID of the client that should become the new owner.</param>
         public void GiveOwner(int ownerId)
         {
             if (_ownerId == ownerId) return;
-            if (!NetManager.allPlayers.Contains(ownerId)) return;
+            if (!NetManager.AllPlayers.Contains(ownerId)) return;
             _ownerId = ownerId;
             
             NetMessage msg = new OwnershipMessage(NetId, ownerId);
             NetManager.Send(msg);
         }
 
-        public void Register(NetBehaviour obj)
+        internal void Register(NetBehaviour obj)
         {
             if (!_behaviours.Contains(obj))
             {
+                DebugQueue.AddMessage($"Registering {obj.GetType().Name} to {NetId}.", DebugQueue.MessageType.Warning);
                 _behaviours.Add(obj);
             }
             obj.SetNetObject(this);
         }
 
-        public void Destroy()
+        internal void Destroy()
         {
             GameObject.Destroy(_behaviours[0].gameObject);
         }
 
-        public void Enable()
+        internal void Enable()
         {
-            if(!_behaviours[0].gameObject.activeSelf) _behaviours[0].gameObject.SetActive(true);
+            foreach (var netBehaviour in _behaviours)
+            {
+                DebugQueue.AddMessage($"Enabling {netBehaviour.GetType().Name} | {NetId}.", DebugQueue.MessageType.Warning);
+                if(!netBehaviour.isActiveAndEnabled) NetManager.EnqueueMainThread(() => netBehaviour.enabled = true);
+            }
+        }
+
+        internal void Disconnect()
+        {
+            foreach (var netBehaviour in _behaviours)
+            {
+                netBehaviour.Disconnect();
+            }
         }
     }
 }

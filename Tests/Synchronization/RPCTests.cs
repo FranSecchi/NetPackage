@@ -1,64 +1,55 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using NetPackage.Network;
-using NetPackage.Synchronization;
 using NetPackage.Serializer;
 using NetPackage.Messages;
-using NetPackage.Transport;
-using NetPackage.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
-using MessagePack;
 
-namespace SynchronizationTest
+namespace NetPackage.Synchronization.Tests
 {
-    public class RPCTests
+    public class RPCTests : SynchronizationTestBase
     {
-        private ITransport client;
         private TestRPCBehaviour testObj;
-        private NetMessage received;
-        private const string TEST_SCENE_NAME = "TestScene2";
-        private const int CLIENT_ID = 0;
 
-        [UnitySetUp]
-        public IEnumerator SetUp()
+
+        protected override IEnumerator SetUp()
         {
-            var managerObj = new GameObject();
-            var manager = managerObj.AddComponent<NetManager>();
-            NetManager.StartHost();
+            TEST_SCENE_NAME = "TestScene2";
+            StartHost(true);
             
             yield return new WaitForSeconds(0.2f);
-            
-            client = new UDPSolution();
-            client.Setup(NetManager.Port, false);
-            client.Start();
+            StartClient(false);
             yield return WaitConnection();
             yield return WaitValidate(typeof(SpawnMessage));
             Assert.IsTrue(received is SpawnMessage, "Client did not receive spawn message");
-            client.Send(NetSerializer.Serialize(received));
+            _client.Send(NetSerializer.Serialize(received));
             yield return new WaitForSeconds(0.5f);
             testObj = GameObject.FindObjectsByType<TestRPCBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None)[0];
+        }
+
+        protected override IEnumerator Teardown()
+        {
+            if (testObj != null && testObj.NetObject != null)
+            {
+                RPCManager.Unregister(testObj.NetObject.NetId, testObj);
+            }
+            testObj = null;
+            yield return null;
         }
 
         [UnityTest]
         public IEnumerator TestBidirectionalRPC()
         {
-            // Test client to server
             NetMessage msg = new RPCMessage(0, testObj.NetObject.NetId, "TestRPC", null, 42, "test");
-            client.Send(NetSerializer.Serialize(msg));
+            _client.Send(NetSerializer.Serialize(msg));
             
-            float startTime = Time.time;
-            while (testObj.lastReceivedValue == 0 && Time.time - startTime < 1f)
-            {
-                yield return null;
-            }
-            
+            yield return WaitValidate(typeof(RPCMessage));
+            Assert.IsTrue(received is RPCMessage, "Client did not receive RPC message");
             Assert.AreEqual(42, testObj.lastReceivedValue, "Server did not receive correct value from client RPC");
             Assert.AreEqual("test", testObj.lastReceivedMessage, "Server did not receive correct message from client RPC");
 
-            // Test server to client
             testObj.lastReceivedValue = 0;
             testObj.lastReceivedMessage = "";
             
@@ -90,7 +81,7 @@ namespace SynchronizationTest
             testObj.clientToServerCalled = false;
             
             NetMessage msg = new RPCMessage(0, testObj.NetObject.NetId, "ClientToServerRPC");
-            client.Send(NetSerializer.Serialize(msg));
+            _client.Send(NetSerializer.Serialize(msg));
             
             float startTime = Time.time;
             while (!testObj.clientToServerCalled && Time.time - startTime < 1f)
@@ -128,21 +119,19 @@ namespace SynchronizationTest
             testObj.targetModeSpecificCalled = false;
             testObj.targetModeSpecificCallCount = 0;
             
-            // Test server sending to specific client
-            var targetList = new List<int> { 0 }; // Send to client with ID 0
+            var targetList = new List<int> { 0 }; 
             testObj.CallTargetModeSpecificRPC(targetList);
             
             yield return WaitValidate(typeof(RPCMessage));
             Assert.IsTrue(received is RPCMessage, "Client did not receive RPC message");
             
             
-            // Test client sending to server
             testObj.targetModeSpecificCalled = false;
             testObj.targetModeSpecificCallCount = 0;
             
             var serverTargetList = new List<int> { NetManager.ConnectionId() };
             NetMessage msg = new RPCMessage(0, testObj.NetObject.NetId, "TargetModeSpecificRPC", null, serverTargetList);
-            client.Send(NetSerializer.Serialize(msg));
+            _client.Send(NetSerializer.Serialize(msg));
             
             float startTime = Time.time;
             while (!testObj.targetModeSpecificCalled && Time.time - startTime < 1f)
@@ -160,7 +149,6 @@ namespace SynchronizationTest
             testObj.targetModeOthersCalled = false;
             testObj.targetModeOthersCallCount = 0;
             
-            // Test server sending to all clients except itself
             testObj.CallTargetModeOthersRPC();
             
             yield return WaitValidate(typeof(RPCMessage));
@@ -180,7 +168,7 @@ namespace SynchronizationTest
             testObj.targetModeOthersCallCount = 0;
             
             NetMessage msg = new RPCMessage(0, testObj.NetObject.NetId, "TargetModeOthersRPC");
-            client.Send(NetSerializer.Serialize(msg));
+            _client.Send(NetSerializer.Serialize(msg));
             
             startTime = Time.time;
             while (!testObj.targetModeOthersCalled && Time.time - startTime < 1f)
@@ -195,7 +183,6 @@ namespace SynchronizationTest
         [UnityTest]
         public IEnumerator TestComplexDataRPC()
         {
-            // Create complex data
             var complexData = new TestRPCBehaviour.ComplexData
             {
                 Id = 42,
@@ -209,7 +196,6 @@ namespace SynchronizationTest
                 }
             };
 
-            // Test server to client
             testObj.CallComplexDataRPC(complexData);
             
             yield return WaitValidate(typeof(RPCMessage));
@@ -227,7 +213,6 @@ namespace SynchronizationTest
             Assert.AreEqual(complexData.Tags.Count, testObj.lastReceivedComplexData.Tags.Count, "Complex data Tags count mismatch");
             Assert.AreEqual(complexData.Stats.Count, testObj.lastReceivedComplexData.Stats.Count, "Complex data Stats count mismatch");
             
-            // Test client to server
             testObj.lastReceivedComplexData = null;
             
             var clientComplexData = new TestRPCBehaviour.ComplexData
@@ -243,7 +228,7 @@ namespace SynchronizationTest
             };
             
             NetMessage msg = new RPCMessage(0, testObj.NetObject.NetId, "ComplexDataRPC", null, clientComplexData);
-            client.Send(NetSerializer.Serialize(msg));
+            _client.Send(NetSerializer.Serialize(msg));
             
             startTime = Time.time;
             while (testObj.lastReceivedComplexData == null && Time.time - startTime < 1f)
@@ -256,68 +241,6 @@ namespace SynchronizationTest
             Assert.AreEqual(clientComplexData.Name, testObj.lastReceivedComplexData.Name, "Client complex data Name mismatch");
             Assert.AreEqual(clientComplexData.Tags.Count, testObj.lastReceivedComplexData.Tags.Count, "Client complex data Tags count mismatch");
             Assert.AreEqual(clientComplexData.Stats.Count, testObj.lastReceivedComplexData.Stats.Count, "Client complex data Stats count mismatch");
-        }
-
-        private IEnumerator WaitConnection()
-        {
-            yield return new WaitForSeconds(0.2f);
-            client.Connect("localhost");
-            yield return new WaitForSeconds(0.2f);
-            NetManager.LoadScene(TEST_SCENE_NAME);
-            yield return WaitValidate(typeof(SceneLoadMessage));
-            
-            SceneLoadMessage scnMsg = (SceneLoadMessage)received;
-            Assert.AreEqual(TEST_SCENE_NAME, scnMsg.sceneName, "Wrong scene name");
-            scnMsg.isLoaded = true; scnMsg.requesterId = CLIENT_ID;
-            NetMessage answerMsg = scnMsg;
-            client.Send(NetSerializer.Serialize(answerMsg));
-            yield return new WaitForSeconds(0.5f);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            if (testObj != null && testObj.NetObject != null)
-            {
-                RPCManager.Unregister(testObj.NetObject.NetId, testObj);
-            }
-
-            NetManager.StopNet();
-            client.Stop();
-            Messager.ClearHandlers();
-            
-            var objects = GameObject.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            foreach (var obj in objects)
-            {
-                GameObject.DestroyImmediate(obj);
-            }
-
-            testObj = null;
-            received = null;
-        }
-        
-        private IEnumerator WaitValidate(Type expectedType)
-        {
-            byte[] data = null;
-            float startTime = Time.time;
-            NetMessage msg = null;
-            while (Time.time - startTime < 1f)
-            {
-                data = client.Receive();
-                if (data != null)
-                {
-                    msg = NetSerializer.Deserialize<NetMessage>(data);
-                    if (msg.GetType() == expectedType)
-                    {
-                        received = msg;
-                        yield break;
-                    }
-                }
-                yield return null;
-            }
-            
-            Assert.IsTrue(msg != null && msg.GetType() == expectedType, 
-                $"Expected message of type {expectedType.Name} but got {(msg == null ? "null" : msg.GetType().Name)}");
         }
     }
 } 

@@ -1,34 +1,33 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using NetPackage.Messages;
 using NUnit.Framework;
-using NetPackage.Network;
 using NetPackage.Serializer;
 using NetPackage.Transport;
 using NetPackage.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace NetworkManagerTest
+namespace NetPackage.Network.Tests
 {
-    public class ClientManagerTests
+    public class ClientManagerTests : NetworkTestBase
     {
-        private int _port;
-        private ITransport host;
-        private GameObject client;
         private List<int> clientIds = new List<int>();
-        [SetUp]
-        public void SetUp()
-        {
-            client = new GameObject();
-            client.AddComponent<NetManager>();
 
-            host = new UDPSolution();
-            host.Setup(NetManager.Port, true);
-            host.Start();
+        protected override IEnumerator SetUp()
+        {
+            StartClient(true);
+            StartHost(false);
             clientIds.Add(-1);
+            yield return null;
         }
+
+        protected override IEnumerator Teardown()
+        {
+            clientIds.Clear();
+            yield return null;
+        }
+
         [UnityTest]
         public IEnumerator TestStartClient()
         {
@@ -37,7 +36,7 @@ namespace NetworkManagerTest
             NetManager.StartClient();
             yield return WaitClientConnection(0);
 
-            Assert.IsTrue(NetManager.allPlayers.Count == 2, "Client did not start correctly");
+            Assert.IsTrue(NetManager.AllPlayers.Count == 2, "Client did not start correctly");
         }
 
 
@@ -52,7 +51,7 @@ namespace NetworkManagerTest
             NetManager.StopNet();
             yield return new WaitForSeconds(0.5f);
             
-            Assert.IsTrue(NetManager.allPlayers.Count == 0, "Client did not stop correctly");
+            Assert.IsTrue(NetManager.AllPlayers.Count == 0, "Client did not stop correctly");
         }
         
         [UnityTest]
@@ -76,9 +75,8 @@ namespace NetworkManagerTest
             }
             
             yield return new WaitForSeconds(0.2f);
-            Debug.Log(NetManager.allPlayers.Count);
-            Assert.AreEqual(NetManager.allPlayers.Count, 5, "Client did not add 5 players");
-            Assert.IsTrue(NetManager.allPlayers.Contains(3), "Client did not add correctly");
+            Assert.AreEqual(NetManager.AllPlayers.Count, 5, "Client did not add 5 players");
+            Assert.IsTrue(NetManager.AllPlayers.Contains(3), "Client did not add correctly");
             foreach (ITransport client in clients)
             {
                 client.Stop();
@@ -111,7 +109,6 @@ namespace NetworkManagerTest
             yield return WaitClientConnection(0);
             
             var connectionInfo = NetManager.GetConnectionInfo();
-            Debug.Log(connectionInfo);
             Assert.IsNotNull(connectionInfo, "Connection info should not be null after connecting");
             Assert.IsTrue(connectionInfo.Id == 0, "Connection info should have valid connection ID");
             Assert.NotNull(connectionInfo.Ping, "Connection info should have valid connection PING");
@@ -127,21 +124,10 @@ namespace NetworkManagerTest
             yield return WaitClientConnection(0);
             
             var connectionState = NetManager.GetConnectionState();
-            var connectionInfo = NetManager.GetConnectionInfo();
-            Debug.Log(connectionInfo);
             Assert.IsNotNull(connectionState, "Connection state should not be null after connecting");
             Assert.AreEqual(ConnectionState.Connected, connectionState, "Connection state should be Connected");
         }
 
-        [TearDown]
-        public void TearDown()
-        {
-            NetManager.StopNet();
-            host.Stop();
-            GameObject.DestroyImmediate(client);
-            clientIds.Clear();
-        }
-        
         private IEnumerator WaitClientConnection(int i)
         {
             clientIds.Add(i);

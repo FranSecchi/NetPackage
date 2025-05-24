@@ -1,15 +1,16 @@
 using NetPackage.Messages;
 using NetPackage.Synchronization;
 using NetPackage.Transport;
+using NetPackage.Utilities;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace NetPackage.Network
 {
-    public static class NetClient
+    internal static class NetClient
     {
-        public static NetConn Connection;
-        public static void Connect(string address)
+        internal static NetConn Connection;
+        internal static void Connect(string address)
         {
             if (Connection != null) return;
             NetScene.Init();
@@ -24,15 +25,15 @@ namespace NetPackage.Network
         {
             StateManager.SetSync(obj);
         }
-        public static void Disconnect()
+        internal static void Disconnect()
         {
             NetManager.Transport.Stop();
             Connection = null;
         }
 
-        public static void Send(NetMessage netMessage)
+        internal static void Send(NetMessage netMessage)
         {
-            DebugQueue.AddNetworkMessage(netMessage, false);
+            if(netMessage is not SyncMessage) DebugQueue.AddNetworkMessage(netMessage, false);
             Connection?.Send(netMessage);
         }
         private static void OnConnected(ConnMessage connection)
@@ -42,7 +43,7 @@ namespace NetPackage.Network
                 Connection = new NetConn(connection.CurrentConnected, false);
                 NetManager.Transport.SetConnectionId(0, Connection.Id);
             }
-            NetManager.allPlayers = connection.AllConnected;
+            NetManager.AllPlayers = connection.AllConnected;
             NetManager.SetServerInfo(connection.ServerInfo);
         }
 

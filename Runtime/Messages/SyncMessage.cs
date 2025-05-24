@@ -4,6 +4,9 @@ using System.Linq;
 
 namespace NetPackage.Messages
 {
+    /// <summary>
+    /// Message for synchronizing object properties.
+    /// </summary>
     [MessagePackObject]
     public class SyncMessage : NetMessage
     {
@@ -13,6 +16,11 @@ namespace NetPackage.Messages
         [Key(4)] public Dictionary<string, object> changedValues;
 
         public SyncMessage(){}
+        /// <param name="senderId">The ID of the client sending the sync message.</param>
+        /// <param name="objectID">The ID of the network object being synchronized.</param>
+        /// <param name="componentID">The ID of the component being synchronized.</param>
+        /// <param name="changes">Dictionary containing the changed properties and their new values.</param>
+        /// <param name="target">Optional list of target client IDs to receive this message.</param>
         public SyncMessage(int senderId, int objectID, int componentID, Dictionary<string, object> changes, List<int> target = null) : base(target)
         {
             SenderId = senderId;

@@ -12,7 +12,7 @@ namespace NetPackage.Serializer
             options = MessagePackSerializerOptions.Standard.WithResolver(
                 MessagePack.Resolvers.CompositeResolver.Create(
                     MessagePack.Resolvers.StandardResolver.Instance, 
-                    MessagePack.Resolvers.TypelessObjectResolver.Instance // Enables `object` serialization
+                    MessagePack.Resolvers.TypelessObjectResolver.Instance
                 )
             );
         }
@@ -20,8 +20,6 @@ namespace NetPackage.Serializer
         {
             return MessagePackSerializer.Serialize(data, options);
         }
-
-        // Generic method to deserialize any object
         public T Deserialize<T>(byte[] data)
         {
             if (data == null || data.Length == 0)
@@ -30,7 +28,6 @@ namespace NetPackage.Serializer
             }
             return MessagePackSerializer.Deserialize<T>(data, options);
         }
-
         public object Deserialize(byte[] data, Type type)
         {
             if (data == null || data.Length == 0)

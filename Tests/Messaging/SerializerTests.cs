@@ -1,16 +1,18 @@
+using System;
 using System.Collections.Generic;
 using MessagePack;
 using NUnit.Framework;
 using NetPackage.Serializer;
 
-namespace SerializerTest
+namespace NetPackage.Messaging.Tests
 {
     public class SerializerTests
     {
         private object objectTest;
         private ISerialize _Serializer;
+        
         [SetUp]
-        public void Setup()
+        public void SetUp()
         {
             _Serializer = new MPSerializer();
         }
@@ -96,6 +98,16 @@ namespace SerializerTest
             Assert.IsNotNull(dic2, "Deserialized list is null");
             Assert.IsTrue(dic2.Count == dic.Count, "Deserialized list count is incorrect");
             Assert.IsTrue(dic[0].msg.Equals(dic2[0].msg), "Deserialized object is incorrect");
+        }
+        [Test]
+        public void DateTimeTest()
+        {
+            DateTime originalDateTime = DateTime.UtcNow;
+            byte[] pck = _Serializer.Serialize(originalDateTime);
+            
+            Assert.IsNotNull(pck, "Serialized DateTime is null");
+            DateTime deserializedDateTime = _Serializer.Deserialize<DateTime>(pck);
+            Assert.AreEqual(originalDateTime.Ticks, deserializedDateTime.Ticks, "DateTime serialization/deserialization failed");
         }
     }
     [MessagePackObject]

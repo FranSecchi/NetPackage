@@ -2,6 +2,9 @@ using MessagePack;
 
 namespace NetPackage.Messages
 {
+    /// <summary>
+    /// Message for scene loading synchronization.
+    /// </summary>
     [MessagePackObject]
     public class SceneLoadMessage : NetMessage
     {
@@ -10,6 +13,9 @@ namespace NetPackage.Messages
         [Key(3)] public int requesterId;
 
         public SceneLoadMessage(){}
+        /// <param name="sceneName">The name of the scene being loaded or unloaded.</param>
+        /// <param name="requesterId">The ID of the client requesting the scene operation.</param>
+        /// <param name="isLoaded">Indicates whether the scene is loaded (true) or unloaded (false). Defaults to false.</param>
         public SceneLoadMessage(string sceneName, int requesterId, bool isLoaded = false)
         {
             this.sceneName = sceneName;

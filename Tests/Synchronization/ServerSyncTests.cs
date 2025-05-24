@@ -1,41 +1,27 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using NetPackage.Network;
 using NetPackage.Serializer;
 using NetPackage.Messages;
-using NetPackage.Synchronization;
-using NetPackage.Transport;
 using NetPackage.Transport.UDP;
-using NUnit.Framework.Internal;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace SynchronizationTest
+namespace NetPackage.Synchronization.Tests
 {
-    public class ServerSyncTests
+    public class ServerSyncTests : SynchronizationTestBase
     {
-        private NetPrefabRegistry prefabs;
-        private ITransport client;
-        private NetMessage received;
-        private const int CLIENT_ID = 0;
-        private string TEST_SCENE_NAME = "TestScene";
-
-        [UnitySetUp]
-        public IEnumerator SetUp()
+        protected override IEnumerator SetUp()
         {
-            var managerObj = new GameObject();
-            var manager = managerObj.AddComponent<NetManager>();
-            NetManager.StartHost();
-            
+            StartHost(true);
             yield return new WaitForSeconds(0.2f);
-            
-            RegisterPrefab();
-            
-            client = new UDPSolution();
-            client.Setup(NetManager.Port, false);
-            client.Start();
+            StartClient(false);
+            yield return new WaitForSeconds(0.2f);
+        }
+
+        protected override IEnumerator Teardown()
+        {
             yield return null;
         }
 
@@ -86,7 +72,7 @@ namespace SynchronizationTest
             syncMsg = (SyncMessage)received;
             Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message for second component");
             
-            Assert.AreNotEqual(comp1.GetComponent<SceneObjectId>().sceneId, comp2.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().sceneId}");
+            Assert.AreNotEqual(comp1.GetComponent<SceneObjectId>().SceneId, comp2.GetComponent<SceneObjectId>().SceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().SceneId}");
         }
 
         [UnityTest]
@@ -114,8 +100,8 @@ namespace SynchronizationTest
                     (comp2, comp4) = (comp4, comp2);
                 }
             }
-            Assert.AreEqual(comp1.GetComponent<SceneObjectId>().sceneId, comp2.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().sceneId}");
-            Assert.AreEqual(comp3.GetComponent<SceneObjectId>().sceneId, comp4.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp3.GetComponent<SceneObjectId>().sceneId}");
+            Assert.AreEqual(comp1.GetComponent<SceneObjectId>().SceneId, comp2.GetComponent<SceneObjectId>().SceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().SceneId}");
+            Assert.AreEqual(comp3.GetComponent<SceneObjectId>().SceneId, comp4.GetComponent<SceneObjectId>().SceneId, $"Wrong scene ID in sync message {comp3.GetComponent<SceneObjectId>().SceneId}");
 
             yield return new WaitForSeconds(0.2f);
             
@@ -159,8 +145,9 @@ namespace SynchronizationTest
                     (comp2, comp4) = (comp4, comp2);
                 }
             }
-            Assert.AreEqual(comp1.GetComponent<SceneObjectId>().sceneId, comp2.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().sceneId}");
-            Assert.AreEqual(comp3.GetComponent<SceneObjectId>().sceneId, comp4.GetComponent<SceneObjectId>().sceneId, $"Wrong scene ID in sync message {comp3.GetComponent<SceneObjectId>().sceneId}");
+            Assert.AreEqual(comp1.GetComponent<SceneObjectId>().SceneId, comp2.GetComponent<SceneObjectId>().SceneId, $"Wrong scene ID in sync message {comp1.GetComponent<SceneObjectId>().SceneId}");
+            Assert.AreEqual(comp3.GetComponent<SceneObjectId>().SceneId, comp4.GetComponent<SceneObjectId>().SceneId, $"Wrong scene ID in sync message {comp3.GetComponent<SceneObjectId>().SceneId}");
+            Assert.AreNotEqual(comp1.GetComponent<SceneObjectId>().SceneId, comp3.GetComponent<SceneObjectId>().SceneId, $"Wrong scene ID in sync message {comp3.GetComponent<SceneObjectId>().SceneId}");
 
             yield return new WaitForSeconds(0.2f);
             
@@ -169,14 +156,10 @@ namespace SynchronizationTest
             
             NetMessage syncMsg = new SyncMessage(CLIENT_ID, comp1.NetObject.NetId, 0, changes1);
             NetMessage syncMsg1 = new SyncMessage(CLIENT_ID, comp2.NetObject.NetId, 1, changes2);
-            client.Send(NetSerializer.Serialize(syncMsg));
-            client.Send(NetSerializer.Serialize(syncMsg1));
+            _client.Send(NetSerializer.Serialize(syncMsg));
+            _client.Send(NetSerializer.Serialize(syncMsg1));
 
-            float startTime = Time.time;
-            while ((comp1.health != 150 || comp2.health != 250) && Time.time - startTime < 1f)
-            {
-                yield return null;
-            }
+            yield return new WaitForSeconds(0.5f);
 
             Assert.AreEqual(150, comp1.health, "First component update not applied");
             Assert.AreEqual("changed1", comp1.msg, "First component message not updated");
@@ -196,7 +179,7 @@ namespace SynchronizationTest
 
             Dictionary<string, object> changes = new Dictionary<string, object> { { "health", 50 } };
             NetMessage syncMsg = new SyncMessage(CLIENT_ID, testComponent.NetObject.NetId, 0, changes);
-            client.Send(NetSerializer.Serialize(syncMsg));
+            _client.Send(NetSerializer.Serialize(syncMsg));
 
             float startTime = Time.time;
             while (testComponent.health == initialHealth && Time.time - startTime < 1f)
@@ -225,8 +208,8 @@ namespace SynchronizationTest
             
             NetMessage syncMsg = new SyncMessage(CLIENT_ID, comp1.NetObject.NetId, 0, changes1);
             NetMessage syncMsg1 = new SyncMessage(CLIENT_ID, comp2.NetObject.NetId, 0, changes2);
-            client.Send(NetSerializer.Serialize(syncMsg));
-            client.Send(NetSerializer.Serialize(syncMsg1));
+            _client.Send(NetSerializer.Serialize(syncMsg));
+            _client.Send(NetSerializer.Serialize(syncMsg1));
 
             float startTime = Time.time;
             while ((comp1.health != 150 || comp2.health != 250) && Time.time - startTime < 1f)
@@ -270,100 +253,20 @@ namespace SynchronizationTest
             var testComponent = objs[0];
             testComponent.Set(999, 888, "test_before_disconnect");
 
-            client.Stop();
+            _client.Stop();
             yield return new WaitForSeconds(0.5f);
 
-            client = new UDPSolution();
-            client.Setup(NetManager.Port, false);
-            client.Start();
+            _client = new UDPSolution();
+            _client.Setup(NetManager.Port, false);
+            _client.Start();
             yield return new WaitForSeconds(0.2f);
-            client.Connect("localhost");
+            _client.Connect("localhost");
             yield return new WaitForSeconds(0.2f);
 
 
             Assert.AreEqual(888, testComponent.health, "Health not recovered after reconnect");
             Assert.AreEqual(999, testComponent.id, "Id not recovered after reconnect");
             Assert.AreEqual("test_before_disconnect", testComponent.msg, "Message not recovered after reconnect");
-        }
-        
-        [TearDown]
-        public void TearDown()
-        {
-            TEST_SCENE_NAME = "TestScene";
-            NetManager.StopNet();
-            client.Stop();
-            Messager.ClearHandlers();
-            StateManager.Clear();
-            
-            var objects = GameObject.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            foreach (var obj in objects)
-            {
-                GameObject.DestroyImmediate(obj);
-            }
-        }
-
-        private IEnumerator WaitConnection()
-        {
-            yield return new WaitForSeconds(0.2f);
-            client.Connect("localhost");
-            yield return new WaitForSeconds(0.2f);
-            NetManager.LoadScene(TEST_SCENE_NAME);
-            yield return WaitValidate(typeof(SceneLoadMessage));
-            
-            SceneLoadMessage scnMsg = (SceneLoadMessage)received;
-            Assert.AreEqual(TEST_SCENE_NAME, scnMsg.sceneName, "Wrong scene name");
-            scnMsg.isLoaded = true; scnMsg.requesterId = CLIENT_ID;
-            NetMessage answerMsg = scnMsg;
-            client.Send(NetSerializer.Serialize(answerMsg));
-            yield return new WaitForSeconds(0.5f);
-        }
-
-        private IEnumerator WaitSpawnSync(TestObj[] objs)
-        {
-            yield return WaitValidate(typeof(SpawnMessage));
-            SpawnMessage spwMsg = (SpawnMessage)received;
-            yield return WaitValidate(typeof(SpawnMessage));
-            SpawnMessage spwMsg2 = (SpawnMessage)received;
-            
-            foreach (NetBehaviour hostObj in objs)
-            {
-                var hostNetObj = hostObj.NetObject;
-                SpawnMessage spw = hostNetObj.NetId != spwMsg.netObjectId ? spwMsg2 : spwMsg;
-                received = spw;
-                client.Send(NetSerializer.Serialize(received));
-                yield return new WaitForSeconds(0.2f);
-            }
-        }
-        private IEnumerator WaitValidate(Type expectedType)
-        {
-            byte[] data = null;
-            float startTime = Time.time;
-            NetMessage msg = null;
-            while (Time.time - startTime < 1f)
-            {
-                data = client.Receive();
-                if (data != null)
-                {
-                    msg = NetSerializer.Deserialize<NetMessage>(data);
-                    if (msg.GetType() == expectedType)
-                    {
-                        received = msg;
-                        yield break;
-                    }
-                }
-                yield return null;
-            }
-            
-            Assert.IsTrue(msg != null && msg.GetType() == expectedType, 
-                $"Expected message of type {expectedType.Name} but got {(msg == null ? "null" : msg.GetType().Name)}");
-        }
-        
-        private void RegisterPrefab()
-        {
-            var prefab = Resources.Load<GameObject>("TestObj");
-            prefabs = ScriptableObject.CreateInstance<NetPrefabRegistry>();
-            prefabs.prefabs.Add(prefab);
-            NetScene.RegisterPrefabs(prefabs.prefabs);
         }
     }
 } 

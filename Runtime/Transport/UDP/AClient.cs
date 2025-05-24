@@ -1,10 +1,9 @@
 using LiteNetLib;
-using NetPackage.Network;
-using UnityEngine;
+using NetPackage.Utilities;
 
 namespace NetPackage.Transport.UDP
 {
-    public class AClient : APeer
+    internal class AClient : APeer
     {
         public AClient(int port) : base(port)
         {

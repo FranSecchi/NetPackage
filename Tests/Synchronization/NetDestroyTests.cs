@@ -1,39 +1,25 @@
-using System;
 using System.Collections;
 using NUnit.Framework;
 using NetPackage.Network;
 using NetPackage.Serializer;
 using NetPackage.Messages;
-using NetPackage.Synchronization;
-using NetPackage.Transport;
-using NetPackage.Transport.UDP;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
-namespace SynchronizationTest
+namespace NetPackage.Synchronization.Tests
 {
-    public class NetDestroyTests
+    public class NetDestroyTests : SynchronizationTestBase
     {
-        private NetPrefabRegistry prefabs;
-        private ITransport client;
-        private const string TEST_SCENE_NAME = "TestScene";
-        private NetMessage received;
-        private const int CLIENT_ID = 0;
-
-        [UnitySetUp]
-        public IEnumerator SetUp()
+        protected override IEnumerator SetUp()
         {
-            var managerObj = new GameObject();
-            var manager = managerObj.AddComponent<NetManager>();
-            NetManager.StartHost();
-            RegisterPrefab();
-            
+            StartHost(true);
             yield return new WaitForSeconds(0.2f);
-            
-            client = new UDPSolution();
-            client.Setup(NetManager.Port, false);
-            client.Start();
+            StartClient(false);
+            yield return new WaitForSeconds(0.2f);
+        }
+
+        protected override IEnumerator Teardown()
+        {
             yield return null;
         }
 
@@ -70,8 +56,8 @@ namespace SynchronizationTest
             yield return WaitSpawnSync(objs);
             
             Vector3 spawnPos = new Vector3(4, 5, 6);
-            NetMessage clientSpawnMsg = new SpawnMessage(CLIENT_ID, "TestObj", spawnPos, CLIENT_ID);
-            client.Send(NetSerializer.Serialize(clientSpawnMsg));
+            NetMessage clientSpawnMsg = new SpawnMessage(CLIENT_ID, "TestObj", spawnPos, owner: CLIENT_ID);
+            _client.Send(NetSerializer.Serialize(clientSpawnMsg));
             yield return new WaitForSeconds(0.5f);
             
             objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
@@ -92,10 +78,9 @@ namespace SynchronizationTest
             Assert.AreEqual(CLIENT_ID, spawnedObj.NetObject.OwnerId, "Object not owned");
             
             NetMessage clientDestroyMsg = new DestroyMessage(spawnedObj.NetObject.NetId, CLIENT_ID);
-            client.Send(NetSerializer.Serialize(clientDestroyMsg));
+            _client.Send(NetSerializer.Serialize(clientDestroyMsg));
             yield return new WaitForSeconds(0.5f);
             
-            // Verify object was destroyed
             objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.AreEqual(2, objs.Length, "Object not destroyed");
         }
@@ -114,7 +99,7 @@ namespace SynchronizationTest
             NetScene.Spawn(hostSpawnMsg);
             
             yield return WaitValidate(typeof(SpawnMessage));
-            client.Send(NetSerializer.Serialize(received));
+            _client.Send(NetSerializer.Serialize(received));
             yield return new WaitForSeconds(0.2f);
             
             
@@ -132,92 +117,11 @@ namespace SynchronizationTest
             Assert.NotNull(spawnedObj, "Spawned object not found");
             
             NetMessage clientDestroyMsg = new DestroyMessage(spawnedObj.NetObject.NetId, CLIENT_ID);
-            client.Send(NetSerializer.Serialize(clientDestroyMsg));
+            _client.Send(NetSerializer.Serialize(clientDestroyMsg));
             yield return new WaitForSeconds(0.5f);
             
             objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.Greater(objs.Length, 1, "Object was destroyed by unauthorized client");
-        }
-
-        [UnityTearDown]
-        public IEnumerator TearDown()
-        {
-            client.Stop();
-            NetManager.StopNet();
-            yield return new WaitForSeconds(0.2f);
-            Messager.ClearHandlers();
-            StateManager.Clear();
-            
-            var objects = GameObject.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            foreach (var obj in objects)
-            {
-                GameObject.DestroyImmediate(obj);
-            }
-            yield return new WaitForSeconds(0.2f);
-        }
-
-        private IEnumerator WaitConnection()
-        {
-            yield return new WaitForSeconds(0.2f);
-            client.Connect("localhost");
-            yield return new WaitForSeconds(0.2f);
-            NetManager.LoadScene(TEST_SCENE_NAME);
-            yield return WaitValidate(typeof(SceneLoadMessage));
-            
-            SceneLoadMessage scnMsg = (SceneLoadMessage)received;
-            Assert.AreEqual(TEST_SCENE_NAME, scnMsg.sceneName, "Wrong scene name");
-            scnMsg.isLoaded = true; scnMsg.requesterId = CLIENT_ID;
-            NetMessage answerMsg = scnMsg;
-            client.Send(NetSerializer.Serialize(answerMsg));
-            yield return new WaitForSeconds(0.5f);
-        }
-
-        private IEnumerator WaitSpawnSync(TestObj[] objs)
-        {
-            yield return WaitValidate(typeof(SpawnMessage));
-            SpawnMessage spwMsg = (SpawnMessage)received;
-            yield return WaitValidate(typeof(SpawnMessage));
-            SpawnMessage spwMsg2 = (SpawnMessage)received;
-            
-            foreach (NetBehaviour hostObj in objs)
-            {
-                var hostNetObj = hostObj.NetObject;
-                SpawnMessage spw = hostNetObj.NetId != spwMsg.netObjectId ? spwMsg2 : spwMsg;
-                received = spw;
-                client.Send(NetSerializer.Serialize(received));
-                yield return new WaitForSeconds(0.2f);
-            }
-        }
-        private IEnumerator WaitValidate(Type expectedType)
-        {
-            byte[] data = null;
-            float startTime = Time.time;
-            NetMessage msg = null;
-            while (Time.time - startTime < 1f)
-            {
-                data = client.Receive();
-                if (data != null)
-                {
-                    msg = NetSerializer.Deserialize<NetMessage>(data);
-                    if (msg.GetType() == expectedType)
-                    {
-                        received = msg;
-                        yield break;
-                    }
-                }
-                yield return null;
-            }
-            
-            Assert.IsTrue(msg != null && msg.GetType() == expectedType, 
-                $"Expected message of type {expectedType.Name} but got {(msg == null ? "null" : msg.GetType().Name)}");
-        }
-
-        private void RegisterPrefab()
-        {
-            var prefab = Resources.Load<GameObject>("TestObj");
-            prefabs = ScriptableObject.CreateInstance<NetPrefabRegistry>();
-            prefabs.prefabs.Add(prefab);
-            NetScene.RegisterPrefabs(prefabs.prefabs);
         }
     }
 } 

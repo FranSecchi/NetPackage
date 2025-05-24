@@ -19,13 +19,61 @@ namespace NetPackage.Synchronization
         [Sync] private float _scaleZ;
 
         // Interpolation settings
+        [SerializeField] private float _interpolationBackTime = 0.1f; // How far back to interpolate
         [SerializeField] private float _interpolationSpeed = 10f; // How fast to interpolate
-        [SerializeField] private float _positionTolerance = 0.1f; // How much position difference is allowed
-        [SerializeField] private float _rotationTolerance = 5f; // How much rotation difference is allowed (in degrees)
+        
+        private bool _isSynchronized = true;
+        
+        private struct TransformState
+        {
+            public Vector3 Position;
+            public Quaternion Rotation;
+            public Vector3 Scale;
+            public float Timestamp;
+        }
+        
+        private Queue<TransformState> _stateBuffer = new Queue<TransformState>();
+        private TransformState _targetState;
+        private TransformState _currentState;
+        private bool _hasTargetState;
+
+        public void Reset()
+        {
+            _isSynchronized = false;
+            _stateBuffer.Clear();
+            _hasTargetState = false;
+            
+            // Update the current state to match the current transform
+            _currentState = new TransformState
+            {
+                Position = transform.position,
+                Rotation = transform.rotation,
+                Scale = transform.localScale,
+                Timestamp = Time.time
+            };
+            
+            // Update the sync variables to match current transform
+            _positionX = transform.position.x;
+            _positionY = transform.position.y;
+            _positionZ = transform.position.z;
+            _rotationX = transform.rotation.x;
+            _rotationY = transform.rotation.y;
+            _rotationZ = transform.rotation.z;
+            _rotationW = transform.rotation.w;
+            _scaleX = transform.localScale.x;
+            _scaleY = transform.localScale.y;
+            _scaleZ = transform.localScale.z;
+        }
+
+        public void ResumeSynchronization()
+        {
+            _isSynchronized = true;
+        }
 
         protected override void OnNetSpawn()
         {
-            // Initialize sync vars with current transform values
+            if (!NetManager.Active || !NetManager.Running)
+                return;
             _positionX = transform.position.x;
             _positionY = transform.position.y;
             _positionZ = transform.position.z;
@@ -37,17 +85,62 @@ namespace NetPackage.Synchronization
             _scaleY = transform.localScale.y;
             _scaleZ = transform.localScale.z;
 
-            if (isOwned)
+            // Initialize states
+            _currentState = new TransformState
             {
-                StartPrediction();
-            }
+                Position = transform.position,
+                Rotation = transform.rotation,
+                Scale = transform.localScale,
+                Timestamp = Time.time
+            };
+            _targetState = _currentState;
+            _hasTargetState = true;
         }
 
-        protected override void Predict(float deltaTime)
+        private void Update()
         {
-            if (isOwned)
+            if (!NetManager.Active || !NetManager.Running || !_isSynchronized)
+                return;
+            if (!isOwned)
             {
-                // Update sync vars with current transform values
+                // Store new state when received
+                if (_positionX != transform.position.x || _positionY != transform.position.y || _positionZ != transform.position.z ||
+                    _rotationX != transform.rotation.x || _rotationY != transform.rotation.y || _rotationZ != transform.rotation.z || _rotationW != transform.rotation.w)
+                {
+                    var newState = new TransformState
+                    {
+                        Position = new Vector3(_positionX, _positionY, _positionZ),
+                        Rotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW),
+                        Scale = new Vector3(_scaleX, _scaleY, _scaleZ),
+                        Timestamp = Time.time
+                    };
+                    
+                    _stateBuffer.Enqueue(newState);
+                    
+                    // Remove old states
+                    while (_stateBuffer.Count > 0 && _stateBuffer.Peek().Timestamp < Time.time - _interpolationBackTime)
+                    {
+                        _stateBuffer.Dequeue();
+                    }
+                    
+                    // Update target state
+                    if (_stateBuffer.Count > 0)
+                    {
+                        _targetState = _stateBuffer.Peek();
+                        _hasTargetState = true;
+                    }
+                }
+
+                // Interpolate to target state
+                if (_hasTargetState)
+                {
+                    transform.position = Vector3.Lerp(transform.position, _targetState.Position, Time.deltaTime * _interpolationSpeed);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, _targetState.Rotation, Time.deltaTime * _interpolationSpeed);
+                    transform.localScale = Vector3.Lerp(transform.localScale, _targetState.Scale, Time.deltaTime * _interpolationSpeed);
+                }
+            }
+            else
+            {
                 _positionX = transform.position.x;
                 _positionY = transform.position.y;
                 _positionZ = transform.position.z;
@@ -59,102 +152,6 @@ namespace NetPackage.Synchronization
                 _scaleY = transform.localScale.y;
                 _scaleZ = transform.localScale.z;
             }
-        }
-
-        protected override bool IsDesynchronized(Dictionary<string, object> changes)
-        {
-            // Check position changes
-            if (HasPositionChanges(changes, out Vector3 newPos))
-            {
-                return Vector3.Distance(transform.position, newPos) > _positionTolerance;
-            }
-
-            // Check rotation changes
-            if (HasRotationChanges(changes, out Quaternion newRot))
-            {
-                return Quaternion.Angle(transform.rotation, newRot) > _rotationTolerance;
-            }
-
-            return false;
-        }
-
-        protected override void OnStateReconcile(Dictionary<string, object> changes)
-        {
-            // Handle position changes
-            if (HasPositionChanges(changes, out Vector3 newPos))
-            {
-                if (isOwned)
-                {
-                    transform.position = Vector3.Lerp(transform.position, newPos, Time.deltaTime * _interpolationSpeed);
-                }
-                else
-                {
-                    transform.position = newPos;
-                }
-            }
-
-            // Handle rotation changes
-            if (HasRotationChanges(changes, out Quaternion newRot))
-            {
-                if (isOwned)
-                {
-                    transform.rotation = Quaternion.Slerp(transform.rotation, newRot, Time.deltaTime * _interpolationSpeed);
-                }
-                else
-                {
-                    transform.rotation = newRot;
-                }
-            }
-
-            // Handle scale changes
-            if (HasScaleChanges(changes, out Vector3 newScale))
-            {
-                if (isOwned)
-                {
-                    transform.localScale = Vector3.Lerp(transform.localScale, newScale, Time.deltaTime * _interpolationSpeed);
-                }
-                else
-                {
-                    transform.localScale = newScale;
-                }
-            }
-        }
-
-        private bool HasPositionChanges(Dictionary<string, object> changes, out Vector3 newPos)
-        {
-            newPos = transform.position;
-            bool hasChanges = false;
-
-            if (changes.TryGetValue("_positionX", out object x)) { newPos.x = (float)x; hasChanges = true; }
-            if (changes.TryGetValue("_positionY", out object y)) { newPos.y = (float)y; hasChanges = true; }
-            if (changes.TryGetValue("_positionZ", out object z)) { newPos.z = (float)z; hasChanges = true; }
-
-            return hasChanges;
-        }
-
-        private bool HasRotationChanges(Dictionary<string, object> changes, out Quaternion newRot)
-        {
-            newRot = transform.rotation;
-            bool hasChanges = false;
-
-            if (changes.TryGetValue("_rotationX", out object x)) { newRot.x = (float)x; hasChanges = true; }
-            if (changes.TryGetValue("_rotationY", out object y)) { newRot.y = (float)y; hasChanges = true; }
-            if (changes.TryGetValue("_rotationZ", out object z)) { newRot.z = (float)z; hasChanges = true; }
-            if (changes.TryGetValue("_rotationW", out object w)) { newRot.w = (float)w; hasChanges = true; }
-
-            return hasChanges;
-        }
-
-        private bool HasScaleChanges(Dictionary<string, object> changes, out Vector3 newScale)
-        {
-            newScale = transform.localScale;
-            bool hasChanges = false;
-
-            if (changes.TryGetValue("_scaleX", out object x)) { newScale.x = (float)x; hasChanges = true; }
-            if (changes.TryGetValue("_scaleY", out object y)) { newScale.y = (float)y; hasChanges = true; }
-            if (changes.TryGetValue("_scaleZ", out object z)) { newScale.z = (float)z; hasChanges = true; }
-
-            return hasChanges;
         }
     }
 }

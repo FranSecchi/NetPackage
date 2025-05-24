@@ -2,19 +2,20 @@ using System.Collections.Concurrent;
 using NetPackage.Messages;
 using NetPackage.Synchronization;
 using NetPackage.Transport;
+using NetPackage.Utilities;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace NetPackage.Network
 {
-    public static class NetHost
+    internal static class NetHost
     {
-        public static ConcurrentDictionary<int, NetConn> Clients = new();
+        internal static ConcurrentDictionary<int, NetConn> Clients = new();
         private static readonly object Lock = new object();
-        public static void StartHost()
+        internal static void StartHost()
         {
             NetManager.Transport.Start();
-            NetManager.allPlayers.Add(-1);
+            NetManager.AllPlayers.Add(-1);
             NetScene.Init();
             RPCManager.Init();
             ITransport.OnClientConnected += OnClientConnected;;
@@ -25,7 +26,7 @@ namespace NetPackage.Network
 
         private static void OnConnMessage(ConnMessage obj)
         {
-            if(!obj.AllConnected.Count.Equals(NetManager.allPlayers.Count))
+            if(!obj.AllConnected.Count.Equals(NetManager.AllPlayers.Count))
                 UpdatePlayers(obj.CurrentConnected);
         }
 
@@ -35,7 +36,7 @@ namespace NetPackage.Network
             if(Clients.TryRemove(id, out _))
             {
                 DebugQueue.AddMessage($"Client {id} disconnected. Clients count: {Clients.Count}", DebugQueue.MessageType.Network);
-                NetManager.allPlayers.Remove(id);
+                NetManager.AllPlayers.Remove(id);
                 UpdatePlayers(id);
                 NetManager.EnqueueMainThread(() => NetScene.DisconnectClient(id));
             }
@@ -47,24 +48,24 @@ namespace NetPackage.Network
             if (Clients.TryAdd(id, new NetConn(id, true)))
             {
                 DebugQueue.AddMessage($"Client {id} connected. Clients count: {Clients.Count}", DebugQueue.MessageType.Network);
-                NetManager.allPlayers.Add(id);
+                NetManager.AllPlayers.Add(id);
                 UpdatePlayers(id);
                 //NetScene.SendScene(id);
             }
         }
 
-        public static void UpdatePlayers(int id)
+        internal static void UpdatePlayers(int id)
         {
             if (Clients.Count == 0) return;
             
             ServerInfo info = NetManager.GetServerInfo();
             info.CurrentPlayers = NetManager.PlayerCount;
             NetManager.Transport.SetServerInfo(info);
-            NetMessage msg = new ConnMessage(id, NetManager.allPlayers, info);
+            NetMessage msg = new ConnMessage(id, NetManager.AllPlayers, info);
             Send(msg);
         }
 
-        public static void Stop()
+        internal static void Stop()
         {
             foreach (var client in Clients.Values)
             {
@@ -77,7 +78,7 @@ namespace NetPackage.Network
             Clients.Clear();
         }
 
-        public static void Kick(int id)
+        internal static void Kick(int id)
         {
             if (Clients.TryGetValue(id, out NetConn client))
             {
@@ -85,13 +86,13 @@ namespace NetPackage.Network
             }
         }
 
-        public static void Send(NetMessage netMessage)
+        internal static void Send(NetMessage netMessage)
         {
             if (netMessage.target == null)
             {
                 foreach (var client in Clients.Values)
                 {
-                    DebugQueue.AddNetworkMessage(netMessage, false);
+                    if(netMessage is not SyncMessage) DebugQueue.AddNetworkMessage(netMessage, false);
                     client.Send(netMessage);
                 }
             }
@@ -101,7 +102,7 @@ namespace NetPackage.Network
                 {
                     if (Clients.TryGetValue(targetId, out NetConn client))
                     {
-                        DebugQueue.AddNetworkMessage(netMessage, false);
+                        if(netMessage is not SyncMessage) DebugQueue.AddNetworkMessage(netMessage, false);
                         client.Send(netMessage);
                     }
                 }

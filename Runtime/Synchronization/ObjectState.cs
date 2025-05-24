@@ -246,5 +246,10 @@ namespace NetPackage.Synchronization
                 }
             }
         }
+
+        public bool HasComponent(int componentId)
+        {
+            return _objectIds.TryGetValue(componentId, out _);
+        }
     }
 }

@@ -223,7 +223,7 @@ namespace NetPackage.Synchronization
         }
         
         // Prediction methods
-        protected virtual void StartPrediction()
+        private void StartPrediction()
         {
             if (!isOwned) return;
             _isPredicting = true;
@@ -233,7 +233,7 @@ namespace NetPackage.Synchronization
             OnPredictionStart();
         }
         
-        protected void StopPrediction()
+        private void StopPrediction()
         {
             if (!isOwned) return;
             _isPredicting = false;
@@ -251,10 +251,10 @@ namespace NetPackage.Synchronization
 
             if (isOwned && _isPredicting)
             {
+                DebugQueue.AddMessage($"State Received for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
                 if (IsDesynchronized(changes))
                 {
-                    DebugQueue.AddMessage($"Desync detected for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
-                    DebugQueue.AddRollback(NetID, _lastReconcileTime, "State desync detected at " + GetType().Name);
+                    DebugQueue.AddRollback(NetID, _lastReconcileTime, $"Desync detected for {GetType().Name} | {gameObject.name}");
                     RollbackManager.RollbackToTime(NetID, id, _lastReconcileTime, changes);
                 }
                 else

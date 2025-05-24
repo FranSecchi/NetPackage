@@ -84,7 +84,6 @@ namespace NetPackage.Synchronization
             if (!NetManager.Active || !NetManager.Running)
                 return;
 
-            // Initialize sync variables
             _positionX = transform.position.x;
             _positionY = transform.position.y;
             _positionZ = transform.position.z;
@@ -96,7 +95,6 @@ namespace NetPackage.Synchronization
             _scaleY = transform.localScale.y;
             _scaleZ = transform.localScale.z;
 
-            // Initialize target state
             _targetPosition = transform.position;
             _targetRotation = transform.rotation;
             _targetScale = transform.localScale;
@@ -165,8 +163,6 @@ namespace NetPackage.Synchronization
 
         protected override void Predict(float deltaTime)
         {
-            // For transform, prediction is handled by the physics system
-            // We just need to update our sync variables
             if (_syncPosition)
             {
                 _positionX = transform.position.x;

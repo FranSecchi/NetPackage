@@ -263,10 +263,6 @@ namespace NetPackage.Synchronization
                     OnStateReconcile(changes);
                 }
             }
-            else
-            {
-                OnStateReconcile(changes);
-            }
         }
         
         protected virtual void OnStateReconcile(Dictionary<string, object> changes) { }

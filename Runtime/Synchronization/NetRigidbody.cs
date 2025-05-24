@@ -11,14 +11,12 @@ namespace NetPackage.Synchronization
         [SerializeField] private bool _syncPosition = true;
         [SerializeField] private bool _syncRotation = true;
         [SerializeField] private bool _syncVelocity = true;
-        [SerializeField] private bool _syncAngularVelocity = true;
         [SerializeField] private bool _syncProperties = true;
 
         [Header("Desync Thresholds")]
         [SerializeField] private float _positionThreshold = 0.01f;
         [SerializeField] private float _rotationThreshold = 0.01f;
         [SerializeField] private float _velocityThreshold = 0.1f;
-        [SerializeField] private float _angularVelocityThreshold = 0.1f;
 
         [Sync] private float _positionX;
         [Sync] private float _positionY;
@@ -30,9 +28,6 @@ namespace NetPackage.Synchronization
         [Sync] private float _velocityX;
         [Sync] private float _velocityY;
         [Sync] private float _velocityZ;
-        [Sync] private float _angularVelocityX;
-        [Sync] private float _angularVelocityY;
-        [Sync] private float _angularVelocityZ;
         [Sync] private float _mass;
         [Sync] private float _drag;
         [Sync] private float _angularDrag;
@@ -47,8 +42,6 @@ namespace NetPackage.Synchronization
         private Vector3 _targetPosition;
         private Quaternion _targetRotation;
         private Vector3 _targetVelocity;
-        private Vector3 _targetAngularVelocity;
-        private bool _hasTargetState;
 
         public bool SyncPosition
         {
@@ -68,12 +61,6 @@ namespace NetPackage.Synchronization
             set => _syncVelocity = value;
         }
 
-        public bool SyncAngularVelocity
-        {
-            get => _syncAngularVelocity;
-            set => _syncAngularVelocity = value;
-        }
-
         public bool SyncProperties
         {
             get => _syncProperties;
@@ -83,41 +70,6 @@ namespace NetPackage.Synchronization
         public override void PausePrediction()
         {
             _isSynchronized = false;
-            _hasTargetState = false;
-            
-            if (_syncPosition)
-            {
-                _positionX = _rigidbody.position.x;
-                _positionY = _rigidbody.position.y;
-                _positionZ = _rigidbody.position.z;
-            }
-            if (_syncRotation)
-            {
-                _rotationX = _rigidbody.rotation.x;
-                _rotationY = _rigidbody.rotation.y;
-                _rotationZ = _rigidbody.rotation.z;
-                _rotationW = _rigidbody.rotation.w;
-            }
-            if (_syncVelocity)
-            {
-                _velocityX = _rigidbody.velocity.x;
-                _velocityY = _rigidbody.velocity.y;
-                _velocityZ = _rigidbody.velocity.z;
-            }
-            if (_syncAngularVelocity)
-            {
-                _angularVelocityX = _rigidbody.angularVelocity.x;
-                _angularVelocityY = _rigidbody.angularVelocity.y;
-                _angularVelocityZ = _rigidbody.angularVelocity.z;
-            }
-            if (_syncProperties)
-            {
-                _mass = _rigidbody.mass;
-                _drag = _rigidbody.drag;
-                _angularDrag = _rigidbody.angularDrag;
-                _useGravity = _rigidbody.useGravity;
-                _isKinematic = _rigidbody.isKinematic;
-            }
         }
 
         public override void ResumePrediction()
@@ -131,45 +83,17 @@ namespace NetPackage.Synchronization
                 return;
             _rigidbody = GetComponent<Rigidbody>();
 
-            if (_syncPosition)
+            if(!isOwned)
             {
-                _positionX = _rigidbody.position.x;
-                _positionY = _rigidbody.position.y;
-                _positionZ = _rigidbody.position.z;
+                _rigidbody.isKinematic = true;
+                _syncProperties = false;
             }
-            if (_syncRotation)
-            {
-                _rotationX = _rigidbody.rotation.x;
-                _rotationY = _rigidbody.rotation.y;
-                _rotationZ = _rigidbody.rotation.z;
-                _rotationW = _rigidbody.rotation.w;
-            }
-            if (_syncVelocity)
-            {
-                _velocityX = _rigidbody.velocity.x;
-                _velocityY = _rigidbody.velocity.y;
-                _velocityZ = _rigidbody.velocity.z;
-            }
-            if (_syncAngularVelocity)
-            {
-                _angularVelocityX = _rigidbody.angularVelocity.x;
-                _angularVelocityY = _rigidbody.angularVelocity.y;
-                _angularVelocityZ = _rigidbody.angularVelocity.z;
-            }
-            if (_syncProperties)
-            {
-                _mass = _rigidbody.mass;
-                _drag = _rigidbody.drag;
-                _angularDrag = _rigidbody.angularDrag;
-                _useGravity = _rigidbody.useGravity;
-                _isKinematic = _rigidbody.isKinematic;
-            }
+
+            SendState();
 
             _targetPosition = _rigidbody.position;
             _targetRotation = _rigidbody.rotation;
             _targetVelocity = _rigidbody.velocity;
-            _targetAngularVelocity = _rigidbody.angularVelocity;
-            _hasTargetState = true;
         }
 
         protected override void OnStateReconcile(Dictionary<string, object> changes)
@@ -193,12 +117,6 @@ namespace NetPackage.Synchronization
                 if (changes.ContainsKey("_velocityY")) _velocityY = (float)changes["_velocityY"];
                 if (changes.ContainsKey("_velocityZ")) _velocityZ = (float)changes["_velocityZ"];
             }
-            if (_syncAngularVelocity)
-            {
-                if (changes.ContainsKey("_angularVelocityX")) _angularVelocityX = (float)changes["_angularVelocityX"];
-                if (changes.ContainsKey("_angularVelocityY")) _angularVelocityY = (float)changes["_angularVelocityY"];
-                if (changes.ContainsKey("_angularVelocityZ")) _angularVelocityZ = (float)changes["_angularVelocityZ"];
-            }
             if (_syncProperties)
             {
                 if (changes.ContainsKey("_mass")) _mass = (float)changes["_mass"];
@@ -211,8 +129,6 @@ namespace NetPackage.Synchronization
             _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
             _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
             _targetVelocity = new Vector3(_velocityX, _velocityY, _velocityZ);
-            _targetAngularVelocity = new Vector3(_angularVelocityX, _angularVelocityY, _angularVelocityZ);
-            _hasTargetState = true;
         }
 
         protected override bool IsDesynchronized(Dictionary<string, object> changes)
@@ -238,17 +154,43 @@ namespace NetPackage.Synchronization
                 if (changes.ContainsKey("_velocityY") && Mathf.Abs((float)changes["_velocityY"] - _rigidbody.velocity.y) > _velocityThreshold) return true;
                 if (changes.ContainsKey("_velocityZ") && Mathf.Abs((float)changes["_velocityZ"] - _rigidbody.velocity.z) > _velocityThreshold) return true;
             }
-            if (_syncAngularVelocity)
-            {
-                if (changes.ContainsKey("_angularVelocityX") && Mathf.Abs((float)changes["_angularVelocityX"] - _rigidbody.angularVelocity.x) > _angularVelocityThreshold) return true;
-                if (changes.ContainsKey("_angularVelocityY") && Mathf.Abs((float)changes["_angularVelocityY"] - _rigidbody.angularVelocity.y) > _angularVelocityThreshold) return true;
-                if (changes.ContainsKey("_angularVelocityZ") && Mathf.Abs((float)changes["_angularVelocityZ"] - _rigidbody.angularVelocity.z) > _angularVelocityThreshold) return true;
-            }
-
             return false;
         }
 
         protected override void Predict(float deltaTime)
+        {
+            if (_syncPosition)
+            {
+                Vector3 p = _rigidbody.position + _rigidbody.velocity * Time.fixedDeltaTime +
+                            (_useGravity ? Physics.gravity * (0.5f * Time.fixedDeltaTime * Time.fixedDeltaTime) : Vector3.zero);
+                _targetPosition = p;
+            }
+            if (_syncRotation)
+            {
+                Quaternion q = Quaternion.Euler(_rigidbody.angularVelocity * (Mathf.Rad2Deg * deltaTime)) * _rigidbody.rotation;
+                _targetRotation = q;
+            }
+            if (_syncVelocity)
+            {
+                Vector3 v =  _rigidbody.velocity + (_useGravity ? Physics.gravity * deltaTime : Vector3.zero);
+                _targetVelocity = v;
+            }
+        }
+
+        private void FixedUpdate()
+        {
+            if (!NetManager.Active || !NetManager.Running || !_isSynchronized)
+                return;
+
+            
+            SetState();
+            if (isOwned)
+            {
+                SendState();
+            }
+        }
+
+        private void SendState()
         {
             if (_syncPosition)
             {
@@ -269,12 +211,6 @@ namespace NetPackage.Synchronization
                 _velocityY = _rigidbody.velocity.y;
                 _velocityZ = _rigidbody.velocity.z;
             }
-            if (_syncAngularVelocity)
-            {
-                _angularVelocityX = _rigidbody.angularVelocity.x;
-                _angularVelocityY = _rigidbody.angularVelocity.y;
-                _angularVelocityZ = _rigidbody.angularVelocity.z;
-            }
             if (_syncProperties)
             {
                 _mass = _rigidbody.mass;
@@ -285,104 +221,28 @@ namespace NetPackage.Synchronization
             }
         }
 
-        private void FixedUpdate()
+        private void SetState()
         {
-            if (!NetManager.Active || !NetManager.Running || !_isSynchronized)
-                return;
-
-            if (!isOwned)
+            if (_syncPosition)
             {
-                if (NetObject?.State != null)
-                {
-                    if (_syncPosition)
-                    {
-                        _positionX = GetFieldValue<float>("_positionX");
-                        _positionY = GetFieldValue<float>("_positionY");
-                        _positionZ = GetFieldValue<float>("_positionZ");
-                    }
-                    if (_syncRotation)
-                    {
-                        _rotationX = GetFieldValue<float>("_rotationX");
-                        _rotationY = GetFieldValue<float>("_rotationY");
-                        _rotationZ = GetFieldValue<float>("_rotationZ");
-                        _rotationW = GetFieldValue<float>("_rotationW");
-                    }
-                    if (_syncVelocity)
-                    {
-                        _velocityX = GetFieldValue<float>("_velocityX");
-                        _velocityY = GetFieldValue<float>("_velocityY");
-                        _velocityZ = GetFieldValue<float>("_velocityZ");
-                    }
-                    if (_syncAngularVelocity)
-                    {
-                        _angularVelocityX = GetFieldValue<float>("_angularVelocityX");
-                        _angularVelocityY = GetFieldValue<float>("_angularVelocityY");
-                        _angularVelocityZ = GetFieldValue<float>("_angularVelocityZ");
-                    }
-                    if (_syncProperties)
-                    {
-                        _mass = GetFieldValue<float>("_mass");
-                        _drag = GetFieldValue<float>("_drag");
-                        _angularDrag = GetFieldValue<float>("_angularDrag");
-                        _useGravity = GetFieldValue<bool>("_useGravity");
-                        _isKinematic = GetFieldValue<bool>("_isKinematic");
-                    }
-
-                    _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
-                    _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
-                    _targetVelocity = new Vector3(_velocityX, _velocityY, _velocityZ);
-                    _targetAngularVelocity = new Vector3(_angularVelocityX, _angularVelocityY, _angularVelocityZ);
-                    _hasTargetState = true;
-                }
-
-                if (_hasTargetState)
-                {
-                    if (_syncPosition)
-                        _rigidbody.position = Vector3.Lerp(_rigidbody.position, _targetPosition, Time.fixedDeltaTime * _interpolationSpeed);
-                    if (_syncRotation)
-                        _rigidbody.rotation = Quaternion.Slerp(_rigidbody.rotation, _targetRotation, Time.fixedDeltaTime * _interpolationSpeed);
-                    if (_syncVelocity)
-                        _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, _targetVelocity, Time.fixedDeltaTime * _interpolationSpeed);
-                    if (_syncAngularVelocity)
-                        _rigidbody.angularVelocity = Vector3.Lerp(_rigidbody.angularVelocity, _targetAngularVelocity, Time.fixedDeltaTime * _interpolationSpeed);
-                }
+                _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
+                _rigidbody.position = Vector3.Lerp(_rigidbody.position, _targetPosition, Time.fixedDeltaTime * _interpolationSpeed);
             }
-            else
+            if (_syncRotation)
+            {                    
+                _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
+                _rigidbody.rotation = Quaternion.Slerp(_rigidbody.rotation, _targetRotation, Time.fixedDeltaTime * _interpolationSpeed);
+            }
+            if (_syncVelocity)
             {
-                if (_syncPosition)
-                {
-                    _positionX = _rigidbody.position.x;
-                    _positionY = _rigidbody.position.y;
-                    _positionZ = _rigidbody.position.z;
-                }
-                if (_syncRotation)
-                {
-                    _rotationX = _rigidbody.rotation.x;
-                    _rotationY = _rigidbody.rotation.y;
-                    _rotationZ = _rigidbody.rotation.z;
-                    _rotationW = _rigidbody.rotation.w;
-                }
-                if (_syncVelocity)
-                {
-                    _velocityX = _rigidbody.velocity.x;
-                    _velocityY = _rigidbody.velocity.y;
-                    _velocityZ = _rigidbody.velocity.z;
-                }
-                if (_syncAngularVelocity)
-                {
-                    _angularVelocityX = _rigidbody.angularVelocity.x;
-                    _angularVelocityY = _rigidbody.angularVelocity.y;
-                    _angularVelocityZ = _rigidbody.angularVelocity.z;
-                }
-                if (_syncProperties)
-                {
-                    _mass = _rigidbody.mass;
-                    _drag = _rigidbody.drag;
-                    _angularDrag = _rigidbody.angularDrag;
-                    _useGravity = _rigidbody.useGravity;
-                    _isKinematic = _rigidbody.isKinematic;
-                }
+                _targetVelocity = new Vector3(_velocityX, _velocityY, _velocityZ);
+                _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, _targetVelocity, Time.fixedDeltaTime * _interpolationSpeed);
             }
+            _rigidbody.isKinematic = _isKinematic;
+            _rigidbody.drag = _drag;
+            _rigidbody.angularDrag = _angularDrag;
+            _rigidbody.useGravity = _useGravity;
+            _rigidbody.mass = _mass;
         }
     }
 } 

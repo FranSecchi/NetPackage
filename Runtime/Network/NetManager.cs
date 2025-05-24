@@ -190,9 +190,9 @@ namespace NetPackage.Network
                 if (currentTime - _lastStateUpdate >= stateUpdateInterval)
                 {
                     StateManager.SendUpdateStates();
-                    if(useRollback) RollbackManager.Update();
                     _lastStateUpdate = currentTime;
                 }
+                if(useRollback) RollbackManager.Update();
             }
         }
 

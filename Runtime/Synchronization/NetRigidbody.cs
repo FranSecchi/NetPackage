@@ -85,17 +85,14 @@ namespace NetPackage.Synchronization
 
             if(!isOwned)
             {
-                // Store original states
                 _wasKinematic = _rigidbody.isKinematic;
                 _wasCollisionDetection = _rigidbody.collisionDetectionMode;
                 _wasInterpolation = _rigidbody.interpolation;
                 
-                // Set up for network-controlled movement
                 _rigidbody.collisionDetectionMode = CollisionDetectionMode.Discrete;
                 _rigidbody.isKinematic = true;
                 _rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
                 
-                // Ensure we sync properties
                 _syncProperties = true;
             }
 
@@ -106,11 +103,22 @@ namespace NetPackage.Synchronization
             _targetVelocity = _rigidbody.velocity;
         }
 
+        protected override void OnNetEnable()
+        {
+            if(!isOwned)
+            {
+                _rigidbody.collisionDetectionMode = CollisionDetectionMode.Discrete;
+                _rigidbody.isKinematic = true;
+                _rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+                
+                _syncProperties = true;
+            }
+        }
+
         protected override void OnNetDisable()
         {
             base.OnNetDisable();
             
-            // Restore original states if not owned
             if (!isOwned && _rigidbody != null)
             {
                 _rigidbody.isKinematic = _wasKinematic;
@@ -135,12 +143,13 @@ namespace NetPackage.Synchronization
                 DeltaTime = Time.fixedDeltaTime
             });
 
-            // Apply force immediately for local prediction
             _rigidbody.AddForce(force, mode);
         }
 
         protected override void OnStateReconcile(Dictionary<string, object> changes)
         {
+            if (!isOwned) return;
+            
             if (_syncPosition)
             {
                 if (changes.ContainsKey("_positionX")) _positionX = (float)changes["_positionX"];
@@ -169,18 +178,8 @@ namespace NetPackage.Synchronization
                 if (changes.ContainsKey("_drag")) _drag = (float)changes["_drag"];
                 if (changes.ContainsKey("_angularDrag")) _angularDrag = (float)changes["_angularDrag"];
                 if (changes.ContainsKey("_useGravity")) _useGravity = (bool)changes["_useGravity"];
-
-                // Update rigidbody properties for non-owned objects
-                if (!isOwned)
-                {
-                    _rigidbody.mass = _mass;
-                    _rigidbody.drag = _drag;
-                    _rigidbody.angularDrag = _angularDrag;
-                    _rigidbody.useGravity = _useGravity;
-                }
             }
 
-            // Clear pending forces after reconciliation
             _pendingForces.Clear();
         }
 
@@ -229,19 +228,18 @@ namespace NetPackage.Synchronization
             {
                 Vector3 v = _rigidbody.velocity + (_useGravity ? Physics.gravity * deltaTime : Vector3.zero);
                 
-                // Apply pending forces to velocity prediction
                 foreach (var force in _pendingForces)
                 {
                     switch (force.Mode)
                     {
                         case ForceMode.Force:
-                            v += force.Force * force.DeltaTime / _rigidbody.mass;
+                            v += force.Force * force.DeltaTime / _mass;
                             break;
                         case ForceMode.Acceleration:
                             v += force.Force * force.DeltaTime;
                             break;
                         case ForceMode.Impulse:
-                            v += force.Force / _rigidbody.mass;
+                            v += force.Force / _mass;
                             break;
                         case ForceMode.VelocityChange:
                             v += force.Force;
@@ -303,32 +301,22 @@ namespace NetPackage.Synchronization
         private void SetState()
         {
             float lerpSpeed = Time.deltaTime * _interpolationSpeed;
-            
-            if (_syncPosition)
+            if (!isOwned)
             {
-                if (!isOwned)
+                if (_syncPosition)
                 {
-                    // For non-owned objects, use rigidbody.MovePosition for better physics
                     _rigidbody.MovePosition(Vector3.Lerp(_rigidbody.position, _targetPosition, lerpSpeed));
                 }
-                else
-                {
-                    _rigidbody.position = Vector3.Lerp(_rigidbody.position, _targetPosition, lerpSpeed);
-                }
-            }
-            
-            if (_syncRotation)
-            {                    
-                if (!isOwned)
-                {
-                    // For non-owned objects, use rigidbody.MoveRotation for better physics
+                if (_syncRotation)
+                {                               
                     _rigidbody.MoveRotation(Quaternion.Slerp(_rigidbody.rotation, _targetRotation, lerpSpeed));
                 }
-                else
-                {
-                    _rigidbody.rotation = Quaternion.Slerp(_rigidbody.rotation, _targetRotation, lerpSpeed);
-                }
             }
+            else
+            {
+                _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, _targetVelocity, lerpSpeed);
+            }
+            
         }
     }
 } 

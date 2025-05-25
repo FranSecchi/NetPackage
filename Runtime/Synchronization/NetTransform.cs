@@ -71,18 +71,39 @@ namespace NetPackage.Synchronization
             if (!NetManager.Active || !NetManager.Running)
                 return;
 
-            
             if (!isOwned)
             {
                 if (_syncPosition)
-                    _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
+                {
+                    Vector3 newTarget = new Vector3(_positionX, _positionY, _positionZ);
+                    if (NetManager.IsHost && Vector3.Distance(_targetPosition, newTarget) > 0.001f)
+                    {
+                        DebugQueue.AddMessage($"Host {NetID} state mismatch - Synced: ({_positionX}, {_positionY}, {_positionZ}) Target: {_targetPosition}", DebugQueue.MessageType.Warning);
+                    }
+                    _targetPosition = newTarget;
+                }
     
                 if (_syncRotation)
-                    _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
+                {
+                    Quaternion newTarget = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
+                    if (NetManager.IsHost && Quaternion.Angle(_targetRotation, newTarget) > 0.1f)
+                    {
+                        DebugQueue.AddMessage($"Host {NetID} rotation mismatch - Synced: ({_rotationX}, {_rotationY}, {_rotationZ}, {_rotationW}) Target: {_targetRotation}", DebugQueue.MessageType.Warning);
+                    }
+                    _targetRotation = newTarget;
+                }
     
                 if (_syncScale)
-                    _targetScale = new Vector3(_scaleX, _scaleY, _scaleZ);
+                {
+                    Vector3 newTarget = new Vector3(_scaleX, _scaleY, _scaleZ);
+                    if (NetManager.IsHost && Vector3.Distance(_targetScale, newTarget) > 0.001f)
+                    {
+                        DebugQueue.AddMessage($"Host {NetID} scale mismatch - Synced: ({_scaleX}, {_scaleY}, {_scaleZ}) Target: {_targetScale}", DebugQueue.MessageType.Warning);
+                    }
+                    _targetScale = newTarget;
+                }
             }
+
             float lerpSpeed = Time.deltaTime * _interpolationSpeed;
 
             if (_syncPosition)
@@ -105,6 +126,10 @@ namespace NetPackage.Synchronization
                 if (changes.ContainsKey("_positionY")) _positionY = (float)changes["_positionY"];
                 if (changes.ContainsKey("_positionZ")) _positionZ = (float)changes["_positionZ"];
                 _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
+                if (NetManager.IsHost)
+                {
+                    DebugQueue.AddMessage($"Host {NetID} received position update: {_targetPosition}", DebugQueue.MessageType.Warning);
+                }
             }
 
             if (_syncRotation)
@@ -114,6 +139,10 @@ namespace NetPackage.Synchronization
                 if (changes.ContainsKey("_rotationZ")) _rotationZ = (float)changes["_rotationZ"];
                 if (changes.ContainsKey("_rotationW")) _rotationW = (float)changes["_rotationW"];
                 _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
+                if (NetManager.IsHost)
+                {
+                    DebugQueue.AddMessage($"Host {NetID} received rotation update: {_targetRotation.eulerAngles}", DebugQueue.MessageType.Warning);
+                }
             }
 
             if (_syncScale)
@@ -122,6 +151,10 @@ namespace NetPackage.Synchronization
                 if (changes.ContainsKey("_scaleY")) _scaleY = (float)changes["_scaleY"];
                 if (changes.ContainsKey("_scaleZ")) _scaleZ = (float)changes["_scaleZ"];
                 _targetScale = new Vector3(_scaleX, _scaleY, _scaleZ);
+                if (NetManager.IsHost)
+                {
+                    DebugQueue.AddMessage($"Host {NetID} received scale update: {_targetScale}", DebugQueue.MessageType.Warning);
+                }
             }
         }
 

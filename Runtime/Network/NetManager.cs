@@ -87,7 +87,7 @@ namespace NetPackage.Network
         /// Interval between state updates in seconds.
         /// </summary>
         [Tooltip("Time between network state updates (in seconds)")]
-        [SerializeField] public float stateUpdateInterval = 0.05f; // 20 updates per second by default
+        [SerializeField] public float stateUpdateInterval = 0.05f;
 
 
         /// <summary>
@@ -196,8 +196,8 @@ namespace NetPackage.Network
                 {
                     StateManager.SendUpdateStates();
                     _lastStateUpdate = currentTime;
+                    if(useRollback) RollbackManager.Update();
                 }
-                if(useRollback) RollbackManager.Update();
             }
         }
 

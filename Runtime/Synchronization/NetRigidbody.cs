@@ -283,12 +283,6 @@ namespace NetPackage.Synchronization
                 {
                     _rigidbody.MoveRotation(Quaternion.Slerp(_rigidbody.rotation, _targetRotation, lerpSpeed));
                 }
-
-                if (_syncVelocity)
-                {
-                    Vector3 currentVelocity = (_targetPosition - _rigidbody.position) / Time.deltaTime;
-                    _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, currentVelocity, lerpSpeed);
-                }
             }
             else
             {

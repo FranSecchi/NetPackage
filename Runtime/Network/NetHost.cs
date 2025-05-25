@@ -112,12 +112,6 @@ namespace NetPackage.Network
         }
         private static void OnSyncMessage(SyncMessage obj)
         {
-            
-            if (NetManager.Rollback)
-            {
-                NetMessage msg = new ReconcileMessage(obj.ObjectID, obj.ComponentId, DateTime.UtcNow, obj.changedValues, obj.SenderId);
-                Send(msg);
-            }
             StateManager.SetSync(obj);
             if(obj.target == null)
             {
@@ -125,6 +119,11 @@ namespace NetPackage.Network
             }
             obj.target.Remove(obj.SenderId);
             Send(obj);
+            if (NetManager.Rollback)
+            {
+                NetMessage msg = new ReconcileMessage(obj.ObjectID, obj.ComponentId, DateTime.UtcNow, obj.changedValues, obj.SenderId);
+                Send(msg);
+            }
         }
         
 

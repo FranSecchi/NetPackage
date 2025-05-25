@@ -245,6 +245,8 @@ namespace NetPackage.Synchronization
 
             if (_isPredicting)
             {
+                _isPredicting = false;
+                DebugQueue.AddMessage($"Reconciliation received for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
                 if (IsDesynchronized(changes))
                 {
                     DebugQueue.AddRollback(NetID, timestamp.Second, $"Desync detected for {GetType().Name} | {gameObject.name}");
@@ -252,8 +254,9 @@ namespace NetPackage.Synchronization
                 }
                 else
                 {
-                    NetManager.EnqueueMainThread(() => OnStateReconcile(changes));
+                    OnStateReconcile(changes);
                 }
+                NetManager.EnqueueMainThread(() => _isPredicting = true);
             }
         }
         

@@ -172,7 +172,7 @@ namespace NetPackage.Synchronization
             {
                 if (obj is NetBehaviour netBehaviour)
                 {
-                    netBehaviour.OnReconciliation(id, changes, timeStamp);
+                    NetManager.EnqueueMainThread(() => netBehaviour.OnReconciliation(id, changes, timeStamp));
                 }
             }
             else

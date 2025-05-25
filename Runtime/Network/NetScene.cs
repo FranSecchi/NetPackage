@@ -38,6 +38,8 @@ namespace NetPackage.Network
             DebugQueue.AddMessage($"NetID {obj} | Validated: {validatedObjects[obj].Count}/{connectedPlayers}");
             if(validatedObjects[obj].Count >= connectedPlayers)
             {
+                NetMessage m = new SpawnValidationMessage(obj, -1);
+                NetHost.Send(m);
                 validatedObjects.Remove(obj);
                 ValidateSpawn(player);
             }

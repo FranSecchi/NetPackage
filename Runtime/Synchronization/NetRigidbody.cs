@@ -248,7 +248,8 @@ namespace NetPackage.Synchronization
                 }
                 
                 _targetVelocity = v;
-            }
+            }            
+            SendState();
         }
 
         private void FixedUpdate()
@@ -264,8 +265,36 @@ namespace NetPackage.Synchronization
                 if (_syncRotation)
                     _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
             }
-
             SetState();
+        }
+
+        private void SetState()
+        {
+            float lerpSpeed = Time.deltaTime * _interpolationSpeed;
+            
+            if (!isOwned)
+            {
+                if (_syncPosition)
+                {
+                    _rigidbody.MovePosition(Vector3.Lerp(_rigidbody.position, _targetPosition, lerpSpeed));
+                }
+                
+                if (_syncRotation)
+                {
+                    _rigidbody.MoveRotation(Quaternion.Slerp(_rigidbody.rotation, _targetRotation, lerpSpeed));
+                }
+
+                if (_syncVelocity)
+                {
+                    Vector3 currentVelocity = (_targetPosition - _rigidbody.position) / Time.deltaTime;
+                    _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, currentVelocity, lerpSpeed);
+                }
+            }
+            else
+            {
+                if (_syncVelocity)
+                    _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, _targetVelocity, lerpSpeed);
+            }
         }
 
         private void SendState()
@@ -296,27 +325,6 @@ namespace NetPackage.Synchronization
                 _angularDrag = _rigidbody.angularDrag;
                 _useGravity = _rigidbody.useGravity;
             }
-        }
-
-        private void SetState()
-        {
-            float lerpSpeed = Time.deltaTime * _interpolationSpeed;
-            if (!isOwned)
-            {
-                if (_syncPosition)
-                {
-                    _rigidbody.MovePosition(Vector3.Lerp(_rigidbody.position, _targetPosition, lerpSpeed));
-                }
-                if (_syncRotation)
-                {                               
-                    _rigidbody.MoveRotation(Quaternion.Slerp(_rigidbody.rotation, _targetRotation, lerpSpeed));
-                }
-            }
-            else
-            {
-                _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, _targetVelocity, lerpSpeed);
-            }
-            
         }
     }
 } 

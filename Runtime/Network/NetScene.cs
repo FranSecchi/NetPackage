@@ -149,6 +149,7 @@ namespace NetPackage.Network
             if (!validatedObjects.ContainsKey(msg.netObjectId))
                 validatedObjects[msg.netObjectId] = new List<int>();
             validatedObjects[msg.netObjectId].Add(msg.requesterId);
+            DebugQueue.AddMessage($"{msg.netObjectId} has validated: {validatedObjects[msg.netObjectId].Count} vs {connectedPlayers}");
             if(validatedObjects[msg.netObjectId].Count >= connectedPlayers)
             {
                 validatedObjects.Remove(msg.netObjectId);

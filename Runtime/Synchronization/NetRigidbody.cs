@@ -41,6 +41,14 @@ namespace NetPackage.Synchronization
         private Vector3 _targetPosition;
         private Quaternion _targetRotation;
         private Vector3 _targetVelocity;
+        private List<ForceCommand> _pendingForces = new List<ForceCommand>();
+
+        private struct ForceCommand
+        {
+            public Vector3 Force;
+            public ForceMode Mode;
+            public float DeltaTime;
+        }
 
         public bool SyncPosition
         {
@@ -85,6 +93,26 @@ namespace NetPackage.Synchronization
             _targetVelocity = _rigidbody.velocity;
         }
 
+        /// <summary>
+        /// Adds a force to be applied during prediction. This force will be synchronized across the network.
+        /// </summary>
+        /// <param name="force">The force to apply</param>
+        /// <param name="mode">The mode in which to apply the force</param>
+        public void AddForce(Vector3 force, ForceMode mode = ForceMode.Force)
+        {
+            if (!isOwned) return;
+
+            _pendingForces.Add(new ForceCommand
+            {
+                Force = force,
+                Mode = mode,
+                DeltaTime = Time.fixedDeltaTime
+            });
+
+            // Apply force immediately for local prediction
+            _rigidbody.AddForce(force, mode);
+        }
+
         protected override void OnStateReconcile(Dictionary<string, object> changes)
         {
             if (_syncPosition)
@@ -117,6 +145,8 @@ namespace NetPackage.Synchronization
                 if (changes.ContainsKey("_useGravity")) _useGravity = (bool)changes["_useGravity"];
             }
 
+            // Clear pending forces after reconciliation
+            _pendingForces.Clear();
         }
 
         protected override bool IsDesynchronized(Dictionary<string, object> changes)
@@ -160,7 +190,28 @@ namespace NetPackage.Synchronization
             }
             if (_syncVelocity)
             {
-                Vector3 v =  _rigidbody.velocity + (_useGravity ? Physics.gravity * deltaTime : Vector3.zero);
+                Vector3 v = _rigidbody.velocity + (_useGravity ? Physics.gravity * deltaTime : Vector3.zero);
+                
+                // Apply pending forces to velocity prediction
+                foreach (var force in _pendingForces)
+                {
+                    switch (force.Mode)
+                    {
+                        case ForceMode.Force:
+                            v += force.Force * force.DeltaTime / _rigidbody.mass;
+                            break;
+                        case ForceMode.Acceleration:
+                            v += force.Force * force.DeltaTime;
+                            break;
+                        case ForceMode.Impulse:
+                            v += force.Force / _rigidbody.mass;
+                            break;
+                        case ForceMode.VelocityChange:
+                            v += force.Force;
+                            break;
+                    }
+                }
+                
                 _targetVelocity = v;
             }
         }

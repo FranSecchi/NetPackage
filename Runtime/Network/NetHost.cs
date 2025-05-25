@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using NetPackage.Messages;
 using NetPackage.Synchronization;
 using NetPackage.Transport;
@@ -118,7 +119,11 @@ namespace NetPackage.Network
                 Send(msg);
             }
             StateManager.SetSync(obj);
-            obj.target.Remove(obj.SenderId);
+            if(obj.SenderId != -1 && obj.target == null)
+            {
+                obj.target = Clients.Keys.ToList();
+                obj.target.Remove(obj.SenderId);
+            }
             Send(obj);
         }
         

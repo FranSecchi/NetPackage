@@ -98,27 +98,92 @@ namespace NetPackage.Synchronization
         {
             if (_syncPosition)
             {
-                if (changes.ContainsKey("_positionX")) _positionX = (float)changes["_positionX"];
-                if (changes.ContainsKey("_positionY")) _positionY = (float)changes["_positionY"];
-                if (changes.ContainsKey("_positionZ")) _positionZ = (float)changes["_positionZ"];
-                _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
+                bool shouldUpdatePosition = true;
+                if (changes.ContainsKey("_positionX")) 
+                {
+                    float newX = (float)changes["_positionX"];
+                    shouldUpdatePosition &= Mathf.Abs(newX - transform.position.x) <= _positionThreshold;
+                }
+                if (changes.ContainsKey("_positionY")) 
+                {
+                    float newY = (float)changes["_positionY"];
+                    shouldUpdatePosition &= Mathf.Abs(newY - transform.position.y) <= _positionThreshold;
+                }
+                if (changes.ContainsKey("_positionZ")) 
+                {
+                    float newZ = (float)changes["_positionZ"];
+                    shouldUpdatePosition &= Mathf.Abs(newZ - transform.position.z) <= _positionThreshold;
+                }
+
+                if (shouldUpdatePosition)
+                {
+                    if (changes.ContainsKey("_positionX")) _positionX = (float)changes["_positionX"];
+                    if (changes.ContainsKey("_positionY")) _positionY = (float)changes["_positionY"];
+                    if (changes.ContainsKey("_positionZ")) _positionZ = (float)changes["_positionZ"];
+                    _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
+                }
             }
 
             if (_syncRotation)
             {
-                if (changes.ContainsKey("_rotationX")) _rotationX = (float)changes["_rotationX"];
-                if (changes.ContainsKey("_rotationY")) _rotationY = (float)changes["_rotationY"];
-                if (changes.ContainsKey("_rotationZ")) _rotationZ = (float)changes["_rotationZ"];
-                if (changes.ContainsKey("_rotationW")) _rotationW = (float)changes["_rotationW"];
-                _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
+                bool shouldUpdateRotation = true;
+                if (changes.ContainsKey("_rotationX")) 
+                {
+                    float newX = (float)changes["_rotationX"];
+                    shouldUpdateRotation &= Mathf.Abs(newX - transform.rotation.x) <= _rotationThreshold;
+                }
+                if (changes.ContainsKey("_rotationY")) 
+                {
+                    float newY = (float)changes["_rotationY"];
+                    shouldUpdateRotation &= Mathf.Abs(newY - transform.rotation.y) <= _rotationThreshold;
+                }
+                if (changes.ContainsKey("_rotationZ")) 
+                {
+                    float newZ = (float)changes["_rotationZ"];
+                    shouldUpdateRotation &= Mathf.Abs(newZ - transform.rotation.z) <= _rotationThreshold;
+                }
+                if (changes.ContainsKey("_rotationW")) 
+                {
+                    float newW = (float)changes["_rotationW"];
+                    shouldUpdateRotation &= Mathf.Abs(newW - transform.rotation.w) <= _rotationThreshold;
+                }
+
+                if (shouldUpdateRotation)
+                {
+                    if (changes.ContainsKey("_rotationX")) _rotationX = (float)changes["_rotationX"];
+                    if (changes.ContainsKey("_rotationY")) _rotationY = (float)changes["_rotationY"];
+                    if (changes.ContainsKey("_rotationZ")) _rotationZ = (float)changes["_rotationZ"];
+                    if (changes.ContainsKey("_rotationW")) _rotationW = (float)changes["_rotationW"];
+                    _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
+                }
             }
 
             if (_syncScale)
             {
-                if (changes.ContainsKey("_scaleX")) _scaleX = (float)changes["_scaleX"];
-                if (changes.ContainsKey("_scaleY")) _scaleY = (float)changes["_scaleY"];
-                if (changes.ContainsKey("_scaleZ")) _scaleZ = (float)changes["_scaleZ"];
-                _targetScale = new Vector3(_scaleX, _scaleY, _scaleZ);
+                bool shouldUpdateScale = true;
+                if (changes.ContainsKey("_scaleX")) 
+                {
+                    float newX = (float)changes["_scaleX"];
+                    shouldUpdateScale &= Mathf.Abs(newX - transform.localScale.x) <= _scaleThreshold;
+                }
+                if (changes.ContainsKey("_scaleY")) 
+                {
+                    float newY = (float)changes["_scaleY"];
+                    shouldUpdateScale &= Mathf.Abs(newY - transform.localScale.y) <= _scaleThreshold;
+                }
+                if (changes.ContainsKey("_scaleZ")) 
+                {
+                    float newZ = (float)changes["_scaleZ"];
+                    shouldUpdateScale &= Mathf.Abs(newZ - transform.localScale.z) <= _scaleThreshold;
+                }
+
+                if (shouldUpdateScale)
+                {
+                    if (changes.ContainsKey("_scaleX")) _scaleX = (float)changes["_scaleX"];
+                    if (changes.ContainsKey("_scaleY")) _scaleY = (float)changes["_scaleY"];
+                    if (changes.ContainsKey("_scaleZ")) _scaleZ = (float)changes["_scaleZ"];
+                    _targetScale = new Vector3(_scaleX, _scaleY, _scaleZ);
+                }
             }
         }
 

@@ -65,7 +65,6 @@ namespace NetPackage.Synchronization
                 var oldState = _stateHistory.Dequeue();
                 oldState.Snapshot.Clear();
                 oldState.Inputs.Clear();
-                DebugQueue.AddMessage($"State history limit reached ({_maxStates}), oldest state removed", DebugQueue.MessageType.Rollback);
             }
             
             var currentState = new GameState

@@ -54,6 +54,12 @@ namespace NetPackage.Synchronization
                 return;
             StateManager.Register(NetObject.NetId, this);
             RPCManager.Register(NetObject.NetId, this);
+            
+            if (NetManager.Rollback && isOwned)
+            {
+                RollbackManager.UpdatePrediction += UpdatePrediction;
+                if(!_isPredicting) StartPrediction();
+            }
             if (!spawned)
             {
                 DebugQueue.AddMessage($"Spawned {GetType().Name} | {gameObject.name}.", DebugQueue.MessageType.Warning);
@@ -65,11 +71,6 @@ namespace NetPackage.Synchronization
             {
                 OnNetEnable();
             }
-            if (NetManager.Rollback && isOwned)
-            {
-                RollbackManager.UpdatePrediction += UpdatePrediction;
-                if(!_isPredicting) StartPrediction();
-            }
         }
 
         private void OnDisable()
@@ -78,12 +79,12 @@ namespace NetPackage.Synchronization
                 return;
             StateManager.Unregister(NetObject.NetId, this);
             RPCManager.Unregister(NetObject.NetId, this);
-            OnNetDisable();
             if (NetManager.Rollback && isOwned && _isPredicting)
             {
                 RollbackManager.UpdatePrediction -= UpdatePrediction;
                 if(_isPredicting) StopPrediction();
             }
+            OnNetDisable();
         }
 
         private void Start()
@@ -192,45 +193,31 @@ namespace NetPackage.Synchronization
             enabled = false;
         }
         
-        private void UpdatePrediction()
-        {
-            if (!isOwned || !_isPredicting) return;
-            
-            float currentTime = Time.time;
-            float timeSinceLastPrediction = currentTime - _lastPredictionTime;
-            
-            // Stop prediction if we've predicted too far ahead
-            if (timeSinceLastPrediction > _maxPredictionTime)
-            {
-                DebugQueue.AddMessage($"Prediction timeout for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
-                StopPrediction();
-                return;
-            }
-
-            if (timeSinceLastPrediction >= _predictionDelay)
-            {
-                try
-                {
-                    Predict(timeSinceLastPrediction);
-                    _lastPredictionTime = currentTime;
-                }
-                catch (Exception e)
-                {
-                    DebugQueue.AddMessage($"Prediction failed for {GetType().Name}: {e.Message}", DebugQueue.MessageType.Error);
-                    StopPrediction();
-                }
-            }
-        }
         
         // Prediction methods
         private void StartPrediction()
         {
-            if (!isOwned) return;
             _isPredicting = true;
             _lastPredictionTime = Time.time;
             _lastReconcileTime = Time.time;
             DebugQueue.AddMessage($"Started prediction for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
             OnPredictionStart();
+        }
+        private void UpdatePrediction(RollbackManager.GameState state)
+        {
+            if (!_isPredicting) return;
+            if (!state.Snapshot.ContainsKey(NetID) || !state.Snapshot[NetID].HasComponent(this)) return;
+            
+            try
+            {
+                DebugQueue.AddMessage($"Attempting prediction for object {NetID} | {GetType().Name}", DebugQueue.MessageType.Rollback);
+                Predict(state.Timestamp, state.Snapshot[NetID], state.Inputs);
+            }
+            catch (Exception e)
+            {
+                DebugQueue.AddMessage($"Prediction failed for {GetType().Name}: {e.Message}", DebugQueue.MessageType.Error);
+                StopPrediction();
+            }
         }
         
         private void StopPrediction()
@@ -243,19 +230,33 @@ namespace NetPackage.Synchronization
         
         protected virtual void OnPredictionStart() { }
         protected virtual void OnPredictionStop() { }
-        
+        protected virtual void OnPausePrediction(){ }
+        protected virtual void OnResumePrediction(){ }
+
+        public void PausePrediction()
+        {
+            _isPredicting = false;
+            OnPausePrediction();
+        }
+
+        public void ResumePrediction()
+        {
+            _isPredicting = true;
+            OnResumePrediction();
+        }
+
         // Called by StateManager when state changes are received
-        public void OnStateReceived(int id, Dictionary<string, object> changes)
+        internal void OnReconciliation(int id, Dictionary<string, object> changes, float deltaTime)
         {
             if (changes == null || changes.Count == 0) return;
 
-            if (isOwned && _isPredicting)
+            if (_isPredicting)
             {
-                DebugQueue.AddMessage($"State Received for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
+                DebugQueue.AddMessage($"Reconciliation received for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
                 if (IsDesynchronized(changes))
                 {
                     DebugQueue.AddRollback(NetID, _lastReconcileTime, $"Desync detected for {GetType().Name} | {gameObject.name}");
-                    RollbackManager.RollbackToTime(NetID, id, _lastReconcileTime, changes);
+                    RollbackManager.RollbackToTime(NetID, id, deltaTime, changes);
                 }
                 else
                 {
@@ -268,22 +269,8 @@ namespace NetPackage.Synchronization
         protected virtual void OnStateReconcile(Dictionary<string, object> changes) { }
         
         // New virtual methods for prediction and desync detection
-        protected virtual void Predict(float deltaTime){ }
-        public virtual void PausePrediction(){ }
-        public virtual void ResumePrediction(){ }
+        protected virtual void Predict(float deltaTime, ObjectState lastState, List<RollbackManager.InputCommand> lastInputs){ }
 
         protected virtual bool IsDesynchronized(Dictionary<string, object> changes){ return false; }
-        
-        protected virtual T GetFieldValue<T>(string fieldName)
-        {
-            if (NetObject?.State == null) return default;
-            return NetObject.State.GetFieldValue<T>(this, fieldName);
-        }
-
-        protected virtual object GetFieldValue(string fieldName)
-        {
-            if (NetObject?.State == null) return null;
-            return NetObject.State.GetFieldValue<object>(this, fieldName);
-        }
     }
 }

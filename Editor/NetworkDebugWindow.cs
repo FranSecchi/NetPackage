@@ -184,6 +184,9 @@ namespace NetPackage.Editor
                     case DebugQueue.MessageType.State:
                         GUI.color = Color.magenta;
                         break;
+                    case DebugQueue.MessageType.Rollback:
+                        GUI.color = new Color(1f, 0.5f, 0f); // Orange color for rollback messages
+                        break;
                 }
 
                 EditorGUILayout.LabelField($"[{message.Timestamp:F2}s] {message.Message}");

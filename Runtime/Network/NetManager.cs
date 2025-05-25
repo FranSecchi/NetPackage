@@ -190,9 +190,9 @@ namespace NetPackage.Network
                 if (currentTime - _lastStateUpdate >= stateUpdateInterval)
                 {
                     StateManager.SendUpdateStates();
-                    if(useRollback) RollbackManager.Update();
                     _lastStateUpdate = currentTime;
                 }
+                if(useRollback) RollbackManager.Update();
             }
         }
 
@@ -202,6 +202,7 @@ namespace NetPackage.Network
             _manager.mainThreadActions.Clear();
             Messager.ClearHandlers();
             NetScene.CleanUp();
+            if(useRollback) RollbackManager.Clear();
         }
 
         private void OnApplicationQuit()
@@ -210,6 +211,7 @@ namespace NetPackage.Network
             _manager.mainThreadActions.Clear();
             Messager.ClearHandlers();
             NetScene.CleanUp();
+            if(useRollback) RollbackManager.Clear();
         }
 
         /// <summary>

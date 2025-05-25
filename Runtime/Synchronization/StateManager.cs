@@ -167,14 +167,8 @@ namespace NetPackage.Synchronization
 
             if (snapshot.TryGetValue(syncMessage.ObjectID, out ObjectState state) && state.HasComponent(syncMessage.ComponentId))
             {
-                if (syncMessage.SenderId == NetManager.ConnectionId())
-                {
-                    state.Reconcile(syncMessage.ObjectID, syncMessage.ComponentId, syncMessage.changedValues);
-                }
-                else 
-                {
-                    state.SetChange(syncMessage.ComponentId, syncMessage.changedValues);
-                }
+                state.SetChange(syncMessage.ComponentId, syncMessage.changedValues);
+                
             }
             else 
             {
@@ -221,7 +215,7 @@ namespace NetPackage.Synchronization
         {
             if (_pendingSyncs.TryGetValue(objectId, out var syncs))
             {
-                foreach (var (sync, timestamp) in syncs)
+                foreach (var (sync, _) in syncs)
                 {
                     DebugQueue.AddMessage($"Set pending sync obj: {objectId}", DebugQueue.MessageType.State);
                     if(snapshot.TryGetValue(objectId, out var state) && state.HasComponent(sync.ComponentId)) 

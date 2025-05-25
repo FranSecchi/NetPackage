@@ -28,16 +28,15 @@ namespace NetPackage.Synchronization
         [Sync] private float _velocityX;
         [Sync] private float _velocityY;
         [Sync] private float _velocityZ;
+        
         [Sync] private float _mass;
         [Sync] private float _drag;
         [Sync] private float _angularDrag;
         [Sync] private bool _useGravity;
-        [Sync] private bool _isKinematic;
 
         [SerializeField] private float _interpolationBackTime = 0.1f;
         [SerializeField] private float _interpolationSpeed = 10f;
         
-        private bool _isSynchronized = true;
         private Rigidbody _rigidbody;
         private Vector3 _targetPosition;
         private Quaternion _targetRotation;
@@ -67,16 +66,6 @@ namespace NetPackage.Synchronization
             set => _syncProperties = value;
         }
 
-        public override void PausePrediction()
-        {
-            _isSynchronized = false;
-        }
-
-        public override void ResumePrediction()
-        {
-            _isSynchronized = true;
-        }
-
         protected override void OnNetSpawn()
         {
             if (!NetManager.Active || !NetManager.Running)
@@ -86,7 +75,7 @@ namespace NetPackage.Synchronization
             if(!isOwned)
             {
                 _rigidbody.isKinematic = true;
-                _syncProperties = false;
+                _syncProperties = true;
             }
 
             SendState();
@@ -102,7 +91,8 @@ namespace NetPackage.Synchronization
             {
                 if (changes.ContainsKey("_positionX")) _positionX = (float)changes["_positionX"];
                 if (changes.ContainsKey("_positionY")) _positionY = (float)changes["_positionY"];
-                if (changes.ContainsKey("_positionZ")) _positionZ = (float)changes["_positionZ"];
+                if (changes.ContainsKey("_positionZ")) _positionZ = (float)changes["_positionZ"];            
+                _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
             }
             if (_syncRotation)
             {
@@ -110,12 +100,14 @@ namespace NetPackage.Synchronization
                 if (changes.ContainsKey("_rotationY")) _rotationY = (float)changes["_rotationY"];
                 if (changes.ContainsKey("_rotationZ")) _rotationZ = (float)changes["_rotationZ"];
                 if (changes.ContainsKey("_rotationW")) _rotationW = (float)changes["_rotationW"];
+                _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
             }
             if (_syncVelocity)
             {
                 if (changes.ContainsKey("_velocityX")) _velocityX = (float)changes["_velocityX"];
                 if (changes.ContainsKey("_velocityY")) _velocityY = (float)changes["_velocityY"];
                 if (changes.ContainsKey("_velocityZ")) _velocityZ = (float)changes["_velocityZ"];
+                _targetVelocity = new Vector3(_velocityX, _velocityY, _velocityZ);
             }
             if (_syncProperties)
             {
@@ -123,12 +115,8 @@ namespace NetPackage.Synchronization
                 if (changes.ContainsKey("_drag")) _drag = (float)changes["_drag"];
                 if (changes.ContainsKey("_angularDrag")) _angularDrag = (float)changes["_angularDrag"];
                 if (changes.ContainsKey("_useGravity")) _useGravity = (bool)changes["_useGravity"];
-                if (changes.ContainsKey("_isKinematic")) _isKinematic = (bool)changes["_isKinematic"];
             }
 
-            _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
-            _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
-            _targetVelocity = new Vector3(_velocityX, _velocityY, _velocityZ);
         }
 
         protected override bool IsDesynchronized(Dictionary<string, object> changes)
@@ -157,7 +145,7 @@ namespace NetPackage.Synchronization
             return false;
         }
 
-        protected override void Predict(float deltaTime)
+        protected override void Predict(float deltaTime, ObjectState lastState, List<RollbackManager.InputCommand> lastInputs)
         {
             if (_syncPosition)
             {
@@ -179,14 +167,22 @@ namespace NetPackage.Synchronization
 
         private void FixedUpdate()
         {
-            if (!NetManager.Active || !NetManager.Running || !_isSynchronized)
+            if (!NetManager.Active || !NetManager.Running)
                 return;
             
-            SetState();
-            if (isOwned)
+            if (!isOwned)
             {
-                SendState();
+                if (_syncPosition)
+                    _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
+    
+                if (_syncRotation)
+                    _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
+    
+                if (_syncVelocity)
+                    _targetVelocity = new Vector3(_velocityX, _velocityY, _velocityZ);
             }
+
+            SetState();
         }
 
         private void SendState()
@@ -216,28 +212,24 @@ namespace NetPackage.Synchronization
                 _drag = _rigidbody.drag;
                 _angularDrag = _rigidbody.angularDrag;
                 _useGravity = _rigidbody.useGravity;
-                _isKinematic = _rigidbody.isKinematic;
             }
         }
 
         private void SetState()
         {
+            float lerpSpeed = Time.deltaTime * _interpolationSpeed;
             if (_syncPosition)
             {
-                _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
-                _rigidbody.position = Vector3.Lerp(_rigidbody.position, _targetPosition, Time.fixedDeltaTime * _interpolationSpeed);
+                _rigidbody.position = Vector3.Lerp(_rigidbody.position, _targetPosition, lerpSpeed);
             }
             if (_syncRotation)
             {                    
-                _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
-                _rigidbody.rotation = Quaternion.Slerp(_rigidbody.rotation, _targetRotation, Time.fixedDeltaTime * _interpolationSpeed);
+                _rigidbody.rotation = Quaternion.Slerp(_rigidbody.rotation, _targetRotation, lerpSpeed);
             }
             if (_syncVelocity)
             {
-                _targetVelocity = new Vector3(_velocityX, _velocityY, _velocityZ);
-                _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, _targetVelocity, Time.fixedDeltaTime * _interpolationSpeed);
+                _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, _targetVelocity, lerpSpeed);
             }
-            _rigidbody.isKinematic = _isKinematic;
             _rigidbody.drag = _drag;
             _rigidbody.angularDrag = _angularDrag;
             _rigidbody.useGravity = _useGravity;

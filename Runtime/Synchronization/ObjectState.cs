@@ -21,7 +21,6 @@ namespace NetPackage.Synchronization
         private int _nextId;
         private Dictionary<object, Dictionary<string, FieldInfo>> _fieldCache;
         public Dictionary<object, Dictionary<FieldInfo, object>> TrackedSyncVars => _trackedSyncVars;
-        public Dictionary<int, object> ObjectIds => _objectIds;
 
         public ObjectState()
         {
@@ -136,7 +135,7 @@ namespace NetPackage.Synchronization
             return allChanges;
         }
 
-        public void SetChange(int id, Dictionary<string, object> changes)
+        public void SetChange(int id, Dictionary<string, object> changes, bool isRollback = false)
         {
             if (changes == null || changes.Count == 0) return;
 
@@ -152,6 +151,8 @@ namespace NetPackage.Synchronization
                             if (field.GetValue(obj) != change.Value)
                             {
                                 field.SetValue(obj, change.Value);
+                                if(isRollback)
+                                    _trackedSyncVars[obj][field] = change.Value;
                             }
                         }
                     }
@@ -163,7 +164,7 @@ namespace NetPackage.Synchronization
             }
         }
         
-        public void Reconcile(int netId, int id, Dictionary<string, object> changes)
+        public void Reconcile(int netId, int id, Dictionary<string, object> changes, float deltaTime)
         {
             if (changes == null || changes.Count == 0) return;
 
@@ -171,7 +172,7 @@ namespace NetPackage.Synchronization
             {
                 if (obj is NetBehaviour netBehaviour)
                 {
-                    NetManager.EnqueueMainThread(() => netBehaviour.OnStateReceived(id, changes));
+                    NetManager.EnqueueMainThread(() => netBehaviour.OnReconciliation(id, changes, deltaTime));
                 }
             }
             else
@@ -180,7 +181,7 @@ namespace NetPackage.Synchronization
             }
         }
 
-        public Dictionary<FieldInfo, object> GetField(object obj)
+        public Dictionary<FieldInfo, object> GetFields(object obj)
         {
             if (obj == null) return null;
 
@@ -250,6 +251,9 @@ namespace NetPackage.Synchronization
         public bool HasComponent(int componentId)
         {
             return _objectIds.TryGetValue(componentId, out _);
+        }public bool HasComponent(object obj)
+        {
+            return _objectIds.ContainsValue(obj);
         }
     }
 }

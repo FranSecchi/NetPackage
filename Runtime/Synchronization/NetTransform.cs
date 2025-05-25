@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NetPackage.Network;
+using NetPackage.Utilities;
 using UnityEngine;
 
 namespace NetPackage.Synchronization
@@ -114,6 +115,7 @@ namespace NetPackage.Synchronization
 
             if (_syncScale)
                 transform.localScale = Vector3.Lerp(transform.localScale, _targetScale, lerpSpeed);
+            SetState();
         }
 
         protected override void OnStateReconcile(Dictionary<string, object> changes)
@@ -122,39 +124,24 @@ namespace NetPackage.Synchronization
 
             if (_syncPosition)
             {
-                if (changes.ContainsKey("_positionX")) _positionX = (float)changes["_positionX"];
-                if (changes.ContainsKey("_positionY")) _positionY = (float)changes["_positionY"];
-                if (changes.ContainsKey("_positionZ")) _positionZ = (float)changes["_positionZ"];
-                _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
-                if (NetManager.IsHost)
-                {
-                    DebugQueue.AddMessage($"Host {NetID} received position update: {_targetPosition}", DebugQueue.MessageType.Warning);
-                }
+                if (changes.ContainsKey("_positionX")) _targetPosition.x = (float)changes["_positionX"];
+                if (changes.ContainsKey("_positionY")) _targetPosition.y = (float)changes["_positionY"];
+                if (changes.ContainsKey("_positionZ")) _targetPosition.z = (float)changes["_positionZ"];
             }
 
             if (_syncRotation)
             {
-                if (changes.ContainsKey("_rotationX")) _rotationX = (float)changes["_rotationX"];
-                if (changes.ContainsKey("_rotationY")) _rotationY = (float)changes["_rotationY"];
-                if (changes.ContainsKey("_rotationZ")) _rotationZ = (float)changes["_rotationZ"];
-                if (changes.ContainsKey("_rotationW")) _rotationW = (float)changes["_rotationW"];
-                _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
-                if (NetManager.IsHost)
-                {
-                    DebugQueue.AddMessage($"Host {NetID} received rotation update: {_targetRotation.eulerAngles}", DebugQueue.MessageType.Warning);
-                }
+                if (changes.ContainsKey("_rotationX")) _targetRotation.x = (float)changes["_rotationX"];
+                if (changes.ContainsKey("_rotationY")) _targetRotation.y = (float)changes["_rotationY"];
+                if (changes.ContainsKey("_rotationZ")) _targetRotation.z = (float)changes["_rotationZ"];
+                if (changes.ContainsKey("_rotationW")) _targetRotation.w = (float)changes["_rotationW"];
             }
 
             if (_syncScale)
             {
-                if (changes.ContainsKey("_scaleX")) _scaleX = (float)changes["_scaleX"];
-                if (changes.ContainsKey("_scaleY")) _scaleY = (float)changes["_scaleY"];
-                if (changes.ContainsKey("_scaleZ")) _scaleZ = (float)changes["_scaleZ"];
-                _targetScale = new Vector3(_scaleX, _scaleY, _scaleZ);
-                if (NetManager.IsHost)
-                {
-                    DebugQueue.AddMessage($"Host {NetID} received scale update: {_targetScale}", DebugQueue.MessageType.Warning);
-                }
+                if (changes.ContainsKey("_scaleX")) _targetScale.x= (float)changes["_scaleX"];
+                if (changes.ContainsKey("_scaleY")) _targetScale.y= (float)changes["_scaleY"];
+                if (changes.ContainsKey("_scaleZ")) _targetScale.z= (float)changes["_scaleZ"];
             }
         }
 
@@ -191,31 +178,32 @@ namespace NetPackage.Synchronization
         {
             if (_syncPosition)
             {
-                _positionX = transform.position.x;
-                _positionY = transform.position.y;
-                _positionZ = transform.position.z;
                 _targetPosition = transform.position;
             }
 
             if (_syncRotation)
             {
-                _rotationX = transform.rotation.x;
-                _rotationY = transform.rotation.y;
-                _rotationZ = transform.rotation.z;
-                _rotationW = transform.rotation.w;
                 _targetRotation = transform.rotation;
             }
 
             if (_syncScale)
             {
-                _scaleX = transform.localScale.x;
-                _scaleY = transform.localScale.y;
-                _scaleZ = transform.localScale.z;
                 _targetScale = transform.localScale;
             }
         }
 
         protected override void OnPausePrediction()
+        {
+            SetState();
+            _isPredicting = false;
+        }
+
+        protected override void OnResumePrediction()
+        {
+            _isPredicting = true;
+        }
+
+        private void SetState()
         {
             _positionX = transform.position.x;
             _positionY = transform.position.y;
@@ -230,12 +218,6 @@ namespace NetPackage.Synchronization
             _targetPosition = transform.position;
             _targetRotation = transform.rotation;
             _targetScale = transform.localScale;
-            _isPredicting = false;
-        }
-
-        protected override void OnResumePrediction()
-        {
-            _isPredicting = true;
         }
     }
 }

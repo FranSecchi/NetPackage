@@ -41,7 +41,7 @@ namespace NetPackage.Network
                 NetMessage m = new SpawnValidationMessage(obj, -1);
                 NetHost.Send(m);
                 validatedObjects.Remove(obj);
-                ValidateSpawn(player);
+                ValidateSpawn(obj);
             }
         }
         private static void OnValidateSpawn(SpawnValidationMessage obj)

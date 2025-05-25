@@ -91,6 +91,7 @@ namespace NetPackage.Synchronization
                 _wasInterpolation = _rigidbody.interpolation;
                 
                 // Set up for network-controlled movement
+                _rigidbody.collisionDetectionMode = CollisionDetectionMode.Discrete;
                 _rigidbody.isKinematic = true;
                 _rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
                 

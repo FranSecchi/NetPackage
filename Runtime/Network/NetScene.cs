@@ -26,7 +26,32 @@ namespace NetPackage.Network
             Messager.RegisterHandler<DestroyMessage>(OnDestroyMessage);
             Messager.RegisterHandler<SceneLoadMessage>(OnSceneLoadMessage);
             Messager.RegisterHandler<SpawnMessage>(OnSpawnMessage);
+            Messager.RegisterHandler<SpawnValidationMessage>(OnValidateSpawn);
             sceneName = SceneManager.GetActiveScene().name;
+        }
+
+        private static void CheckValidateSpawn(int obj, int player)
+        {
+            if (!validatedObjects.ContainsKey(obj))
+                validatedObjects[obj] = new List<int>();
+            validatedObjects[obj].Add(player);
+            DebugQueue.AddMessage($"NetID {obj} | Validated: {validatedObjects[obj].Count}/{connectedPlayers}");
+            if(validatedObjects[obj].Count >= connectedPlayers)
+            {
+                validatedObjects.Remove(obj);
+                ValidateSpawn(player);
+            }
+        }
+        private static void OnValidateSpawn(SpawnValidationMessage obj)
+        {
+            if (NetManager.IsHost)
+            {
+                CheckValidateSpawn(obj.netObjectId, obj.requesterId);
+            }
+            else
+            {
+                ValidateSpawn(obj.netObjectId);
+            }
         }
 
         internal static void LoadScene(string name)
@@ -136,7 +161,6 @@ namespace NetPackage.Network
             if (msg.sceneId != "")
             {
                 if (!NetManager.IsHost) NetManager.EnqueueMainThread(() => { SpawnSceneObject(msg);}); 
-                else NetManager.EnqueueMainThread(() => { CheckValidateSpawn(msg);}); 
             }
             else
             {
@@ -144,18 +168,6 @@ namespace NetPackage.Network
             }
         }
 
-        private static void CheckValidateSpawn(SpawnMessage msg)
-        {
-            if (!validatedObjects.ContainsKey(msg.netObjectId))
-                validatedObjects[msg.netObjectId] = new List<int>();
-            validatedObjects[msg.netObjectId].Add(msg.requesterId);
-            DebugQueue.AddMessage($"{msg.netObjectId} has validated: {validatedObjects[msg.netObjectId].Count} vs {connectedPlayers}");
-            if(validatedObjects[msg.netObjectId].Count >= connectedPlayers)
-            {
-                validatedObjects.Remove(msg.netObjectId);
-                ValidateSpawn(msg);
-            }
-        }
         private static void SpawnSceneObject(SpawnMessage msg)
         {
             if (sceneObjects.TryGetValue(msg.sceneId, out GameObject obj))
@@ -167,16 +179,17 @@ namespace NetPackage.Network
                 netObj.SceneId = msg.sceneId;
                 obj.transform.position = msg.position;
                 obj.transform.rotation = msg.rotation;
-                NetManager.Send(msg);
-                ValidateSpawn(msg);
+                msg.requesterId = NetManager.ConnectionId();
+                NetMessage m = new SpawnValidationMessage(msg.netObjectId, NetManager.ConnectionId());
+                NetManager.Send(m);
             }
             else DebugQueue.AddMessage($"A spawn request of a not found scene object has been received. Scene Id: {msg.sceneId} Requested by {msg.requesterId}", DebugQueue.MessageType.Error);
         }
 
-        private static void ValidateSpawn(SpawnMessage msg)
+        private static void ValidateSpawn(int netObjectId)
         {
-            DebugQueue.AddMessage("Validated spawn: "+msg.netObjectId, DebugQueue.MessageType.Network);
-            GetNetObject(msg.netObjectId)?.Enable();
+            DebugQueue.AddMessage("Validated spawn: "+netObjectId, DebugQueue.MessageType.Network);
+            GetNetObject(netObjectId)?.Enable();
         }
 
         private static void SpawnImmediate(SpawnMessage msg)
@@ -198,7 +211,7 @@ namespace NetPackage.Network
                 
                 netObj.SceneId = "";
                 Register(netObj);
-                ValidateSpawn(msg);
+                ValidateSpawn(msg.netObjectId);
                 DebugQueue.AddMessage($"Spawned NetObject with ID {msg.netObjectId}, owned by {netObj.OwnerId}",
                     DebugQueue.MessageType.Network);
 

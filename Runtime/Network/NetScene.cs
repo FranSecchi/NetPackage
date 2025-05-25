@@ -35,7 +35,7 @@ namespace NetPackage.Network
             if (!validatedObjects.ContainsKey(obj))
                 validatedObjects[obj] = new List<int>();
             validatedObjects[obj].Add(player);
-            DebugQueue.AddMessage($"NetID {obj} | Validated: {validatedObjects[obj].Count}/{connectedPlayers}");
+            DebugQueue.AddMessage($"NetID {obj} | Validated: {validatedObjects[obj].Count}/{connectedPlayers}", DebugQueue.MessageType.Warning);
             if(validatedObjects[obj].Count >= connectedPlayers)
             {
                 NetMessage m = new SpawnValidationMessage(obj, -1);

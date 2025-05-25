@@ -47,7 +47,6 @@ namespace NetPackage.Network
                 {
                     SendObjects(msg.requesterId);
                 }
-                // else NetManager.LoadScene(msg.sceneName);
             }
             else if(sceneName != msg.sceneName)
             {
@@ -60,6 +59,7 @@ namespace NetPackage.Network
             SceneManager.sceneLoaded -= OnSceneLoaded;
             sceneName = scene.name;
             NetManager.Init();
+            connectedPlayers = NetManager.PlayerCount;
             SceneLoadMessage msg = new SceneLoadMessage(scene.name, NetManager.ConnectionId(), true);
             NetManager.Send(msg);
         }
@@ -71,7 +71,6 @@ namespace NetPackage.Network
 
             foreach (var prefab in prefabs)
             {
-                // prefab.GetComponent<NetBehaviour>().registered = true;
                 m_prefabs[prefab.name] = prefab;
             }
         }

@@ -42,6 +42,9 @@ namespace NetPackage.Synchronization
         private Quaternion _targetRotation;
         private Vector3 _targetVelocity;
         private List<ForceCommand> _pendingForces = new List<ForceCommand>();
+        private bool _wasKinematic;
+        private CollisionDetectionMode _wasCollisionDetection;
+        private RigidbodyInterpolation _wasInterpolation;
 
         private struct ForceCommand
         {
@@ -82,7 +85,16 @@ namespace NetPackage.Synchronization
 
             if(!isOwned)
             {
+                // Store original states
+                _wasKinematic = _rigidbody.isKinematic;
+                _wasCollisionDetection = _rigidbody.collisionDetectionMode;
+                _wasInterpolation = _rigidbody.interpolation;
+                
+                // Set up for network-controlled movement
                 _rigidbody.isKinematic = true;
+                _rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+                
+                // Ensure we sync properties
                 _syncProperties = true;
             }
 
@@ -91,6 +103,19 @@ namespace NetPackage.Synchronization
             _targetPosition = _rigidbody.position;
             _targetRotation = _rigidbody.rotation;
             _targetVelocity = _rigidbody.velocity;
+        }
+
+        protected override void OnNetDisable()
+        {
+            base.OnNetDisable();
+            
+            // Restore original states if not owned
+            if (!isOwned && _rigidbody != null)
+            {
+                _rigidbody.isKinematic = _wasKinematic;
+                _rigidbody.collisionDetectionMode = _wasCollisionDetection;
+                _rigidbody.interpolation = _wasInterpolation;
+            }
         }
 
         /// <summary>
@@ -143,6 +168,15 @@ namespace NetPackage.Synchronization
                 if (changes.ContainsKey("_drag")) _drag = (float)changes["_drag"];
                 if (changes.ContainsKey("_angularDrag")) _angularDrag = (float)changes["_angularDrag"];
                 if (changes.ContainsKey("_useGravity")) _useGravity = (bool)changes["_useGravity"];
+
+                // Update rigidbody properties for non-owned objects
+                if (!isOwned)
+                {
+                    _rigidbody.mass = _mass;
+                    _rigidbody.drag = _drag;
+                    _rigidbody.angularDrag = _angularDrag;
+                    _rigidbody.useGravity = _useGravity;
+                }
             }
 
             // Clear pending forces after reconciliation
@@ -177,6 +211,8 @@ namespace NetPackage.Synchronization
 
         protected override void Predict(float deltaTime, ObjectState lastState, List<RollbackManager.InputCommand> lastInputs)
         {
+            if (!isOwned) return;
+
             if (_syncPosition)
             {
                 Vector3 p = _rigidbody.position + _rigidbody.velocity * Time.fixedDeltaTime +
@@ -266,13 +302,31 @@ namespace NetPackage.Synchronization
         private void SetState()
         {
             float lerpSpeed = Time.deltaTime * _interpolationSpeed;
+            
             if (_syncPosition)
             {
-                _rigidbody.position = Vector3.Lerp(_rigidbody.position, _targetPosition, lerpSpeed);
+                if (!isOwned)
+                {
+                    // For non-owned objects, use rigidbody.MovePosition for better physics
+                    _rigidbody.MovePosition(Vector3.Lerp(_rigidbody.position, _targetPosition, lerpSpeed));
+                }
+                else
+                {
+                    _rigidbody.position = Vector3.Lerp(_rigidbody.position, _targetPosition, lerpSpeed);
+                }
             }
+            
             if (_syncRotation)
             {                    
-                _rigidbody.rotation = Quaternion.Slerp(_rigidbody.rotation, _targetRotation, lerpSpeed);
+                if (!isOwned)
+                {
+                    // For non-owned objects, use rigidbody.MoveRotation for better physics
+                    _rigidbody.MoveRotation(Quaternion.Slerp(_rigidbody.rotation, _targetRotation, lerpSpeed));
+                }
+                else
+                {
+                    _rigidbody.rotation = Quaternion.Slerp(_rigidbody.rotation, _targetRotation, lerpSpeed);
+                }
             }
         }
     }

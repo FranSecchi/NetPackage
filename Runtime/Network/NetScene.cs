@@ -21,7 +21,7 @@ namespace NetPackage.Network
         internal static void Init()
         {
             netObjectId = 0;
-            connectedPlayers = NetManager.PlayerCount;
+            connectedPlayers = NetManager.PlayerCount - 1;
             Messager.RegisterHandler<OwnershipMessage>(OnOwnership);
             Messager.RegisterHandler<DestroyMessage>(OnDestroyMessage);
             Messager.RegisterHandler<SceneLoadMessage>(OnSceneLoadMessage);
@@ -86,7 +86,7 @@ namespace NetPackage.Network
             SceneManager.sceneLoaded -= OnSceneLoaded;
             sceneName = scene.name;
             NetManager.Init();
-            connectedPlayers = NetManager.PlayerCount;
+            connectedPlayers = NetManager.PlayerCount - 1;
             SceneLoadMessage msg = new SceneLoadMessage(scene.name, NetManager.ConnectionId(), true);
             NetManager.Send(msg);
         }

@@ -177,9 +177,6 @@ namespace NetPackage.Synchronization
     
                 if (_syncRotation)
                     _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
-    
-                if (_syncVelocity)
-                    _targetVelocity = new Vector3(_velocityX, _velocityY, _velocityZ);
             }
 
             SetState();
@@ -226,14 +223,6 @@ namespace NetPackage.Synchronization
             {                    
                 _rigidbody.rotation = Quaternion.Slerp(_rigidbody.rotation, _targetRotation, lerpSpeed);
             }
-            if (_syncVelocity)
-            {
-                _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, _targetVelocity, lerpSpeed);
-            }
-            _rigidbody.drag = _drag;
-            _rigidbody.angularDrag = _angularDrag;
-            _rigidbody.useGravity = _useGravity;
-            _rigidbody.mass = _mass;
         }
     }
 } 

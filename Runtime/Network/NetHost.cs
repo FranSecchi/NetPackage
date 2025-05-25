@@ -119,11 +119,11 @@ namespace NetPackage.Network
                 Send(msg);
             }
             StateManager.SetSync(obj);
-            if(obj.SenderId != -1 && obj.target == null)
+            if(obj.target == null)
             {
                 obj.target = Clients.Keys.ToList();
-                obj.target.Remove(obj.SenderId);
             }
+            obj.target.Remove(obj.SenderId);
             Send(obj);
         }
         

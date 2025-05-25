@@ -42,14 +42,35 @@ namespace NetPackage.Synchronization
 
         private static void OnReconcileMessage(ReconcileMessage obj)
         {
-            GameState? state = GetStateAtTime(obj.Timestamp);
-            if (state.HasValue)
-            {
-                StateManager.GetState(obj.ObjectId).Reconcile(obj.ObjectId, obj.ComponentId, obj.Values, obj.Timestamp);
-            }
-            else DebugQueue.AddMessage($"Too late for reconcile {obj.ObjectId} | Passed time: {DateTime.UtcNow.Millisecond - obj.Timestamp}");
-        }
+            if (_stateHistory.Count == 0)
+                return;
 
+            var targetState = GetStateAtTime(obj.Timestamp);
+            if (!targetState.HasValue)
+            {
+                DebugQueue.AddMessage($"Failed to find state for reconciliation of object {obj.ObjectId} at time {obj.Timestamp:HH:mm:ss.fff}", DebugQueue.MessageType.Rollback);
+                return;
+            }
+
+            if (!targetState.Value.Snapshot.TryGetValue(obj.ObjectId, out var state))
+            {
+                DebugQueue.AddMessage($"Object {obj.ObjectId} not found in state snapshot at time {obj.Timestamp:HH:mm:ss.fff}", DebugQueue.MessageType.Rollback);
+                return;
+            }
+
+            if (!state.HasComponent(obj.ComponentId))
+            {
+                DebugQueue.AddMessage($"Component {obj.ComponentId} not found in object {obj.ObjectId} at time {obj.Timestamp:HH:mm:ss.fff}", DebugQueue.MessageType.Rollback);
+                return;
+            }
+
+            var timeDiff = (DateTime.UtcNow - obj.Timestamp).TotalSeconds;
+            
+            // Perform the reconciliation
+            state.Reconcile(obj.ObjectId, obj.ComponentId, obj.Values, obj.Timestamp);
+            
+            DebugQueue.AddMessage($"Reconciled object {obj.ObjectId} component {obj.ComponentId} at time {obj.Timestamp:HH:mm:ss.fff} (time diff: {timeDiff:F3}s)", DebugQueue.MessageType.Rollback);
+        }
 
         public static void Update()
         {
@@ -60,26 +81,41 @@ namespace NetPackage.Synchronization
         
         private static void StoreCurrentState()
         {
-            if (_stateHistory.Count >= _maxStates)
+            var currentTime = DateTime.UtcNow;
+            
+            // Remove states older than rollback window
+            while (_stateHistory.Count > 0)
             {
-                var oldState = _stateHistory.Dequeue();
-                oldState.Snapshot.Clear();
-                oldState.Inputs.Clear();
+                var oldestState = _stateHistory.Peek();
+                if ((currentTime - oldestState.Timestamp).TotalSeconds > _rollbackWindow)
+                {
+                    var oldState = _stateHistory.Dequeue();
+                    oldState.Snapshot.Clear();
+                    oldState.Inputs.Clear();
+                }
+                else
+                {
+                    break;
+                }
             }
             
-            var currentState = new GameState
+            // Add new state if we haven't reached max states
+            if (_stateHistory.Count < _maxStates)
             {
-                Timestamp = DateTime.UtcNow,
-                Snapshot = new Dictionary<int, ObjectState>(),
-                Inputs = new List<InputCommand>()
-            };
-            
-            foreach (var kvp in StateManager.GetAllStates())
-            {
-                currentState.Snapshot[kvp.Key] = kvp.Value.Clone();
+                var currentState = new GameState
+                {
+                    Timestamp = currentTime,
+                    Snapshot = new Dictionary<int, ObjectState>(),
+                    Inputs = new List<InputCommand>()
+                };
+                
+                foreach (var kvp in StateManager.GetAllStates())
+                {
+                    currentState.Snapshot[kvp.Key] = kvp.Value.Clone();
+                }
+                
+                _stateHistory.Enqueue(currentState);
             }
-            
-            _stateHistory.Enqueue(currentState);
         }
 
         private static void CleanupOldStates()
@@ -118,7 +154,7 @@ namespace NetPackage.Synchronization
             }
         }
         
-        public static void RollbackToTime(float targetTime)
+        public static void RollbackToTime(DateTime targetTime)
         {
             var targetState = GetStateAtTime(targetTime);
             if (!targetState.HasValue)
@@ -142,7 +178,7 @@ namespace NetPackage.Synchronization
             DebugQueue.AddMessage($"Rollback completed, replaying {inputsToReplay.Count} inputs", DebugQueue.MessageType.Rollback);
         }
 
-        public static void RollbackToTime(int netId, int id, float targetTime, Dictionary<string, object> changes)
+        public static void RollbackToTime(int netId, int id, DateTime targetTime, Dictionary<string, object> changes)
         {
             if (_stateHistory.Count == 0)
             {
@@ -193,32 +229,42 @@ namespace NetPackage.Synchronization
             DebugQueue.AddMessage($"RollbackManager cleared: {stateCount} states and {inputCount} inputs removed", DebugQueue.MessageType.Rollback);
         }
 
-        private static GameState? GetStateAtTime(float targetTime)
+        private static GameState? GetStateAtTime(DateTime targetTime)
         {
-            GameState? targetState = null;
+            if (_stateHistory.Count == 0) return null;
+            
+            GameState? closestState = null;
+            TimeSpan closestDiff = TimeSpan.MaxValue;
+            
             foreach (var state in _stateHistory)
             {
-                if (state.Timestamp.Millisecond <= targetTime)
+                var diff = (state.Timestamp - targetTime).Duration();
+                if (diff < closestDiff)
                 {
-                    targetState = state;
-                    break;
+                    closestDiff = diff;
+                    closestState = state;
                 }
             }
             
-            if (targetState == null)
+            if (closestState == null || closestDiff.TotalSeconds > _rollbackWindow)
             {
-                DebugQueue.AddMessage($"Failed to find state to roll back to at time {targetTime:F3}s", DebugQueue.MessageType.Rollback);
+                DebugQueue.AddMessage($"Failed to find state to roll back to at time {targetTime:HH:mm:ss.fff} (closest diff: {closestDiff.TotalMilliseconds}ms)", DebugQueue.MessageType.Rollback);
+                return null;
             }
             
-            return targetState;
+            return closestState;
         }
 
-        private static List<InputCommand> GetInputsAtTime(float targetTime)
+        private static List<InputCommand> GetInputsAtTime(DateTime targetTime)
         {
+            if (_inputBuffer.Count == 0) return null;
+            
             var inputsToReplay = new List<InputCommand>();
+            TimeSpan closestDiff = TimeSpan.MaxValue;
             foreach (var input in _inputBuffer)
             {
-                if (input.Timestamp.Millisecond >= targetTime)
+                var diff = (input.Timestamp - targetTime).Duration();
+                if (diff < closestDiff)
                 {
                     inputsToReplay.Add(input);
                 }

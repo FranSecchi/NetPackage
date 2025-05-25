@@ -1,7 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MessagePack;
-using NetPackage.Synchronization;
 
 namespace NetPackage.Messages
 {
@@ -10,11 +10,11 @@ namespace NetPackage.Messages
     {
         [Key(1)] public int ObjectId;
         [Key(2)] public int ComponentId;
-        [Key(3)] public float Timestamp;
+        [Key(3)] public DateTime Timestamp;
         [Key(4)] public Dictionary<string, object> Values;
 
         public ReconcileMessage(){}
-        public ReconcileMessage(int objectId, int componentId, float timestamp, Dictionary<string, object> values, int target) : base(new List<int>{target})
+        public ReconcileMessage(int objectId, int componentId, DateTime timestamp, Dictionary<string, object> values, int target) : base(new List<int>{target})
         {
             this.ObjectId = objectId;
             this.ComponentId = componentId;
@@ -24,7 +24,7 @@ namespace NetPackage.Messages
         public override string ToString()
         {
             string changes = Values != null ? string.Join(", ", Values.Select(kv => $"{kv.Key}={kv.Value}")) : "none";
-            return $"{base.ToString()} [{Timestamp}] ObjectID:{ObjectId}, ComponentID:{ComponentId}, Changes:{changes}";
+            return $"{base.ToString()} [{Timestamp:HH:mm:ss.fff}] ObjectID:{ObjectId}, ComponentID:{ComponentId}, Changes:{changes}";
         }
     }
 }

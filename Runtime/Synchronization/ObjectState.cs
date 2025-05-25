@@ -164,7 +164,7 @@ namespace NetPackage.Synchronization
             }
         }
         
-        public void Reconcile(int netId, int id, Dictionary<string, object> changes, float deltaTime)
+        public void Reconcile(int netId, int id, Dictionary<string, object> changes, DateTime timeStamp)
         {
             if (changes == null || changes.Count == 0) return;
 
@@ -172,7 +172,7 @@ namespace NetPackage.Synchronization
             {
                 if (obj is NetBehaviour netBehaviour)
                 {
-                    NetManager.EnqueueMainThread(() => netBehaviour.OnReconciliation(id, changes, deltaTime));
+                    netBehaviour.OnReconciliation(id, changes, timeStamp);
                 }
             }
             else

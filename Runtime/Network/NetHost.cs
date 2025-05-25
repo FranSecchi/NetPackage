@@ -115,7 +115,7 @@ namespace NetPackage.Network
             
             if (NetManager.Rollback)
             {
-                NetMessage msg = new ReconcileMessage(obj.ObjectID, obj.ComponentId, DateTime.UtcNow.Millisecond, obj.changedValues, obj.SenderId);
+                NetMessage msg = new ReconcileMessage(obj.ObjectID, obj.ComponentId, DateTime.UtcNow, obj.changedValues, obj.SenderId);
                 Send(msg);
             }
             StateManager.SetSync(obj);

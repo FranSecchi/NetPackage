@@ -36,10 +36,6 @@ namespace NetPackage.Synchronization
         private bool registered = false;
         // Prediction support
         protected bool _isPredicting = false;
-        protected float _lastPredictionTime;
-        protected float _lastReconcileTime;
-        protected float _predictionDelay = 0.1f;
-        protected float _maxPredictionTime = 0.5f; // Maximum time to predict ahead
         public bool IsPredicting => _isPredicting;
         /// <summary>
         /// Override - use only for declaring and initializing, network calls are not consistent.
@@ -198,8 +194,6 @@ namespace NetPackage.Synchronization
         private void StartPrediction()
         {
             _isPredicting = true;
-            _lastPredictionTime = Time.time;
-            _lastReconcileTime = Time.time;
             DebugQueue.AddMessage($"Started prediction for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
             OnPredictionStart();
         }
@@ -245,7 +239,7 @@ namespace NetPackage.Synchronization
         }
 
         // Called by StateManager when state changes are received
-        internal void OnReconciliation(int id, Dictionary<string, object> changes, float deltaTime)
+        internal void OnReconciliation(int id, Dictionary<string, object> changes, DateTime timestamp)
         {
             if (changes == null || changes.Count == 0) return;
 
@@ -254,13 +248,12 @@ namespace NetPackage.Synchronization
                 DebugQueue.AddMessage($"Reconciliation received for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
                 if (IsDesynchronized(changes))
                 {
-                    DebugQueue.AddRollback(NetID, _lastReconcileTime, $"Desync detected for {GetType().Name} | {gameObject.name}");
-                    RollbackManager.RollbackToTime(NetID, id, deltaTime, changes);
+                    DebugQueue.AddRollback(NetID, timestamp.Second, $"Desync detected for {GetType().Name} | {gameObject.name}");
+                    RollbackManager.RollbackToTime(NetID, id, timestamp, changes);
                 }
                 else
                 {
-                    _lastReconcileTime = Time.time;
-                    OnStateReconcile(changes);
+                    NetManager.EnqueueMainThread(() => OnStateReconcile(changes));
                 }
             }
         }

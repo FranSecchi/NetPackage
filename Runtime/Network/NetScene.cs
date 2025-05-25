@@ -15,10 +15,13 @@ namespace NetPackage.Network
         private static Dictionary<int, NetObject> netObjects = new Dictionary<int, NetObject>();
         private static Dictionary<string, GameObject> sceneObjects = new Dictionary<string, GameObject>();
         private static int netObjectId = 0;
+        private static int connectedPlayers = 0;
+        private static Dictionary<int, List<int>> validatedObjects = new Dictionary<int, List<int>>();
         private static string sceneName = "";
         internal static void Init()
         {
             netObjectId = 0;
+            connectedPlayers = NetManager.PlayerCount;
             Messager.RegisterHandler<OwnershipMessage>(OnOwnership);
             Messager.RegisterHandler<DestroyMessage>(OnDestroyMessage);
             Messager.RegisterHandler<SceneLoadMessage>(OnSceneLoadMessage);
@@ -133,8 +136,8 @@ namespace NetPackage.Network
         {
             if (msg.sceneId != "")
             {
-                if (!NetManager.IsHost) NetManager.EnqueueMainThread(() => { SpawnSceneObject(msg);}); // Host spawns a scene object
-                else NetManager.EnqueueMainThread(() => { ValidateSpawn(msg);}); // Host validates scene object spawned
+                if (!NetManager.IsHost) NetManager.EnqueueMainThread(() => { SpawnSceneObject(msg);}); 
+                else NetManager.EnqueueMainThread(() => { CheckValidateSpawn(msg);}); 
             }
             else
             {
@@ -142,6 +145,17 @@ namespace NetPackage.Network
             }
         }
 
+        private static void CheckValidateSpawn(SpawnMessage msg)
+        {
+            if (!validatedObjects.ContainsKey(msg.netObjectId))
+                validatedObjects[msg.netObjectId] = new List<int>();
+            validatedObjects[msg.netObjectId].Add(msg.requesterId);
+            if(validatedObjects[msg.netObjectId].Count >= connectedPlayers)
+            {
+                validatedObjects.Remove(msg.netObjectId);
+                ValidateSpawn(msg);
+            }
+        }
         private static void SpawnSceneObject(SpawnMessage msg)
         {
             if (sceneObjects.TryGetValue(msg.sceneId, out GameObject obj))

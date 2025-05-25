@@ -18,7 +18,7 @@ namespace NetPackage.Synchronization
 
         internal struct GameState
         {
-            public float Timestamp;
+            public DateTime Timestamp;
             public Dictionary<int, ObjectState> Snapshot;
             public List<InputCommand> Inputs;
         }
@@ -28,7 +28,7 @@ namespace NetPackage.Synchronization
             public int NetId;
             public string MethodName;
             public object[] Parameters;
-            public float Timestamp;
+            public DateTime Timestamp;
         }
         
         public static void Initialize(float rollbackWindow = 0.1f, int maxStates = 20)
@@ -47,7 +47,7 @@ namespace NetPackage.Synchronization
             {
                 StateManager.GetState(obj.ObjectId).Reconcile(obj.ObjectId, obj.ComponentId, obj.Values, obj.Timestamp);
             }
-            else DebugQueue.AddMessage($"Too late for reconcile {obj.ObjectId} | Passed time: {Time.time - obj.Timestamp}");
+            else DebugQueue.AddMessage($"Too late for reconcile {obj.ObjectId} | Passed time: {DateTime.UtcNow.Millisecond - obj.Timestamp}");
         }
 
 
@@ -70,7 +70,7 @@ namespace NetPackage.Synchronization
             
             var currentState = new GameState
             {
-                Timestamp = Time.time,
+                Timestamp = DateTime.UtcNow,
                 Snapshot = new Dictionary<int, ObjectState>(),
                 Inputs = new List<InputCommand>()
             };
@@ -85,16 +85,16 @@ namespace NetPackage.Synchronization
 
         private static void CleanupOldStates()
         {
-            float cutoffTime = Time.time - _rollbackWindow;
+            TimeSpan spanned = _stateHistory.Peek().Timestamp - DateTime.UtcNow;
             
-            while (_stateHistory.Count > 0 && _stateHistory.Peek().Timestamp < cutoffTime)
+            while (_stateHistory.Count > 0 && spanned.TotalMilliseconds > _rollbackWindow)
             {
                 var oldState = _stateHistory.Dequeue();
                 oldState.Snapshot.Clear();
                 oldState.Inputs.Clear();
             }
             
-            while (_inputBuffer.Count > 0 && _inputBuffer.Peek().Timestamp < cutoffTime)
+            while (_inputBuffer.Count > 0 && spanned.TotalMilliseconds > _rollbackWindow)
             {
                 _inputBuffer.Dequeue();
             }
@@ -107,7 +107,7 @@ namespace NetPackage.Synchronization
                 NetId = netId,
                 MethodName = methodName,
                 Parameters = parameters,
-                Timestamp = Time.time
+                Timestamp = DateTime.UtcNow
             };
             
             _inputBuffer.Enqueue(input);
@@ -199,7 +199,7 @@ namespace NetPackage.Synchronization
             GameState? targetState = null;
             foreach (var state in _stateHistory)
             {
-                if (state.Timestamp <= targetTime)
+                if (state.Timestamp.Millisecond <= targetTime)
                 {
                     targetState = state;
                     break;
@@ -219,7 +219,7 @@ namespace NetPackage.Synchronization
             var inputsToReplay = new List<InputCommand>();
             foreach (var input in _inputBuffer)
             {
-                if (input.Timestamp >= targetTime)
+                if (input.Timestamp.Millisecond >= targetTime)
                 {
                     inputsToReplay.Add(input);
                 }

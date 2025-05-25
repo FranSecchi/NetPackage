@@ -211,7 +211,7 @@ namespace NetPackage.Synchronization
             try
             {
                 DebugQueue.AddMessage($"Attempting prediction for object {NetID} | {GetType().Name}", DebugQueue.MessageType.Rollback);
-                Predict(state.Timestamp, state.Snapshot[NetID], state.Inputs);
+                Predict((state.Timestamp - DateTime.UtcNow).Milliseconds, state.Snapshot[NetID], state.Inputs);
             }
             catch (Exception e)
             {

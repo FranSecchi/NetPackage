@@ -34,6 +34,9 @@ namespace NetPackage.Synchronization
         private Vector3 _targetPosition;
         private Quaternion _targetRotation;
         private Vector3 _targetScale;
+        private bool _isReconciling = false;
+        private float _reconcileTimer = 0f;
+        private const float RECONCILE_COOLDOWN = 0.1f;
 
         public bool SyncPosition
         {
@@ -70,6 +73,7 @@ namespace NetPackage.Synchronization
         {
             if (!NetManager.Active || !NetManager.Running)
                 return;
+
             
             if (!isOwned)
             {
@@ -82,6 +86,16 @@ namespace NetPackage.Synchronization
                 if (_syncScale)
                     _targetScale = new Vector3(_scaleX, _scaleY, _scaleZ);
             }
+
+            if (_isReconciling)
+            {
+                _reconcileTimer += Time.deltaTime;
+                if (_reconcileTimer >= RECONCILE_COOLDOWN)
+                {
+                    _isReconciling = false;
+                    _reconcileTimer = 0f;
+                }
+            }
             float lerpSpeed = Time.deltaTime * _interpolationSpeed;
 
             if (_syncPosition)
@@ -92,103 +106,45 @@ namespace NetPackage.Synchronization
 
             if (_syncScale)
                 transform.localScale = Vector3.Lerp(transform.localScale, _targetScale, lerpSpeed);
-
         }
+
         protected override void OnStateReconcile(Dictionary<string, object> changes)
         {
+            if (!isOwned) return;
+
+            _isReconciling = true;
+            _reconcileTimer = 0f;
+
             if (_syncPosition)
             {
-                bool shouldUpdatePosition = true;
-                if (changes.ContainsKey("_positionX")) 
-                {
-                    float newX = (float)changes["_positionX"];
-                    shouldUpdatePosition &= Mathf.Abs(newX - transform.position.x) <= _positionThreshold;
-                }
-                if (changes.ContainsKey("_positionY")) 
-                {
-                    float newY = (float)changes["_positionY"];
-                    shouldUpdatePosition &= Mathf.Abs(newY - transform.position.y) <= _positionThreshold;
-                }
-                if (changes.ContainsKey("_positionZ")) 
-                {
-                    float newZ = (float)changes["_positionZ"];
-                    shouldUpdatePosition &= Mathf.Abs(newZ - transform.position.z) <= _positionThreshold;
-                }
-
-                if (shouldUpdatePosition)
-                {
-                    if (changes.ContainsKey("_positionX")) _positionX = (float)changes["_positionX"];
-                    if (changes.ContainsKey("_positionY")) _positionY = (float)changes["_positionY"];
-                    if (changes.ContainsKey("_positionZ")) _positionZ = (float)changes["_positionZ"];
-                    _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
-                }
+                if (changes.ContainsKey("_positionX")) _positionX = (float)changes["_positionX"];
+                if (changes.ContainsKey("_positionY")) _positionY = (float)changes["_positionY"];
+                if (changes.ContainsKey("_positionZ")) _positionZ = (float)changes["_positionZ"];
+                _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
             }
 
             if (_syncRotation)
             {
-                bool shouldUpdateRotation = true;
-                if (changes.ContainsKey("_rotationX")) 
-                {
-                    float newX = (float)changes["_rotationX"];
-                    shouldUpdateRotation &= Mathf.Abs(newX - transform.rotation.x) <= _rotationThreshold;
-                }
-                if (changes.ContainsKey("_rotationY")) 
-                {
-                    float newY = (float)changes["_rotationY"];
-                    shouldUpdateRotation &= Mathf.Abs(newY - transform.rotation.y) <= _rotationThreshold;
-                }
-                if (changes.ContainsKey("_rotationZ")) 
-                {
-                    float newZ = (float)changes["_rotationZ"];
-                    shouldUpdateRotation &= Mathf.Abs(newZ - transform.rotation.z) <= _rotationThreshold;
-                }
-                if (changes.ContainsKey("_rotationW")) 
-                {
-                    float newW = (float)changes["_rotationW"];
-                    shouldUpdateRotation &= Mathf.Abs(newW - transform.rotation.w) <= _rotationThreshold;
-                }
-
-                if (shouldUpdateRotation)
-                {
-                    if (changes.ContainsKey("_rotationX")) _rotationX = (float)changes["_rotationX"];
-                    if (changes.ContainsKey("_rotationY")) _rotationY = (float)changes["_rotationY"];
-                    if (changes.ContainsKey("_rotationZ")) _rotationZ = (float)changes["_rotationZ"];
-                    if (changes.ContainsKey("_rotationW")) _rotationW = (float)changes["_rotationW"];
-                    _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
-                }
+                if (changes.ContainsKey("_rotationX")) _rotationX = (float)changes["_rotationX"];
+                if (changes.ContainsKey("_rotationY")) _rotationY = (float)changes["_rotationY"];
+                if (changes.ContainsKey("_rotationZ")) _rotationZ = (float)changes["_rotationZ"];
+                if (changes.ContainsKey("_rotationW")) _rotationW = (float)changes["_rotationW"];
+                _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
             }
 
             if (_syncScale)
             {
-                bool shouldUpdateScale = true;
-                if (changes.ContainsKey("_scaleX")) 
-                {
-                    float newX = (float)changes["_scaleX"];
-                    shouldUpdateScale &= Mathf.Abs(newX - transform.localScale.x) <= _scaleThreshold;
-                }
-                if (changes.ContainsKey("_scaleY")) 
-                {
-                    float newY = (float)changes["_scaleY"];
-                    shouldUpdateScale &= Mathf.Abs(newY - transform.localScale.y) <= _scaleThreshold;
-                }
-                if (changes.ContainsKey("_scaleZ")) 
-                {
-                    float newZ = (float)changes["_scaleZ"];
-                    shouldUpdateScale &= Mathf.Abs(newZ - transform.localScale.z) <= _scaleThreshold;
-                }
-
-                if (shouldUpdateScale)
-                {
-                    if (changes.ContainsKey("_scaleX")) _scaleX = (float)changes["_scaleX"];
-                    if (changes.ContainsKey("_scaleY")) _scaleY = (float)changes["_scaleY"];
-                    if (changes.ContainsKey("_scaleZ")) _scaleZ = (float)changes["_scaleZ"];
-                    _targetScale = new Vector3(_scaleX, _scaleY, _scaleZ);
-                }
+                if (changes.ContainsKey("_scaleX")) _scaleX = (float)changes["_scaleX"];
+                if (changes.ContainsKey("_scaleY")) _scaleY = (float)changes["_scaleY"];
+                if (changes.ContainsKey("_scaleZ")) _scaleZ = (float)changes["_scaleZ"];
+                _targetScale = new Vector3(_scaleX, _scaleY, _scaleZ);
             }
         }
 
         protected override bool IsDesynchronized(Dictionary<string, object> changes)
         {
+            if (!isOwned) return false;
+
             if (_syncPosition)
             {
                 if (changes.ContainsKey("_positionX") && Mathf.Abs((float)changes["_positionX"] - transform.position.x) > _positionThreshold) return true;
@@ -218,34 +174,32 @@ namespace NetPackage.Synchronization
         {
             if (_syncPosition)
             {
-                _positionX = transform.position.x + transform.position.x - lastState.GetFieldValue<float>(this,"_positionX");
-                _positionY = transform.position.y + transform.position.y - lastState.GetFieldValue<float>(this,"_positionY");
-                _positionZ = transform.position.z + transform.position.z - lastState.GetFieldValue<float>(this,"_positionZ");
-                _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
+                _positionX = transform.position.x;
+                _positionY = transform.position.y;
+                _positionZ = transform.position.z;
+                _targetPosition = transform.position;
             }
 
             if (_syncRotation)
             {
-                _rotationX = transform.rotation.x + transform.rotation.x - lastState.GetFieldValue<float>(this,"_rotationX");
-                _rotationY = transform.rotation.y + transform.rotation.y - lastState.GetFieldValue<float>(this,"_rotationY");
-                _rotationZ = transform.rotation.z + transform.rotation.z - lastState.GetFieldValue<float>(this,"_rotationZ");
-                _rotationW = transform.rotation.w + transform.rotation.w - lastState.GetFieldValue<float>(this,"_rotationW");
-                _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
+                _rotationX = transform.rotation.x;
+                _rotationY = transform.rotation.y;
+                _rotationZ = transform.rotation.z;
+                _rotationW = transform.rotation.w;
+                _targetRotation = transform.rotation;
             }
 
             if (_syncScale)
             {
-                _scaleX = transform.localScale.x + transform.localScale.x - lastState.GetFieldValue<float>(this,"_scaleX");
-                _scaleY = transform.localScale.y + transform.localScale.y - lastState.GetFieldValue<float>(this,"_scaleY");
-                _scaleZ = transform.localScale.z + transform.localScale.z - lastState.GetFieldValue<float>(this,"_scaleZ");
-                _targetScale = new Vector3(_scaleX, _scaleY, _scaleZ);
+                _scaleX = transform.localScale.x;
+                _scaleY = transform.localScale.y;
+                _scaleZ = transform.localScale.z;
+                _targetScale = transform.localScale;
             }
         }
 
-
         protected override void OnPausePrediction()
         {
-            
             _positionX = transform.position.x;
             _positionY = transform.position.y;
             _positionZ = transform.position.z;

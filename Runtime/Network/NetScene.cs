@@ -56,10 +56,7 @@ namespace NetPackage.Network
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
             sceneName = scene.name;
-            if (NetManager.PrefabsList != null)
-            {
-                RegisterPrefabs(NetManager.PrefabsList.prefabs);
-            }
+            NetManager.Init();
             SceneLoadMessage msg = new SceneLoadMessage(scene.name, NetManager.ConnectionId(), true);
             NetManager.Send(msg);
         }

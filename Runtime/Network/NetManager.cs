@@ -157,8 +157,7 @@ namespace NetPackage.Network
             else _manager = this;
             Transport ??= new UDPSolution();
             AllPlayers = new List<int>();
-            if(NetPrefabs != null) NetScene.RegisterPrefabs(NetPrefabs.prefabs);
-            if(useRollback) RollbackManager.Initialize(rollbackWindow, maxStates);
+            Init();
             _running = false;
             DontDestroyOnLoad(this);
         }
@@ -172,6 +171,12 @@ namespace NetPackage.Network
             {
                 _manager.mainThreadActions.Enqueue(action);
             }
+        }
+
+        internal static void Init()
+        {
+            if(_manager.NetPrefabs != null) NetScene.RegisterPrefabs(_manager.NetPrefabs.prefabs);
+            if(Rollback) RollbackManager.Initialize(_manager.rollbackWindow, _manager.maxStates);
         }
         private void Update()
         {

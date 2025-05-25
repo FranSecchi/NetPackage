@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using MessagePack;
 using NetPackage.Synchronization;
 
@@ -19,6 +20,11 @@ namespace NetPackage.Messages
             this.ComponentId = componentId;
             this.Timestamp = timestamp;
             this.Values = values;
+        }
+        public override string ToString()
+        {
+            string changes = Values != null ? string.Join(", ", Values.Select(kv => $"{kv.Key}={kv.Value}")) : "none";
+            return $"{base.ToString()} [{Timestamp}] ObjectID:{ObjectId}, ComponentID:{ComponentId}, Changes:{changes}";
         }
     }
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using NetPackage.Network;
-using NetPackage.Utilities;
 using UnityEngine;
 
 namespace NetPackage.Synchronization
@@ -72,41 +71,20 @@ namespace NetPackage.Synchronization
             if (!NetManager.Active || !NetManager.Running)
                 return;
 
+            
             if (!isOwned)
             {
                 if (_syncPosition)
-                {
-                    Vector3 newTarget = new Vector3(_positionX, _positionY, _positionZ);
-                    if (NetManager.IsHost && Vector3.Distance(_targetPosition, newTarget) > 0.001f)
-                    {
-                        DebugQueue.AddMessage($"Host {NetID} state mismatch - Synced: ({_positionX}, {_positionY}, {_positionZ}) Target: {_targetPosition}", DebugQueue.MessageType.Warning);
-                    }
-                    _targetPosition = newTarget;
-                }
+                    _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
     
                 if (_syncRotation)
-                {
-                    Quaternion newTarget = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
-                    if (NetManager.IsHost && Quaternion.Angle(_targetRotation, newTarget) > 0.1f)
-                    {
-                        DebugQueue.AddMessage($"Host {NetID} rotation mismatch - Synced: ({_rotationX}, {_rotationY}, {_rotationZ}, {_rotationW}) Target: {_targetRotation}", DebugQueue.MessageType.Warning);
-                    }
-                    _targetRotation = newTarget;
-                }
+                    _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
     
                 if (_syncScale)
-                {
-                    Vector3 newTarget = new Vector3(_scaleX, _scaleY, _scaleZ);
-                    if (NetManager.IsHost && Vector3.Distance(_targetScale, newTarget) > 0.001f)
-                    {
-                        DebugQueue.AddMessage($"Host {NetID} scale mismatch - Synced: ({_scaleX}, {_scaleY}, {_scaleZ}) Target: {_targetScale}", DebugQueue.MessageType.Warning);
-                    }
-                    _targetScale = newTarget;
-                }
+                    _targetScale = new Vector3(_scaleX, _scaleY, _scaleZ);
             }
-
             float lerpSpeed = Time.deltaTime * _interpolationSpeed;
-            if (NetManager.IsHost)
+            if (NetManager.IsHost && !isOwned)
                 lerpSpeed = 0.9f;
 
             if (_syncPosition)
@@ -117,7 +95,6 @@ namespace NetPackage.Synchronization
 
             if (_syncScale)
                 transform.localScale = Vector3.Lerp(transform.localScale, _targetScale, lerpSpeed);
-            SetState();
         }
 
         protected override void OnStateReconcile(Dictionary<string, object> changes)
@@ -209,17 +186,6 @@ namespace NetPackage.Synchronization
 
         protected override void OnPausePrediction()
         {
-            SetState();
-            _isPredicting = false;
-        }
-
-        protected override void OnResumePrediction()
-        {
-            _isPredicting = true;
-        }
-
-        private void SetState()
-        {
             _positionX = transform.position.x;
             _positionY = transform.position.y;
             _positionZ = transform.position.z;
@@ -233,6 +199,12 @@ namespace NetPackage.Synchronization
             _targetPosition = transform.position;
             _targetRotation = transform.rotation;
             _targetScale = transform.localScale;
+            _isPredicting = false;
+        }
+
+        protected override void OnResumePrediction()
+        {
+            _isPredicting = true;
         }
     }
 }

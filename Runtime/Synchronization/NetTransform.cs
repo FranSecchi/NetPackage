@@ -11,6 +11,7 @@ namespace NetPackage.Synchronization
         [SerializeField] private bool _syncPosition = true;
         [SerializeField] private bool _syncRotation = true;
         [SerializeField] private bool _syncScale = true;
+        [SerializeField] public float syncPrecision = 0.01f; 
 
         [Header("Desync Thresholds")]
         [Tooltip("For rollback")]
@@ -47,9 +48,7 @@ namespace NetPackage.Synchronization
         private Vector3 _lastPosition;
         private Quaternion _lastRotation;
         private Vector3 _lastScale;
-        private float _lastUpdateTime;
 
-        [SerializeField] public float syncPrecision = 0.01f; // Default to 1cm precision
 
 
         public bool SyncPosition
@@ -82,9 +81,7 @@ namespace NetPackage.Synchronization
             _lastPosition = transform.position;
             _lastRotation = transform.rotation;
             _lastScale = transform.localScale;
-            _lastUpdateTime = Time.time;
-            PausePrediction();
-            ResumePrediction();
+            SetState();
         }
 
         private void Update()
@@ -150,6 +147,7 @@ namespace NetPackage.Synchronization
                 _lastRotation = transform.rotation;
                 _lastScale = transform.localScale;
             }
+            else SetState();
         }
 
         protected override void OnStateReconcile(Dictionary<string, object> changes)
@@ -208,59 +206,56 @@ namespace NetPackage.Synchronization
             return false;
         }
         
+        protected override void OnPausePrediction()
+        {
+            SetState();
+        }
         protected override void Predict(float deltaTime, ObjectState lastState, List<RollbackManager.InputCommand> lastInputs)
+        {
+            if (_syncPosition)
+            {
+                _targetPosition = transform.position;
+            }
+
+            if (_syncRotation)
+            {
+                _targetRotation = transform.rotation;
+            }
+
+            if (_syncScale)
+            {
+                _targetScale = transform.localScale;
+            }
+        }
+
+
+        private void SetState()
         {
             if (_syncPosition)
             {
                 _positionY = Quantize(transform.position.y);
                 _positionX = Quantize(transform.position.x);
                 _positionZ = Quantize(transform.position.z);
-                _targetPosition = transform.position;
+            
             }
-
             if (_syncRotation)
             {
                 _rotationX = Quantize(transform.rotation.x);
                 _rotationY = Quantize(transform.rotation.y);
                 _rotationZ = Quantize(transform.rotation.z);
                 _rotationW = Quantize(transform.rotation.w);
-                _targetRotation = transform.rotation;
             }
-
             if (_syncScale)
             {
                 _scaleX = Quantize(transform.localScale.x);
                 _scaleY = Quantize(transform.localScale.y);
                 _scaleZ = Quantize(transform.localScale.z);
-                _targetScale = transform.localScale;
             }
         }
-
-        protected override void OnPausePrediction()
-        {
-            SetState();
-        }
-
         private float Quantize(float value)
         {
             return Mathf.Round(value / syncPrecision) * syncPrecision;
         }
 
-        private void SetState()
-        {
-            _positionX = transform.position.x;
-            _positionY = transform.position.y;
-            _positionZ = transform.position.z;
-            _rotationX = transform.rotation.x;
-            _rotationY = transform.rotation.y;
-            _rotationZ = transform.rotation.z;
-            _rotationW = transform.rotation.w;
-            _scaleX = transform.localScale.x;
-            _scaleY = transform.localScale.y;
-            _scaleZ = transform.localScale.z;
-            _targetPosition = transform.position;
-            _targetRotation = transform.rotation;
-            _targetScale = transform.localScale;
-        }
     }
 }

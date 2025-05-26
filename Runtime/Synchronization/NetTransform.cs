@@ -7,15 +7,28 @@ namespace NetPackage.Synchronization
 {
     public class NetTransform : NetBehaviour
     {
-        [Header("Synchronization Settings")]
+        [Header("Synchronizes")]
         [SerializeField] private bool _syncPosition = true;
         [SerializeField] private bool _syncRotation = true;
         [SerializeField] private bool _syncScale = true;
 
         [Header("Desync Thresholds")]
+        [Tooltip("For rollback")]
         [SerializeField] private float _positionThreshold = 0.01f;
         [SerializeField] private float _rotationThreshold = 0.01f;
         [SerializeField] private float _scaleThreshold = 0.01f;
+
+        [Header("Interpolation Settings")]
+        [Space(5)]
+        [Tooltip("These apply only on non-owned objects")]
+        [SerializeField] private float _interpolationSpeed = 10f;
+        [SerializeField] private AnimationCurve _interpolationCurve = AnimationCurve.Linear(0, 0, 1, 1);
+        [SerializeField] private float _maxTeleportDistance = 10f;
+        [SerializeField] private bool _useVelocityBasedInterpolation = false;
+        [Tooltip("Smooth")]
+        [SerializeField] private float _positionSmoothingFactor = 1f;
+        [SerializeField] private float _rotationSmoothingFactor = 1f;
+        [SerializeField] private float _scaleSmoothingFactor = 1f;
 
         [Sync] private float _positionX;
         [Sync] private float _positionY;
@@ -28,14 +41,16 @@ namespace NetPackage.Synchronization
         [Sync] private float _scaleY;
         [Sync] private float _scaleZ;
 
-        [SerializeField] private float _interpolationBackTime = 0.1f;
-        [SerializeField] private float _interpolationSpeed = 10f;
-        
         private Vector3 _targetPosition;
         private Quaternion _targetRotation;
         private Vector3 _targetScale;
+        private Vector3 _lastPosition;
+        private Quaternion _lastRotation;
+        private Vector3 _lastScale;
+        private float _lastUpdateTime;
 
         [SerializeField] public float syncPrecision = 0.01f; // Default to 1cm precision
+
 
         public bool SyncPosition
         {
@@ -64,6 +79,10 @@ namespace NetPackage.Synchronization
                 enabled = false;
                 return;
             }
+            _lastPosition = transform.position;
+            _lastRotation = transform.rotation;
+            _lastScale = transform.localScale;
+            _lastUpdateTime = Time.time;
             PausePrediction();
             ResumePrediction();
         }
@@ -73,7 +92,6 @@ namespace NetPackage.Synchronization
             if (!NetManager.Active || !NetManager.Running)
                 return;
 
-            
             if (!isOwned)
             {
                 if (_syncPosition)
@@ -84,17 +102,54 @@ namespace NetPackage.Synchronization
     
                 if (_syncScale)
                     _targetScale = new Vector3(_scaleX, _scaleY, _scaleZ);
+
+
+                float lerpSpeed = Time.deltaTime * _interpolationSpeed;
+                float curveValue = _interpolationCurve.Evaluate(lerpSpeed);
+
+                if (_syncPosition)
+                {
+                    if (_useVelocityBasedInterpolation)
+                    {
+                        Vector3 velocity = (_targetPosition - _lastPosition) / Time.deltaTime;
+                        _targetPosition += velocity * Time.deltaTime;
+                    }
+                    if (Vector3.Distance(transform.position, _targetPosition) > _maxTeleportDistance)
+                    {
+                        transform.position = _targetPosition;
+                    }
+                    else
+                    {
+                        transform.position = Vector3.Lerp(transform.position, _targetPosition, curveValue * _positionSmoothingFactor);
+                    }
+                }
+
+                if (_syncRotation)
+                {
+                    if (_useVelocityBasedInterpolation)
+                    {
+                        Quaternion deltaRotation = Quaternion.Inverse(_lastRotation) * _targetRotation;
+                        _targetRotation = _lastRotation * Quaternion.Slerp(Quaternion.identity, deltaRotation, Time.deltaTime);
+                    }
+
+                    transform.rotation = Quaternion.Slerp(transform.rotation, _targetRotation, curveValue * _rotationSmoothingFactor);
+                }
+
+                if (_syncScale)
+                {
+                    if (_useVelocityBasedInterpolation)
+                    {
+                        Vector3 scaleVelocity = (_targetScale - _lastScale) / Time.deltaTime;
+                        _targetScale += scaleVelocity * Time.deltaTime;
+                    }
+
+                    transform.localScale = Vector3.Lerp(transform.localScale, _targetScale, curveValue * _scaleSmoothingFactor);
+                }
+
+                _lastPosition = transform.position;
+                _lastRotation = transform.rotation;
+                _lastScale = transform.localScale;
             }
-            float lerpSpeed = Time.deltaTime * _interpolationSpeed;
-
-            if (_syncPosition)
-                transform.position = Vector3.Lerp(transform.position, _targetPosition, lerpSpeed);
-
-            if (_syncRotation)
-                transform.rotation = Quaternion.Slerp(transform.rotation, _targetRotation, lerpSpeed);
-
-            if (_syncScale)
-                transform.localScale = Vector3.Lerp(transform.localScale, _targetScale, lerpSpeed);
         }
 
         protected override void OnStateReconcile(Dictionary<string, object> changes)

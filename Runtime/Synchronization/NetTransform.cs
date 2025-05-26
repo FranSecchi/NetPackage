@@ -35,6 +35,8 @@ namespace NetPackage.Synchronization
         private Quaternion _targetRotation;
         private Vector3 _targetScale;
 
+        [SerializeField] public float syncPrecision = 0.01f; // Default to 1cm precision
+
         public bool SyncPosition
         {
             get => _syncPosition;
@@ -84,8 +86,6 @@ namespace NetPackage.Synchronization
                     _targetScale = new Vector3(_scaleX, _scaleY, _scaleZ);
             }
             float lerpSpeed = Time.deltaTime * _interpolationSpeed;
-            if (NetManager.IsHost && !isOwned)
-                lerpSpeed = 0.9f;
 
             if (_syncPosition)
                 transform.position = Vector3.Lerp(transform.position, _targetPosition, lerpSpeed);
@@ -160,26 +160,26 @@ namespace NetPackage.Synchronization
         {
             if (_syncPosition)
             {
-                _positionX = transform.position.x;
-                _positionY = transform.position.y;
-                _positionZ = transform.position.z;
+                _positionY = Quantize(transform.position.y);
+                _positionX = Quantize(transform.position.x);
+                _positionZ = Quantize(transform.position.z);
                 _targetPosition = transform.position;
             }
 
             if (_syncRotation)
             {
-                _rotationX = transform.rotation.x;
-                _rotationY = transform.rotation.y;
-                _rotationZ = transform.rotation.z;
-                _rotationW = transform.rotation.w;
+                _rotationX = Quantize(transform.rotation.x);
+                _rotationY = Quantize(transform.rotation.y);
+                _rotationZ = Quantize(transform.rotation.z);
+                _rotationW = Quantize(transform.rotation.w);
                 _targetRotation = transform.rotation;
             }
 
             if (_syncScale)
             {
-                _scaleX = transform.localScale.x;
-                _scaleY = transform.localScale.y;
-                _scaleZ = transform.localScale.z;
+                _scaleX = Quantize(transform.localScale.x);
+                _scaleY = Quantize(transform.localScale.y);
+                _scaleZ = Quantize(transform.localScale.z);
                 _targetScale = transform.localScale;
             }
         }
@@ -205,6 +205,11 @@ namespace NetPackage.Synchronization
         protected override void OnResumePrediction()
         {
             _isPredicting = true;
+        }
+
+        private float Quantize(float value)
+        {
+            return Mathf.Round(value / syncPrecision) * syncPrecision;
         }
     }
 }

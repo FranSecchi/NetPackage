@@ -193,13 +193,14 @@ namespace NetPackage.Synchronization
         // Prediction methods
         private void StartPrediction()
         {
+            if (!isOwned) return;
             _isPredicting = true;
             DebugQueue.AddMessage($"Started prediction for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
             OnPredictionStart();
         }
         private void UpdatePrediction(RollbackManager.GameState state)
         {
-            if (!_isPredicting) return;
+            if (!_isPredicting || !isOwned) return;
             if (!state.Snapshot.ContainsKey(NetID) || !state.Snapshot[NetID].HasComponent(this)) return;
             
             try
@@ -228,12 +229,14 @@ namespace NetPackage.Synchronization
 
         public void PausePrediction()
         {
+            if (!isOwned) return;
             _isPredicting = false;
             OnPausePrediction();
         }
 
         public void ResumePrediction()
         {
+            if (!isOwned) return;
             _isPredicting = true;
             OnResumePrediction();
         }

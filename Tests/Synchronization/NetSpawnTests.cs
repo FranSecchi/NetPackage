@@ -93,7 +93,7 @@ namespace NetPackage.Synchronization.Tests
                 {
                     found = true;
                     Assert.NotNull(obj.NetObject, "NetObject not assigned");
-                    Assert.IsFalse(obj.isOwned, "Object not owned");
+                    Assert.IsFalse(obj.IsOwned, "Object not owned");
                     Assert.IsFalse(obj.NetObject.Owned, "Object not owned");
                     Assert.AreEqual(CLIENT_ID, obj.NetObject.OwnerId, "Wrong owner assigned");
                     
@@ -102,7 +102,7 @@ namespace NetPackage.Synchronization.Tests
                 }
                 else
                 {
-                    Assert.IsTrue(obj.isOwned, "Object not owned");
+                    Assert.IsTrue(obj.IsOwned, "Object not owned");
                     Assert.IsTrue(obj.NetObject.Owned, "Object not owned");
                     Assert.AreEqual(NetManager.ConnectionId(), obj.NetObject.OwnerId, "Object not owned");
                 }

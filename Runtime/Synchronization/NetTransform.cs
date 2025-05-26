@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using NetPackage.Network;
 using UnityEngine;
@@ -8,28 +7,29 @@ namespace NetPackage.Synchronization
     public class NetTransform : NetBehaviour
     {
         [Header("Synchronizes")]
-        [SerializeField] private bool _syncPosition = true;
-        [SerializeField] private bool _syncRotation = true;
-        [SerializeField] private bool _syncScale = true;
+        [SerializeField] private bool syncPosition = true;
+        [SerializeField] private bool syncRotation = true;
+        [SerializeField] private bool syncScale = true;
         [SerializeField] public float syncPrecision = 0.01f; 
 
         [Header("Desync Thresholds")]
         [Tooltip("For rollback")]
-        [SerializeField] private float _positionThreshold = 0.01f;
-        [SerializeField] private float _rotationThreshold = 0.01f;
-        [SerializeField] private float _scaleThreshold = 0.01f;
+        [SerializeField] private float positionThreshold = 0.01f;
+        [SerializeField] private float rotationThreshold = 0.01f;
+        [SerializeField] private float scaleThreshold = 0.01f;
 
         [Header("Interpolation Settings")]
         [Space(5)]
         [Tooltip("These apply only on non-owned objects")]
-        [SerializeField] private float _interpolationSpeed = 10f;
-        [SerializeField] private AnimationCurve _interpolationCurve = AnimationCurve.Linear(0, 0, 1, 1);
-        [SerializeField] private float _maxTeleportDistance = 10f;
-        [SerializeField] private bool _useVelocityBasedInterpolation = false;
+        [SerializeField] private float interpolationSpeed = 10f;
+        [SerializeField] private AnimationCurve interpolationCurve = AnimationCurve.Linear(0, 0, 1, 1);
+        [SerializeField] private float maxTeleportDistance = 10f;
+        [SerializeField] private bool useVelocityBasedInterpolation;
+        
         [Tooltip("Smooth")]
-        [SerializeField] private float _positionSmoothingFactor = 1f;
-        [SerializeField] private float _rotationSmoothingFactor = 1f;
-        [SerializeField] private float _scaleSmoothingFactor = 1f;
+        [SerializeField] private float positionSmoothingFactor = 1f;
+        [SerializeField] private float rotationSmoothingFactor = 1f;
+        [SerializeField] private float scaleSmoothingFactor = 1f;
 
         [Sync] private float _positionX;
         [Sync] private float _positionY;
@@ -53,27 +53,27 @@ namespace NetPackage.Synchronization
 
         public bool SyncPosition
         {
-            get => _syncPosition;
-            set => _syncPosition = value;
+            get => syncPosition;
+            set => syncPosition = value;
         }
 
         public bool SyncRotation
         {
-            get => _syncRotation;
-            set => _syncRotation = value;
+            get => syncRotation;
+            set => syncRotation = value;
         }
 
         public bool SyncScale
         {
-            get => _syncScale;
-            set => _syncScale = value;
+            get => syncScale;
+            set => syncScale = value;
         }
 
         protected override void OnNetSpawn()
         {
             if (!NetManager.Active || !NetManager.Running)
                 return;
-            if (!_syncPosition && !_syncRotation && !_syncScale)
+            if (!syncPosition && !syncRotation && !syncScale)
             {
                 enabled = false;
                 return;
@@ -89,58 +89,54 @@ namespace NetPackage.Synchronization
             if (!NetManager.Active || !NetManager.Running)
                 return;
 
-            if (!isOwned)
+            if (!IsOwned)
             {
-                if (_syncPosition)
+                if (syncPosition)
                     _targetPosition = new Vector3(_positionX, _positionY, _positionZ);
     
-                if (_syncRotation)
+                if (syncRotation)
                     _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
     
-                if (_syncScale)
+                if (syncScale)
                     _targetScale = new Vector3(_scaleX, _scaleY, _scaleZ);
 
 
-                float lerpSpeed = Time.deltaTime * _interpolationSpeed;
-                float curveValue = _interpolationCurve.Evaluate(lerpSpeed);
+                float lerpSpeed = Time.deltaTime * interpolationSpeed;
+                float curveValue = interpolationCurve.Evaluate(lerpSpeed);
 
-                if (_syncPosition)
+                if (syncPosition)
                 {
-                    if (_useVelocityBasedInterpolation)
+                    if (useVelocityBasedInterpolation)
                     {
                         Vector3 velocity = (_targetPosition - _lastPosition) / Time.deltaTime;
                         _targetPosition += velocity * Time.deltaTime;
                     }
-                    if (Vector3.Distance(transform.position, _targetPosition) > _maxTeleportDistance)
-                    {
-                        transform.position = _targetPosition;
-                    }
-                    else
-                    {
-                        transform.position = Vector3.Lerp(transform.position, _targetPosition, curveValue * _positionSmoothingFactor);
-                    }
+
+                    transform.position = Vector3.Distance(transform.position, _targetPosition) > maxTeleportDistance 
+                                            ? _targetPosition 
+                                            : Vector3.Lerp(transform.position, _targetPosition, curveValue * positionSmoothingFactor);
                 }
 
-                if (_syncRotation)
+                if (syncRotation)
                 {
-                    if (_useVelocityBasedInterpolation)
+                    if (useVelocityBasedInterpolation)
                     {
                         Quaternion deltaRotation = Quaternion.Inverse(_lastRotation) * _targetRotation;
                         _targetRotation = _lastRotation * Quaternion.Slerp(Quaternion.identity, deltaRotation, Time.deltaTime);
                     }
 
-                    transform.rotation = Quaternion.Slerp(transform.rotation, _targetRotation, curveValue * _rotationSmoothingFactor);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, _targetRotation, curveValue * rotationSmoothingFactor);
                 }
 
-                if (_syncScale)
+                if (syncScale)
                 {
-                    if (_useVelocityBasedInterpolation)
+                    if (useVelocityBasedInterpolation)
                     {
                         Vector3 scaleVelocity = (_targetScale - _lastScale) / Time.deltaTime;
                         _targetScale += scaleVelocity * Time.deltaTime;
                     }
 
-                    transform.localScale = Vector3.Lerp(transform.localScale, _targetScale, curveValue * _scaleSmoothingFactor);
+                    transform.localScale = Vector3.Lerp(transform.localScale, _targetScale, curveValue * scaleSmoothingFactor);
                 }
 
                 _lastPosition = transform.position;
@@ -152,55 +148,55 @@ namespace NetPackage.Synchronization
 
         protected override void OnStateReconcile(Dictionary<string, object> changes)
         {
-            if (!isOwned) return;
+            if (!IsOwned) return;
             
-            if (_syncPosition)
+            if (syncPosition)
             {
-                if (changes.ContainsKey("_positionX")) _targetPosition.x = (float)changes["_positionX"];
-                if (changes.ContainsKey("_positionY")) _targetPosition.y = (float)changes["_positionY"];
-                if (changes.ContainsKey("_positionZ")) _targetPosition.z = (float)changes["_positionZ"];
+                if (changes.TryGetValue("_positionX", out var x)) _targetPosition.x = (float)x;
+                if (changes.TryGetValue("_positionY", out var y)) _targetPosition.y = (float)y;
+                if (changes.TryGetValue("_positionZ", out var z)) _targetPosition.z = (float)z;
             }
             
-            if (_syncRotation)
+            if (syncRotation)
             {
-                if (changes.ContainsKey("_rotationX")) _targetRotation.x = (float)changes["_rotationX"];
-                if (changes.ContainsKey("_rotationY")) _targetRotation.y = (float)changes["_rotationY"];
-                if (changes.ContainsKey("_rotationZ")) _targetRotation.z = (float)changes["_rotationZ"];
-                if (changes.ContainsKey("_rotationW")) _targetRotation.w = (float)changes["_rotationW"];
+                if (changes.TryGetValue("_rotationX", out var x)) _targetRotation.x = (float)x;
+                if (changes.TryGetValue("_rotationY", out var y)) _targetRotation.y = (float)y;
+                if (changes.TryGetValue("_rotationZ", out var z)) _targetRotation.z = (float)z;
+                if (changes.TryGetValue("_rotationW", out var w)) _targetRotation.w = (float)w;
             }
             
-            if (_syncScale)
+            if (syncScale)
             {
-                if (changes.ContainsKey("_scaleX")) _targetScale.x = (float)changes["_scaleX"];
-                if (changes.ContainsKey("_scaleY")) _targetScale.y = (float)changes["_scaleY"];
-                if (changes.ContainsKey("_scaleZ")) _targetScale.z = (float)changes["_scaleZ"];
+                if (changes.TryGetValue("_scaleX", out var x)) _targetScale.x = (float)x;
+                if (changes.TryGetValue("_scaleY", out var y)) _targetScale.y = (float)y;
+                if (changes.TryGetValue("_scaleZ", out var z)) _targetScale.z = (float)z;
             }
         }
 
         protected override bool IsDesynchronized(Dictionary<string, object> changes)
         {
-            if (!isOwned) return false;
+            if (!IsOwned) return false;
 
-            if (_syncPosition)
+            if (syncPosition)
             {
-                if (changes.ContainsKey("_positionX") && Mathf.Abs((float)changes["_positionX"] - transform.position.x) > _positionThreshold) return true;
-                if (changes.ContainsKey("_positionY") && Mathf.Abs((float)changes["_positionY"] - transform.position.y) > _positionThreshold) return true;
-                if (changes.ContainsKey("_positionZ") && Mathf.Abs((float)changes["_positionZ"] - transform.position.z) > _positionThreshold) return true;
+                if (changes.ContainsKey("_positionX") && Mathf.Abs((float)changes["_positionX"] - transform.position.x) > positionThreshold) return true;
+                if (changes.ContainsKey("_positionY") && Mathf.Abs((float)changes["_positionY"] - transform.position.y) > positionThreshold) return true;
+                if (changes.ContainsKey("_positionZ") && Mathf.Abs((float)changes["_positionZ"] - transform.position.z) > positionThreshold) return true;
             }
             
-            if (_syncRotation)
+            if (syncRotation)
             {
-                if (changes.ContainsKey("_rotationX") && Mathf.Abs((float)changes["_rotationX"] - transform.rotation.x) > _rotationThreshold) return true;
-                if (changes.ContainsKey("_rotationY") && Mathf.Abs((float)changes["_rotationY"] - transform.rotation.y) > _rotationThreshold) return true;
-                if (changes.ContainsKey("_rotationZ") && Mathf.Abs((float)changes["_rotationZ"] - transform.rotation.z) > _rotationThreshold) return true;
-                if (changes.ContainsKey("_rotationW") && Mathf.Abs((float)changes["_rotationW"] - transform.rotation.w) > _rotationThreshold) return true;
+                if (changes.ContainsKey("_rotationX") && Mathf.Abs((float)changes["_rotationX"] - transform.rotation.x) > rotationThreshold) return true;
+                if (changes.ContainsKey("_rotationY") && Mathf.Abs((float)changes["_rotationY"] - transform.rotation.y) > rotationThreshold) return true;
+                if (changes.ContainsKey("_rotationZ") && Mathf.Abs((float)changes["_rotationZ"] - transform.rotation.z) > rotationThreshold) return true;
+                if (changes.ContainsKey("_rotationW") && Mathf.Abs((float)changes["_rotationW"] - transform.rotation.w) > rotationThreshold) return true;
             }
             
-            if (_syncScale)
+            if (syncScale)
             {
-                if (changes.ContainsKey("_scaleX") && Mathf.Abs((float)changes["_scaleX"] - transform.localScale.x) > _scaleThreshold) return true;
-                if (changes.ContainsKey("_scaleY") && Mathf.Abs((float)changes["_scaleY"] - transform.localScale.y) > _scaleThreshold) return true;
-                if (changes.ContainsKey("_scaleZ") && Mathf.Abs((float)changes["_scaleZ"] - transform.localScale.z) > _scaleThreshold) return true;
+                if (changes.ContainsKey("_scaleX") && Mathf.Abs((float)changes["_scaleX"] - transform.localScale.x) > scaleThreshold) return true;
+                if (changes.ContainsKey("_scaleY") && Mathf.Abs((float)changes["_scaleY"] - transform.localScale.y) > scaleThreshold) return true;
+                if (changes.ContainsKey("_scaleZ") && Mathf.Abs((float)changes["_scaleZ"] - transform.localScale.z) > scaleThreshold) return true;
             }
 
             return false;
@@ -212,17 +208,17 @@ namespace NetPackage.Synchronization
         }
         protected override void Predict(float deltaTime, ObjectState lastState, List<InputCommand> lastInputs)
         {
-            if (_syncPosition)
+            if (syncPosition)
             {
                 _targetPosition = transform.position;
             }
 
-            if (_syncRotation)
+            if (syncRotation)
             {
                 _targetRotation = transform.rotation;
             }
 
-            if (_syncScale)
+            if (syncScale)
             {
                 _targetScale = transform.localScale;
             }
@@ -231,21 +227,21 @@ namespace NetPackage.Synchronization
 
         private void SetState()
         {
-            if (_syncPosition)
+            if (syncPosition)
             {
                 _positionY = Quantize(transform.position.y);
                 _positionX = Quantize(transform.position.x);
                 _positionZ = Quantize(transform.position.z);
             
             }
-            if (_syncRotation)
+            if (syncRotation)
             {
                 _rotationX = Quantize(transform.rotation.x);
                 _rotationY = Quantize(transform.rotation.y);
                 _rotationZ = Quantize(transform.rotation.z);
                 _rotationW = Quantize(transform.rotation.w);
             }
-            if (_syncScale)
+            if (syncScale)
             {
                 _scaleX = Quantize(transform.localScale.x);
                 _scaleY = Quantize(transform.localScale.y);

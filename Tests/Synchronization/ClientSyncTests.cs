@@ -74,7 +74,7 @@ namespace NetPackage.Synchronization.Tests
             
             foreach (var obj in hostObjects)
             {
-                Assert.IsFalse(obj.isOwned, "Object not owned");
+                Assert.IsFalse(obj.IsOwned, "Object not owned");
                 Assert.IsFalse(obj.NetObject.Owned, "Object not owned");
                 Assert.AreEqual(-1, obj.NetObject.OwnerId, "Wrong owner assigned");
             }
@@ -88,7 +88,7 @@ namespace NetPackage.Synchronization.Tests
                 yield return null;
             }
             var obj1 = hostObjects[0];
-            Assert.IsTrue(obj1.isOwned, "Ownership not updated correctly");
+            Assert.IsTrue(obj1.IsOwned, "Ownership not updated correctly");
             Assert.IsTrue(obj1.NetObject.Owned, "Ownership not updated correctly");
             Assert.AreEqual(CLIENT_ID, obj1.NetObject.OwnerId, "Ownership not updated correctly");
         }

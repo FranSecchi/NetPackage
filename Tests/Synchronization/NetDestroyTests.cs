@@ -73,7 +73,7 @@ namespace NetPackage.Synchronization.Tests
                 }
             }
             Assert.NotNull(spawnedObj, "Spawned object not found");
-            Assert.IsFalse(spawnedObj.isOwned, "Object not owned");
+            Assert.IsFalse(spawnedObj.IsOwned, "Object not owned");
             Assert.IsFalse(spawnedObj.NetObject.Owned, "Object not owned");
             Assert.AreEqual(CLIENT_ID, spawnedObj.NetObject.OwnerId, "Object not owned");
             

@@ -26,16 +26,15 @@ namespace NetPackage.Synchronization
         /// <summary>
         /// Gets whether this behaviour is owned by the local client.
         /// </summary>
-        public bool isOwned => NetObject.Owned;
+        public bool IsOwned => NetObject.Owned;
 
         /// <summary>
         /// Indicates whether this behaviour has been spawned across the network.
         /// </summary>
-        protected bool spawned = false;
+        protected bool Spawned;
         
-        private bool registered = false;
-        // Prediction support
-        protected bool _isPredicting = false;
+        private bool _registered;
+        private bool _isPredicting;
         public bool IsPredicting => _isPredicting;
         /// <summary>
         /// Override - use only for declaring and initializing, network calls are not consistent.
@@ -51,16 +50,16 @@ namespace NetPackage.Synchronization
             StateManager.Register(NetObject.NetId, this);
             RPCManager.Register(NetObject.NetId, this);
             
-            if (NetManager.Rollback && isOwned)
+            if (NetManager.Rollback && IsOwned)
             {
                 RollbackManager.UpdatePrediction += UpdatePrediction;
                 if(!_isPredicting) StartPrediction();
             }
-            if (!spawned)
+            if (!Spawned)
             {
                 DebugQueue.AddMessage($"Spawned {GetType().Name} | {gameObject.name}.", DebugQueue.MessageType.Warning);
 
-                spawned = true;
+                Spawned = true;
                 OnNetSpawn();
             }
             else 
@@ -75,7 +74,7 @@ namespace NetPackage.Synchronization
                 return;
             StateManager.Unregister(NetObject.NetId, this);
             RPCManager.Unregister(NetObject.NetId, this);
-            if (NetManager.Rollback && isOwned && _isPredicting)
+            if (NetManager.Rollback && IsOwned && _isPredicting)
             {
                 RollbackManager.UpdatePrediction -= UpdatePrediction;
                 if(_isPredicting) StopPrediction();
@@ -85,7 +84,7 @@ namespace NetPackage.Synchronization
 
         private void Start()
         {
-            if (!registered && NetObject == null)
+            if (!_registered && NetObject == null)
             {
                 RegisterAsSceneObject();
             }
@@ -163,9 +162,9 @@ namespace NetPackage.Synchronization
         }
         private void RegisterAsSceneObject()
         {
-            if (!NetManager.Active || !NetManager.Running || registered) return;
+            if (!NetManager.Active || !NetManager.Running || _registered) return;
             
-            registered = true;
+            _registered = true;
             enabled = false;                
             DebugQueue.AddMessage($"Disable {GetType().Name} | {gameObject.name}.", DebugQueue.MessageType.Warning);
 
@@ -185,7 +184,7 @@ namespace NetPackage.Synchronization
         {
             if (obj == null) return;
             NetObject = obj;
-            registered = true;
+            _registered = true;
             enabled = false;
         }
         
@@ -193,14 +192,14 @@ namespace NetPackage.Synchronization
         // Prediction methods
         private void StartPrediction()
         {
-            if (!isOwned) return;
+            if (!IsOwned) return;
             _isPredicting = true;
             DebugQueue.AddMessage($"Started prediction for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
             OnPredictionStart();
         }
         private void UpdatePrediction(RollbackManager.GameState state)
         {
-            if (!_isPredicting || !isOwned) return;
+            if (!_isPredicting || !IsOwned) return;
             if (!state.Snapshot.ContainsKey(NetID) || !state.Snapshot[NetID].HasComponent(this)) return;
             
             try
@@ -216,7 +215,7 @@ namespace NetPackage.Synchronization
         
         private void StopPrediction()
         {
-            if (!isOwned) return;
+            if (!IsOwned) return;
             _isPredicting = false;
             DebugQueue.AddMessage($"Stopped prediction for {GetType().Name} | {gameObject.name}", DebugQueue.MessageType.Rollback);
             OnPredictionStop();
@@ -229,14 +228,14 @@ namespace NetPackage.Synchronization
 
         public void PausePrediction()
         {
-            if (!isOwned) return;
+            if (!IsOwned) return;
             _isPredicting = false;
             OnPausePrediction();
         }
 
         public void ResumePrediction()
         {
-            if (!isOwned) return;
+            if (!IsOwned) return;
             _isPredicting = true;
             OnResumePrediction();
         }

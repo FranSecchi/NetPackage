@@ -266,7 +266,7 @@ namespace NetPackage.Synchronization
         protected virtual void OnStateReconcile(Dictionary<string, object> changes) { }
         
         // New virtual methods for prediction and desync detection
-        protected virtual void Predict(float deltaTime, ObjectState lastState, List<RollbackManager.InputCommand> lastInputs){ }
+        protected virtual void Predict(float deltaTime, ObjectState lastState, List<InputCommand> lastInputs){ }
 
         protected virtual bool IsDesynchronized(Dictionary<string, object> changes){ return false; }
     }

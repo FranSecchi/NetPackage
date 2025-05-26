@@ -15,13 +15,13 @@ namespace NetPackage.Synchronization
         private static readonly Dictionary<int, HashSet<object>> _componentCache = new();
         private static readonly ConcurrentDictionary<int, List<(SyncMessage, DateTime)>> _pendingSyncs = new();
         private static TimeSpan _pendingSyncTimeout = TimeSpan.FromSeconds(3);
-        public static void Register(int netId, ObjectState state)
+        internal static void Register(int netId, ObjectState state)
         {
             if (state == null) return;
             snapshot[netId] = state;
         }
 
-        public static void Register(int netId, object obj)
+        internal static void Register(int netId, object obj)
         {
             if (obj == null) return;
             if (snapshot.TryGetValue(netId, out ObjectState state))
@@ -43,7 +43,7 @@ namespace NetPackage.Synchronization
             }
         }
 
-        public static void Unregister(int netId, object obj)
+        internal static void Unregister(int netId, object obj)
         {
             if (obj == null) return;
 
@@ -51,7 +51,6 @@ namespace NetPackage.Synchronization
             {
                 state.Unregister(obj);
                 
-                // Remove from component cache
                 if (_componentCache.TryGetValue(netId, out var components))
                 {
                     components.Remove(obj);
@@ -63,37 +62,35 @@ namespace NetPackage.Synchronization
             }
         }
 
-        public static void Unregister(int netId)
+        internal static void Unregister(int netId)
         {
             snapshot.TryRemove(netId, out _);
             _componentCache.Remove(netId);
         }
 
-        public static void Clear()
+        internal static void Clear()
         {
             snapshot.Clear();
             _componentCache.Clear();
             _pendingSyncs.Clear();
         }
 
-        public static ObjectState GetState(int objectId)
+        internal static ObjectState GetState(int objectId)
         {
             return snapshot.TryGetValue(objectId, out ObjectState state) ? state : null;
         }
 
-        public static Dictionary<int, ObjectState> GetAllStates()
+        internal static Dictionary<int, ObjectState> GetAllStates()
         {
             return new Dictionary<int, ObjectState>(snapshot);
         }
         
-        public static void RestoreState(int objectId, ObjectState state)
+        internal static void RestoreState(int objectId, ObjectState state)
         {
             if (state == null) return;
             
-            // If the object exists, update its state
             if (snapshot.TryGetValue(objectId, out ObjectState currentState))
             {
-                // Update all tracked variables
                 foreach (var kvp in state.TrackedSyncVars)
                 {
                     var component = kvp.Key;
@@ -114,18 +111,15 @@ namespace NetPackage.Synchronization
                         }
                     }
                 }
-
-                // Update the current state
                 snapshot[objectId] = state.Clone();
             }
             else
             {
-                // If the object doesn't exist, add it
                 snapshot[objectId] = state.Clone();
             }
         }
 
-        public static void SendUpdateStates()
+        internal static void SendUpdateStates()
         {
             foreach (var netObject in snapshot)
             {
@@ -160,7 +154,7 @@ namespace NetPackage.Synchronization
             }
         }
 
-        public static void SetSync(SyncMessage syncMessage)
+        internal static void SetSync(SyncMessage syncMessage)
         {
             if (syncMessage == null) return;
             CleanupPendingSyncs();

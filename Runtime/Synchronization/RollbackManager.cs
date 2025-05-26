@@ -8,7 +8,14 @@ using UnityEngine;
 
 namespace NetPackage.Synchronization
 {
-    public static class RollbackManager
+    public struct InputCommand
+    {
+        public int NetId;
+        public string MethodName;
+        public object[] Parameters;
+        public DateTime Timestamp;
+    }
+    internal static class RollbackManager
     {
         private static float _rollbackWindow = 0.1f;
         private static int _maxStates = 20;
@@ -25,15 +32,7 @@ namespace NetPackage.Synchronization
             public List<InputCommand> Inputs;
         }
         
-        public struct InputCommand
-        {
-            public int NetId;
-            public string MethodName;
-            public object[] Parameters;
-            public DateTime Timestamp;
-        }
-        
-        public static void Initialize(float rollbackWindow = 0.1f, int maxStates = 20)
+        internal static void Initialize(float rollbackWindow = 0.1f, int maxStates = 20)
         {
             _rollbackWindow = rollbackWindow;
             _maxStates = maxStates;
@@ -71,7 +70,7 @@ namespace NetPackage.Synchronization
             DebugQueue.AddMessage($"Reconciled object {obj.ObjectId} component {obj.ComponentId} at time {obj.Timestamp:HH:mm:ss.fff} (time diff: {timeDiff:F3}s)", DebugQueue.MessageType.Rollback);
         }
 
-        public static void Update()
+        internal static void Update()
         {
             if(!_stateHistory.IsEmpty && _stateHistory.TryPeek(out var state))
                 UpdatePrediction?.Invoke(state);
@@ -86,7 +85,6 @@ namespace NetPackage.Synchronization
             {
                 var currentTime = DateTime.UtcNow;
                 
-                // Remove states older than rollback window
                 while (!_stateHistory.IsEmpty)
                 {
                     if (!_stateHistory.TryPeek(out var oldestState)) break;
@@ -105,7 +103,6 @@ namespace NetPackage.Synchronization
                     }
                 }
                 
-                // Add new state if we haven't reached max states
                 if (_stateHistory.Count < _maxStates)
                 {
                     var currentState = new GameState
@@ -167,6 +164,12 @@ namespace NetPackage.Synchronization
             }
         }
         
+        /// <summary>
+        /// Records an input command for a networked object, including its method call and parameters.
+        /// </summary>
+        /// <param name="netId">The network ID of the object receiving the input</param>
+        /// <param name="methodName">The name of the method to be called</param>
+        /// <param name="parameters">The parameters to be passed to the method</param>
         public static void RecordInput(int netId, string methodName, params object[] parameters)
         {
             var input = new InputCommand
@@ -188,6 +191,10 @@ namespace NetPackage.Synchronization
             }
         }
         
+        /// <summary>
+        /// Rolls back the game state to a specific point in time and replays all inputs that occurred after that time.
+        /// </summary>
+        /// <param name="targetTime">The target time to roll back to</param>
         public static void RollbackToTime(DateTime targetTime)
         {
             var targetState = GetStateAtTime(targetTime);
@@ -215,6 +222,13 @@ namespace NetPackage.Synchronization
             }
         }
 
+        /// <summary>
+        /// Rolls back a specific networked object to a given time and applies the provided changes.
+        /// </summary>
+        /// <param name="netId">The network ID of the object to roll back</param>
+        /// <param name="id">The ID of the change to apply</param>
+        /// <param name="targetTime">The target time to roll back to</param>
+        /// <param name="changes">The changes to apply to the object</param>
         public static void RollbackToTime(int netId, int id, DateTime targetTime, Dictionary<string, object> changes)
         {
             if (_stateHistory.IsEmpty)
@@ -254,6 +268,9 @@ namespace NetPackage.Synchronization
             }
         }
         
+        /// <summary>
+        /// Clears all stored game states and input buffers.
+        /// </summary>
         public static void Clear()
         {
             lock (_stateLock)
@@ -279,7 +296,12 @@ namespace NetPackage.Synchronization
             }
         }
 
-        private static GameState? GetStateAtTime(DateTime targetTime)
+        /// <summary>
+        /// Retrieves the game state closest to the specified target time.
+        /// </summary>
+        /// <param name="targetTime">The target time to find the closest state for</param>
+        /// <returns>The closest game state to the target time, or null if no valid state is found</returns>
+        public static GameState? GetStateAtTime(DateTime targetTime)
         {
             if (_stateHistory.IsEmpty) return null;
             
@@ -305,7 +327,12 @@ namespace NetPackage.Synchronization
             return closestState;
         }
 
-        private static List<InputCommand> GetInputsAtTime(DateTime targetTime)
+        /// <summary>
+        /// Retrieves all input commands that occurred at or after the specified target time.
+        /// </summary>
+        /// <param name="targetTime">The target time to get inputs from</param>
+        /// <returns>A list of input commands, or null if no inputs are found</returns>
+        public static List<InputCommand> GetInputsAtTime(DateTime targetTime)
         {
             if (_inputBuffer.IsEmpty) return null;
             

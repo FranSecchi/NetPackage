@@ -210,7 +210,7 @@ namespace NetPackage.Synchronization
         {
             SetState();
         }
-        protected override void Predict(float deltaTime, ObjectState lastState, List<RollbackManager.InputCommand> lastInputs)
+        protected override void Predict(float deltaTime, ObjectState lastState, List<InputCommand> lastInputs)
         {
             if (_syncPosition)
             {

@@ -15,14 +15,14 @@ namespace NetPackage.Synchronization
     public class ObjectState
     {
         private readonly object _syncLock = new object();
-        //Component_instance - (Var_info - Var_value)
+        //Instancia del componente - (Var info - Var value)
         private Dictionary<object, Dictionary<FieldInfo, object>> _trackedSyncVars;
         private Dictionary<int, object> _objectIds;
         private int _nextId;
         private Dictionary<object, Dictionary<string, FieldInfo>> _fieldCache;
-        public Dictionary<object, Dictionary<FieldInfo, object>> TrackedSyncVars => _trackedSyncVars;
+        internal Dictionary<object, Dictionary<FieldInfo, object>> TrackedSyncVars => _trackedSyncVars;
 
-        public ObjectState()
+        internal ObjectState()
         {
             _trackedSyncVars = new();
             _objectIds = new();
@@ -34,7 +34,6 @@ namespace NetPackage.Synchronization
         {
             if (obj == null) return default;
 
-            // Try to get from cache first
             if (_fieldCache.TryGetValue(obj, out var fields) && 
                 fields.TryGetValue(fieldName, out var field))
             {
@@ -50,7 +49,7 @@ namespace NetPackage.Synchronization
             return default;
         }
 
-        public void Register(int netId, object obj)
+        internal void Register(int netId, object obj)
         {
             if (obj == null) return;
 
@@ -88,7 +87,7 @@ namespace NetPackage.Synchronization
             }
         }
 
-        public Dictionary<int, Dictionary<string, object>> Update()
+        internal Dictionary<int, Dictionary<string, object>> Update()
         {
             Dictionary<int, Dictionary<string, object>> allChanges = new();
             Dictionary<object, Dictionary<FieldInfo, object>> updates = new();
@@ -135,7 +134,7 @@ namespace NetPackage.Synchronization
             return allChanges;
         }
 
-        public void SetChange(int id, Dictionary<string, object> changes, bool isRollback = false)
+        internal void SetChange(int id, Dictionary<string, object> changes, bool isRollback = false)
         {
             if (changes == null || changes.Count == 0) return;
 
@@ -164,7 +163,7 @@ namespace NetPackage.Synchronization
             }
         }
         
-        public void Reconcile(int netId, int id, Dictionary<string, object> changes, DateTime timeStamp)
+        internal void Reconcile(int netId, int id, Dictionary<string, object> changes, DateTime timeStamp)
         {
             if (changes == null || changes.Count == 0) return;
 
@@ -216,7 +215,7 @@ namespace NetPackage.Synchronization
             return clone;
         }
 
-        public void Unregister(object o)
+        internal void Unregister(object o)
         {
             if (o == null)
             {

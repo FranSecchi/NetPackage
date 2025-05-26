@@ -19,6 +19,25 @@ namespace NetPackage.Synchronization
         [SerializeField] private float _rotationThreshold = 0.01f;
         [SerializeField] private float _velocityThreshold = 0.1f;
 
+        [Header("Interpolation Settings")]
+        [Space(5)]
+        [Tooltip("These apply only on non-owned objects")]
+        [SerializeField] private float _interpolationSpeed = 10f;
+        [SerializeField] private AnimationCurve _interpolationCurve = AnimationCurve.Linear(0, 0, 1, 1);
+        [SerializeField] private float _maxTeleportDistance = 10f;
+        [SerializeField] private bool _useVelocityBasedInterpolation = false;
+        [Tooltip("Smooth")]
+        [SerializeField] private float _positionSmoothingFactor = 1f;
+        [SerializeField] private float _rotationSmoothingFactor = 1f;
+        [SerializeField] private float _velocitySmoothingFactor = 1f;
+
+        [Header("Physics Settings")]
+        [SerializeField] private bool _predictPhysics = true;
+        [SerializeField] private float _predictionTime = 0.1f;
+        [SerializeField] private int _predictionSteps = 3;
+        [SerializeField] private bool _smoothAngularVelocity = true;
+        [SerializeField] private float _angularVelocitySmoothing = 0.1f;
+
         [Sync] private float _positionX;
         [Sync] private float _positionY;
         [Sync] private float _positionZ;
@@ -29,23 +48,28 @@ namespace NetPackage.Synchronization
         [Sync] private float _velocityX;
         [Sync] private float _velocityY;
         [Sync] private float _velocityZ;
+        [Sync] private float _angularVelocityX;
+        [Sync] private float _angularVelocityY;
+        [Sync] private float _angularVelocityZ;
         
         [Sync] private float _mass;
         [Sync] private float _drag;
         [Sync] private float _angularDrag;
         [Sync] private bool _useGravity;
 
-        [SerializeField] private float _interpolationBackTime = 0.1f;
-        [SerializeField] private float _interpolationSpeed = 10f;
-        
         private Rigidbody _rigidbody;
         private Vector3 _targetPosition;
         private Quaternion _targetRotation;
         private Vector3 _targetVelocity;
+        private Vector3 _targetAngularVelocity;
         private List<ForceCommand> _pendingForces = new List<ForceCommand>();
         private bool _wasKinematic;
         private CollisionDetectionMode _wasCollisionDetection;
         private RigidbodyInterpolation _wasInterpolation;
+        private Vector3 _lastPosition;
+        private Quaternion _lastRotation;
+        private Vector3 _lastVelocity;
+        private Vector3 _lastAngularVelocity;
 
         private struct ForceCommand
         {
@@ -97,11 +121,17 @@ namespace NetPackage.Synchronization
                 _syncProperties = true;
             }
 
+            _lastPosition = _rigidbody.position;
+            _lastRotation = _rigidbody.rotation;
+            _lastVelocity = _rigidbody.velocity;
+            _lastAngularVelocity = _rigidbody.angularVelocity;
+
             SetState();
 
             _targetPosition = _rigidbody.position;
             _targetRotation = _rigidbody.rotation;
             _targetVelocity = _rigidbody.velocity;
+            _targetAngularVelocity = _rigidbody.angularVelocity;
         }
 
         protected override void OnNetEnable()
@@ -208,45 +238,51 @@ namespace NetPackage.Synchronization
 
         protected override void Predict(float deltaTime, ObjectState lastState, List<RollbackManager.InputCommand> lastInputs)
         {
-            // if (!isOwned) return;
-            //
-            // if (_syncPosition)
-            // {
-            //     Vector3 p = _rigidbody.position + _rigidbody.velocity * Time.fixedDeltaTime +
-            //                 (_useGravity ? Physics.gravity * (0.5f * Time.fixedDeltaTime * Time.fixedDeltaTime) : Vector3.zero);
-            //     _targetPosition = p;
-            // }
-            // if (_syncRotation)
-            // {
-            //     Quaternion q = Quaternion.Euler(_rigidbody.angularVelocity * (Mathf.Rad2Deg * deltaTime)) * _rigidbody.rotation;
-            //     _targetRotation = q;
-            // }
-            // if (_syncVelocity)
-            // {
-            //     Vector3 v = _rigidbody.velocity + (_useGravity ? Physics.gravity * deltaTime : Vector3.zero);
-            //     
-            //     foreach (var force in _pendingForces)
-            //     {
-            //         switch (force.Mode)
-            //         {
-            //             case ForceMode.Force:
-            //                 v += force.Force * force.DeltaTime / _mass;
-            //                 break;
-            //             case ForceMode.Acceleration:
-            //                 v += force.Force * force.DeltaTime;
-            //                 break;
-            //             case ForceMode.Impulse:
-            //                 v += force.Force / _mass;
-            //                 break;
-            //             case ForceMode.VelocityChange:
-            //                 v += force.Force;
-            //                 break;
-            //         }
-            //     }
-            //     
-            //     _targetVelocity = v;
-            // }            
-            // SetState();
+            if (!isOwned || !_predictPhysics) return;
+
+            float stepTime = _predictionTime / _predictionSteps;
+            Vector3 currentPosition = _rigidbody.position;
+            Vector3 currentVelocity = _rigidbody.velocity;
+            Quaternion currentRotation = _rigidbody.rotation;
+            Vector3 currentAngularVelocity = _rigidbody.angularVelocity;
+
+            for (int i = 0; i < _predictionSteps; i++)
+            {
+                // Predict position
+                currentPosition += currentVelocity * stepTime;
+                if (_useGravity)
+                {
+                    currentVelocity += Physics.gravity * stepTime;
+                }
+
+                // Predict rotation
+                currentRotation = Quaternion.Euler(currentAngularVelocity * (Mathf.Rad2Deg * stepTime)) * currentRotation;
+
+                // Apply forces
+                foreach (var force in _pendingForces)
+                {
+                    switch (force.Mode)
+                    {
+                        case ForceMode.Force:
+                            currentVelocity += force.Force * stepTime / _mass;
+                            break;
+                        case ForceMode.Acceleration:
+                            currentVelocity += force.Force * stepTime;
+                            break;
+                        case ForceMode.Impulse:
+                            currentVelocity += force.Force / _mass;
+                            break;
+                        case ForceMode.VelocityChange:
+                            currentVelocity += force.Force;
+                            break;
+                    }
+                }
+            }
+
+            _targetPosition = currentPosition;
+            _targetRotation = currentRotation;
+            _targetVelocity = currentVelocity;
+            _targetAngularVelocity = currentAngularVelocity;
         }
 
         private void FixedUpdate()
@@ -261,18 +297,69 @@ namespace NetPackage.Synchronization
     
                 if (_syncRotation)
                     _targetRotation = new Quaternion(_rotationX, _rotationY, _rotationZ, _rotationW);
+
+                if (_syncVelocity)
+                {
+                    _targetVelocity = new Vector3(_velocityX, _velocityY, _velocityZ);
+                    if (_smoothAngularVelocity)
+                    {
+                        Vector3 newAngularVelocity = new Vector3(_angularVelocityX, _angularVelocityY, _angularVelocityZ);
+                        _targetAngularVelocity = Vector3.Lerp(_lastAngularVelocity, newAngularVelocity, _angularVelocitySmoothing);
+                    }
+                    else
+                    {
+                        _targetAngularVelocity = new Vector3(_angularVelocityX, _angularVelocityY, _angularVelocityZ);
+                    }
+                }
                 
                 float lerpSpeed = Time.deltaTime * _interpolationSpeed;
+                float curveValue = _interpolationCurve.Evaluate(lerpSpeed);
                 
                 if (_syncPosition)
                 {
-                    _rigidbody.MovePosition(Vector3.Lerp(_rigidbody.position, _targetPosition, lerpSpeed));
+                    if (_useVelocityBasedInterpolation)
+                    {
+                        Vector3 velocity = (_targetPosition - _lastPosition) / Time.deltaTime;
+                        _targetPosition += velocity * Time.deltaTime;
+                    }
+
+                    if (Vector3.Distance(_rigidbody.position, _targetPosition) > _maxTeleportDistance)
+                    {
+                        _rigidbody.MovePosition(_targetPosition);
+                    }
+                    else
+                    {
+                        _rigidbody.MovePosition(Vector3.Lerp(_rigidbody.position, _targetPosition, curveValue * _positionSmoothingFactor));
+                    }
                 }
                 
                 if (_syncRotation)
                 {
-                    _rigidbody.MoveRotation(Quaternion.Slerp(_rigidbody.rotation, _targetRotation, lerpSpeed));
+                    if (_useVelocityBasedInterpolation)
+                    {
+                        Quaternion deltaRotation = Quaternion.Inverse(_lastRotation) * _targetRotation;
+                        _targetRotation = _lastRotation * Quaternion.Slerp(Quaternion.identity, deltaRotation, Time.deltaTime);
+                    }
+
+                    _rigidbody.MoveRotation(Quaternion.Slerp(_rigidbody.rotation, _targetRotation, curveValue * _rotationSmoothingFactor));
                 }
+
+                if (_syncVelocity)
+                {
+                    if (_useVelocityBasedInterpolation)
+                    {
+                        Vector3 velocityDelta = (_targetVelocity - _lastVelocity) / Time.deltaTime;
+                        _targetVelocity += velocityDelta * Time.deltaTime;
+                    }
+
+                    _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, _targetVelocity, curveValue * _velocitySmoothingFactor);
+                    _rigidbody.angularVelocity = _targetAngularVelocity;
+                }
+
+                _lastPosition = _rigidbody.position;
+                _lastRotation = _rigidbody.rotation;
+                _lastVelocity = _rigidbody.velocity;
+                _lastAngularVelocity = _rigidbody.angularVelocity;
             }
             else
             {
@@ -300,6 +387,9 @@ namespace NetPackage.Synchronization
                 _velocityX = Quantize(_rigidbody.velocity.x);
                 _velocityY = Quantize(_rigidbody.velocity.y);
                 _velocityZ = Quantize(_rigidbody.velocity.z);
+                _angularVelocityX = Quantize(_rigidbody.angularVelocity.x);
+                _angularVelocityY = Quantize(_rigidbody.angularVelocity.y);
+                _angularVelocityZ = Quantize(_rigidbody.angularVelocity.z);
             }
             if (_syncProperties)
             {

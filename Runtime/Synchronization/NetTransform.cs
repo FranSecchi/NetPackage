@@ -186,10 +186,6 @@ namespace NetPackage.Synchronization
             SetState();
         }
 
-        protected override void OnResumePrediction()
-        {
-        }
-
         private float Quantize(float value)
         {
             return Mathf.Round(value / syncPrecision) * syncPrecision;

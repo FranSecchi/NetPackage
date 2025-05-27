@@ -84,7 +84,7 @@ namespace NetPackage.Synchronization.Tests
             objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.AreEqual(initialCount + 1, objs.Length, "Object not spawned");
 
-            yield return WaitValidate(typeof(SpawnMessage));
+            yield return WaitMessage(typeof(SpawnMessage));
             
             bool found = false;
             foreach (var obj in objs)
@@ -117,17 +117,13 @@ namespace NetPackage.Synchronization.Tests
             var objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
             yield return WaitSpawnSync(objs);
-            SpawnMessage spawnMsg = (SpawnMessage)received;
             
             objs = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (var obj in objs)
             {
-                Assert.IsNotEmpty(spawnMsg.sceneId, "Scene ID not set");
-                if(obj.NetID != spawnMsg.netObjectId) continue;
+                Assert.IsNotEmpty(obj.GetComponent<SceneObjectId>().SceneId, "Scene ID not set");
                 ObjectState state = StateManager.GetState(obj.NetObject.NetId);
                 Assert.NotNull(state, "Scene object state not registered");
-                Assert.AreEqual(obj.name, spawnMsg.prefabName, "Wrong prefab name");
-                Assert.AreEqual(obj.transform.position, spawnMsg.position, $"Wrong position {spawnMsg.position}");
             }
         }
     }

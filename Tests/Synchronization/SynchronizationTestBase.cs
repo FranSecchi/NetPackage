@@ -1,6 +1,7 @@
 using System;
 using UnityEngine.TestTools;
 using System.Collections;
+using System.Collections.Generic;
 using NetPackage.Messages;
 using NetPackage.Network;
 using NetPackage.Serializer;
@@ -84,14 +85,15 @@ namespace NetPackage.Synchronization.Tests
             prefabs.prefabs.Add(prefab);
             NetScene.RegisterPrefabs(prefabs.prefabs);
         }
-        protected IEnumerator WaitValidate(Type expectedType)
+        protected IEnumerator WaitMessage(Type expectedType, ITransport client = null)
         {
+            if(client == null) client = _client;
             byte[] data = null;
             float startTime = Time.time;
             NetMessage msg = null;
             while (Time.time - startTime < 1f)
             {
-                data = _client.Receive();
+                data = client.Receive();
                 if (data != null)
                 {
                     msg = NetSerializer.Deserialize<NetMessage>(data);
@@ -114,7 +116,7 @@ namespace NetPackage.Synchronization.Tests
             _client.Connect("localhost");
             yield return new WaitForSeconds(0.2f);
             NetManager.LoadScene(TEST_SCENE_NAME);
-            yield return WaitValidate(typeof(SceneLoadMessage));
+            yield return WaitMessage(typeof(SceneLoadMessage), _client);
             
             SceneLoadMessage scnMsg = (SceneLoadMessage)received;
             Assert.AreEqual(TEST_SCENE_NAME, scnMsg.sceneName, "Wrong scene name");
@@ -123,20 +125,50 @@ namespace NetPackage.Synchronization.Tests
             _client.Send(NetSerializer.Serialize(answerMsg));
             yield return new WaitForSeconds(0.5f);
         }
-        protected IEnumerator WaitSpawnSync(TestObj[] objs)
+        protected IEnumerator WaitSpawnSync(NetBehaviour[] objs, bool client = true)
         {
-            yield return WaitValidate(typeof(SpawnMessage));
-            SpawnMessage spwMsg = (SpawnMessage)received;
-            yield return WaitValidate(typeof(SpawnMessage));
-            SpawnMessage spwMsg2 = (SpawnMessage)received;
-            
-            foreach (NetBehaviour hostObj in objs)
+            if(client)
             {
-                var hostNetObj = hostObj.NetObject;
-                SpawnMessage spw = hostNetObj.NetId != spwMsg.netObjectId ? spwMsg2 : spwMsg;
-                received = spw;
-                _client.Send(NetSerializer.Serialize(received));
+                List<int> ids = new List<int>();
+                foreach (NetBehaviour hostObj in objs)
+                {
+                    if(ids.Contains(hostObj.NetID)) continue;
+                    yield return WaitMessage(typeof(SpawnMessage));
+                    SpawnValidationMessage spw = new SpawnValidationMessage(hostObj.NetID, CLIENT_ID);
+                    received = spw;
+                    _client.Send(NetSerializer.Serialize(received));
+                    ids.Add(hostObj.NetID);
+                    yield return new WaitForSeconds(0.2f);
+                }
+
+                for (int i = 0; i < ids.Count; i++)
+                {
+                    yield return WaitMessage(typeof(SpawnValidationMessage));
+                    NetMessage spwMsg = (SpawnValidationMessage)received;
+                    
+                    _client.Send(NetSerializer.Serialize(spwMsg));
+                }
+            }
+            else
+            {
+                int c = 0;
+                foreach (NetBehaviour hostObj in objs)
+                {
+                    SpawnMessage msg = new SpawnMessage(-1, hostObj.gameObject.name, hostObj.transform.position, sceneId:hostObj.GetComponent<SceneObjectId>().SceneId);
+                    msg.netObjectId = c;
+                    received = msg;
+                    _server.Send(NetSerializer.Serialize(received));
+                    c++;
+                }
                 yield return new WaitForSeconds(0.2f);
+                for (int i = 0; i < objs.Length; i++)
+                {
+                    yield return WaitMessage(typeof(SpawnValidationMessage), _server);
+                    SpawnValidationMessage spwMsg = (SpawnValidationMessage)received;
+                    spwMsg.requesterId = -1;
+                    received = spwMsg;
+                    _server.Send(NetSerializer.Serialize(received));
+                }
             }
         }
     }

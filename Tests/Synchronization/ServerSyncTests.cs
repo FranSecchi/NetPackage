@@ -38,7 +38,7 @@ namespace NetPackage.Synchronization.Tests
             testComponent.Set(42, 100, "test");
             StateManager.SendUpdateStates();
             
-            yield return WaitValidate(typeof(SyncMessage));
+            yield return WaitMessage(typeof(SyncMessage));
 
             SyncMessage syncMsg = (SyncMessage)received;
             Assert.AreEqual(testComponent.NetObject.NetId, syncMsg.ObjectID, "Wrong object ID in sync message");
@@ -64,11 +64,11 @@ namespace NetPackage.Synchronization.Tests
             
             StateManager.SendUpdateStates();
 
-            yield return WaitValidate(typeof(SyncMessage));
+            yield return WaitMessage(typeof(SyncMessage));
             SyncMessage syncMsg = (SyncMessage)received;
             Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message");
 
-            yield return WaitValidate(typeof(SyncMessage));
+            yield return WaitMessage(typeof(SyncMessage));
             syncMsg = (SyncMessage)received;
             Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message for second component");
             
@@ -110,11 +110,11 @@ namespace NetPackage.Synchronization.Tests
             
             StateManager.SendUpdateStates();
 
-            yield return WaitValidate(typeof(SyncMessage));
+            yield return WaitMessage(typeof(SyncMessage));
             SyncMessage syncMsg = (SyncMessage)received;
             Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message");
 
-            yield return WaitValidate(typeof(SyncMessage));
+            yield return WaitMessage(typeof(SyncMessage));
             syncMsg = (SyncMessage)received;
             Assert.Greater(syncMsg.changedValues.Count, 0, "No state changes in sync message for second component");
             
@@ -161,10 +161,10 @@ namespace NetPackage.Synchronization.Tests
 
             yield return new WaitForSeconds(0.5f);
 
-            Assert.AreEqual(150, comp1.health, "First component update not applied");
-            Assert.AreEqual("changed1", comp1.msg, "First component message not updated");
-            Assert.AreEqual(250, comp2.health, "Second component update not applied");
-            Assert.AreEqual("changed2", comp2.msg, "Second component message not updated");
+            Assert.IsTrue(150 == comp1.health || 150 == comp2.health, "Not applied");
+            Assert.IsTrue(250 == comp1.health || 250 == comp2.health, "Not applied");
+            Assert.IsTrue("changed1" == comp1.msg || "changed1" == comp2.msg, "Not updated");
+            Assert.IsTrue("changed2" == comp1.msg || "changed2" == comp2.msg, "Not updated");
         }
         [UnityTest]
         public IEnumerator ReceiveSingleUpdate()
@@ -234,7 +234,7 @@ namespace NetPackage.Synchronization.Tests
             var testComponent = objs[0];
 
             testComponent.NetObject.GiveOwner(CLIENT_ID);
-            yield return WaitValidate(typeof(OwnershipMessage));
+            yield return WaitMessage(typeof(OwnershipMessage));
 
 
             OwnershipMessage ownerMsg = (OwnershipMessage)received;

@@ -22,11 +22,10 @@ namespace NetPackage.Synchronization.Tests
             yield return new WaitForSeconds(0.2f);
             StartClient(false);
             yield return WaitConnection();
-            yield return WaitValidate(typeof(SpawnMessage));
-            Assert.IsTrue(received is SpawnMessage, "Client did not receive spawn message");
-            _client.Send(NetSerializer.Serialize(received));
+            var testObjs = GameObject.FindObjectsByType<NetBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            testObj = (TestRPCBehaviour)testObjs[0];
+            yield return WaitSpawnSync(testObjs);
             yield return new WaitForSeconds(0.5f);
-            testObj = GameObject.FindObjectsByType<TestRPCBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None)[0];
         }
 
         protected override IEnumerator Teardown()
@@ -45,7 +44,7 @@ namespace NetPackage.Synchronization.Tests
             NetMessage msg = new RPCMessage(0, testObj.NetObject.NetId, "TestRPC", null, 42, "test");
             _client.Send(NetSerializer.Serialize(msg));
             
-            yield return WaitValidate(typeof(RPCMessage));
+            yield return WaitMessage(typeof(RPCMessage));
             Assert.IsTrue(received is RPCMessage, "Client did not receive RPC message");
             Assert.AreEqual(42, testObj.lastReceivedValue, "Server did not receive correct value from client RPC");
             Assert.AreEqual("test", testObj.lastReceivedMessage, "Server did not receive correct message from client RPC");
@@ -55,7 +54,7 @@ namespace NetPackage.Synchronization.Tests
             
             testObj.CallTestRPC(100, "server_test");
             
-            yield return WaitValidate(typeof(RPCMessage));
+            yield return WaitMessage(typeof(RPCMessage));
             Assert.IsTrue(received is RPCMessage, "Client did not receive RPC message");
             
             
@@ -71,7 +70,7 @@ namespace NetPackage.Synchronization.Tests
             
             testObj.CallServerToClientRPC();
             
-            yield return WaitValidate(typeof(RPCMessage));
+            yield return WaitMessage(typeof(RPCMessage));
             Assert.IsTrue(received is RPCMessage, "Client did not receive RPC message");
         }
 
@@ -100,7 +99,7 @@ namespace NetPackage.Synchronization.Tests
             
             testObj.CallTargetModeAllRPC();
             
-            yield return WaitValidate(typeof(RPCMessage));
+            yield return WaitMessage(typeof(RPCMessage));
             Assert.IsTrue(received is RPCMessage, "Client did not receive RPC message");
             
             float startTime = Time.time;
@@ -122,7 +121,7 @@ namespace NetPackage.Synchronization.Tests
             var targetList = new List<int> { 0 }; 
             testObj.CallTargetModeSpecificRPC(targetList);
             
-            yield return WaitValidate(typeof(RPCMessage));
+            yield return WaitMessage(typeof(RPCMessage));
             Assert.IsTrue(received is RPCMessage, "Client did not receive RPC message");
             
             
@@ -151,7 +150,7 @@ namespace NetPackage.Synchronization.Tests
             
             testObj.CallTargetModeOthersRPC();
             
-            yield return WaitValidate(typeof(RPCMessage));
+            yield return WaitMessage(typeof(RPCMessage));
             Assert.IsTrue(received is RPCMessage, "Client did not receive RPC message");
             
             float startTime = Time.time;
@@ -198,7 +197,7 @@ namespace NetPackage.Synchronization.Tests
 
             testObj.CallComplexDataRPC(complexData);
             
-            yield return WaitValidate(typeof(RPCMessage));
+            yield return WaitMessage(typeof(RPCMessage));
             Assert.IsTrue(received is RPCMessage, "Client did not receive RPC message");
             
             float startTime = Time.time;

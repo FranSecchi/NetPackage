@@ -14,5 +14,10 @@ namespace NetPackage.Messages
             this.netObjectId = netObjectId;
             this.requesterId = requesterId;
         }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()}, Requester:{requesterId}, ID:{netObjectId}";
+        }
     }
 }

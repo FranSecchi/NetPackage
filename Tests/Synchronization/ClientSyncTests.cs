@@ -25,6 +25,7 @@ namespace NetPackage.Synchronization.Tests
             NetMessage answerMsg =  new SceneLoadMessage(TEST_SCENE_NAME, -1);
             _server.Send(NetSerializer.Serialize(answerMsg));
             yield return new WaitForSeconds(0.5f);
+            yield return WaitMessage(typeof(SceneLoadMessage), _server);
         }
 
         protected override IEnumerator Teardown()
@@ -38,20 +39,17 @@ namespace NetPackage.Synchronization.Tests
         {
             var hostObjects = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.Greater(hostObjects.Length, 0, "No NetBehaviour objects found in host scene");
-            foreach (NetBehaviour hostObj in hostObjects)
-            {
-                NetMessage msg = new SpawnMessage(-1, hostObj.gameObject.name, hostObj.transform.position, sceneId:hostObj.GetComponent<SceneObjectId>().SceneId);
-                _server.Send(NetSerializer.Serialize(msg));
-                yield return new WaitForSeconds(0.2f);
-            }
+            yield return WaitSpawnSync(hostObjects, false);
+            yield return new WaitForSeconds(0.2f);
+            
             Dictionary<string, object> changes = new Dictionary<string, object> 
             { 
                 { "health", 75 },
                 { "id", 42 },
                 { "msg", "updated" }
             };
-            SendObjUpdate(hostObjects[0], changes);
-
+            NetMessage spw = new SyncMessage(-1, hostObjects[0].NetID, 0, changes);
+            _server.Send(NetSerializer.Serialize(spw));
             yield return new WaitForSeconds(0.2f);
 
             Assert.AreEqual(75, hostObjects[0].health, "Health not updated correctly");
@@ -93,11 +91,6 @@ namespace NetPackage.Synchronization.Tests
             Assert.AreEqual(CLIENT_ID, obj1.NetObject.OwnerId, "Ownership not updated correctly");
         }
 
-        private void SendObjUpdate(NetBehaviour netObj, Dictionary<string, object> changes)
-        {
-            NetMessage spw = new SyncMessage(-1, netObj.NetID, 0, changes);
-            _server.Send(NetSerializer.Serialize(spw));
-        }
         protected override IEnumerator WaitConnection()
         {
             clientIds.Add(0);

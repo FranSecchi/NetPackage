@@ -34,39 +34,24 @@ namespace NetPackage.Synchronization.Tests
 
             var hostObjects = GameObject.FindObjectsByType<TestObj>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Assert.Greater(hostObjects.Length, 0, "No NetBehaviour objects found in host scene");
-            yield return WaitValidate(typeof(SceneLoadMessage));
+            yield return WaitMessage(typeof(SceneLoadMessage));
             
             SceneLoadMessage scnMsg = (SceneLoadMessage)received;
             Assert.AreEqual(TEST_SCENE_NAME, scnMsg.sceneName, "Wrong scene name");
-            scnMsg.isLoaded = true; scnMsg.requesterId = CLIENT_ID;
+            scnMsg.isLoaded = true; 
+            scnMsg.requesterId = CLIENT_ID;
             NetMessage answerMsg = scnMsg;
             _client.Send(NetSerializer.Serialize(answerMsg));
             yield return new WaitForSeconds(0.5f);
             
-            yield return WaitValidate(typeof(SpawnMessage));
-            SpawnMessage spwMsg = (SpawnMessage)received;
-            yield return WaitValidate(typeof(SpawnMessage));
-            SpawnMessage spwMsg2 = (SpawnMessage)received;
+            yield return WaitSpawnSync(hostObjects);
 
-            foreach (NetBehaviour hostObj in hostObjects)
-            {
-                var hostNetObj = hostObj.NetObject;
-                Assert.IsNotNull(hostNetObj, "Host object missing NetObject component");
-                SpawnMessage spw = hostNetObj.NetId != spwMsg.netObjectId ? spwMsg2 : spwMsg;
-                
-                Assert.AreEqual(hostObj.transform.position, spw.position, "Object positions don't match");
-                Assert.AreEqual(hostNetObj.NetId, spw.netObjectId, "Object NetId doesn't match");
-                Assert.AreEqual(hostNetObj.SceneId, spw.sceneId, "Object sceneId doesn't match");
-                received = spw;
-                _client.Send(NetSerializer.Serialize(received));
-                yield return new WaitForSeconds(0.2f);
-            }
             
             TestObj testComponent = hostObjects[0];
             testComponent.Set(42, 100, "test");
             StateManager.SendUpdateStates();
             
-            yield return WaitValidate(typeof(SyncMessage));
+            yield return WaitMessage(typeof(SyncMessage));
 
             SyncMessage syncMsg = (SyncMessage)received;
             Assert.AreEqual(testComponent.NetObject.NetId, syncMsg.ObjectID, "Wrong object ID in sync message");

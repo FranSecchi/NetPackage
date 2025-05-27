@@ -36,7 +36,7 @@ namespace NetPackage.Synchronization.Tests
             yield return WaitSpawnSync(objs);
 
             NetManager.Destroy(spawnedObj.NetObject.NetId);
-            yield return WaitValidate(typeof(DestroyMessage));
+            yield return WaitMessage(typeof(DestroyMessage));
             DestroyMessage destroyMsg = (DestroyMessage)received;
             
             Assert.AreEqual(spawnedObj.NetObject.NetId, destroyMsg.netObjectId, "Wrong object ID in destroy message");
@@ -98,7 +98,7 @@ namespace NetPackage.Synchronization.Tests
             SpawnMessage hostSpawnMsg = new SpawnMessage(NetManager.ConnectionId(), "TestObj", spawnPos);
             NetScene.Spawn(hostSpawnMsg);
             
-            yield return WaitValidate(typeof(SpawnMessage));
+            yield return WaitMessage(typeof(SpawnMessage));
             _client.Send(NetSerializer.Serialize(received));
             yield return new WaitForSeconds(0.2f);
             

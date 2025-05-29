@@ -1,6 +1,6 @@
 using MessagePack;
 
-namespace NetPackage.Messages
+namespace SimpleNet.Messages
 {
     /// <summary>
     /// Message for scene loading synchronization.

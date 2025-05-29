@@ -1,6 +1,13 @@
+using UnityEngine;
+using SimpleNet.Messages;
+using SimpleNet.Network;
+using SimpleNet.Synchronization;
+using SimpleNet.Transport;
+using SimpleNet.Transport.UDP;
+using SimpleNet.Utilities;
 using System.Collections.Generic;
 using MessagePack;
-namespace NetPackage.Synchronization.Tests
+namespace SimpleNet.Synchronization.Tests
 {
     public class TestRPCBehaviour : NetBehaviour
     {

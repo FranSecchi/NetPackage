@@ -1,14 +1,8 @@
-using System;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
-using NetPackage.Transport;
-using NetPackage.Utilities;
+using SimpleNet.Utilities;
 using System.Collections.Generic;
 using LiteNetLib;
 
-namespace NetPackage.Transport.UDP
+namespace SimpleNet.Transport.UDP
 {
     internal class AHost : APeer
     {

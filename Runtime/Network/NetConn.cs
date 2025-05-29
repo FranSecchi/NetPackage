@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using NetPackage.Synchronization;
-using NetPackage.Serializer;
-using NetPackage.Messages;
-using NetPackage.Transport;
+using SimpleNet.Messages;
+using SimpleNet.Transport;
+using SimpleNet.Synchronization;
+using SimpleNet.Serializer;
 
-namespace NetPackage.Network
+namespace SimpleNet.Network
 {
     internal class NetConn
     {

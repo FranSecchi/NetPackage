@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using MessagePack;
 using NUnit.Framework;
-using NetPackage.Serializer;
+using SimpleNet.Serializer;
 
-namespace NetPackage.Messaging.Tests
+namespace SimpleNet.Messaging.Tests
 {
     public class SerializerTests
     {

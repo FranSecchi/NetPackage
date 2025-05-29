@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using System.Net;
+using System.Threading.Tasks;
 
-namespace NetPackage.Transport
+namespace SimpleNet.Transport
 {
     public enum TransportType
     {

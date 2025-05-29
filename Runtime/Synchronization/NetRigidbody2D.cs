@@ -1,8 +1,12 @@
 using System.Collections.Generic;
-using NetPackage.Network;
+using SimpleNet.Network;
 using UnityEngine;
+using SimpleNet.Messages;
+using SimpleNet.Transport;
+using SimpleNet.Transport.UDP;
+using SimpleNet.Utilities;
 
-namespace NetPackage.Synchronization
+namespace SimpleNet.Synchronization
 {
     [RequireComponent(typeof(Rigidbody2D))]
     public class NetRigidbody2D : NetBehaviour

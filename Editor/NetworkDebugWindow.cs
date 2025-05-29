@@ -1,13 +1,13 @@
 using UnityEngine;
+using SimpleNet.Network;
 using UnityEditor;
-using NetPackage.Network;
+using SimpleNet.Transport;
+using SimpleNet.Synchronization;
+using SimpleNet.Utilities;
 using System.Collections.Generic;
 using System.Linq;
-using NetPackage.Transport;
-using NetPackage.Synchronization;
-using NetPackage.Utilities;
 
-namespace NetPackage.Editor
+namespace SimpleNet.Editor
 {
     public class NetworkDebugWindow : EditorWindow
     {
@@ -32,7 +32,7 @@ namespace NetPackage.Editor
         private static bool lastKnownIsHost;
         private static ConnectionState? lastKnownConnectionState;
 
-        [MenuItem("Window/NetPackage/Network Debug")]
+        [MenuItem("Window/SimpleNet/Network Debug")]
         public static void ShowWindow()
         {
             GetWindow<NetworkDebugWindow>("Network Debug");
@@ -110,7 +110,7 @@ namespace NetPackage.Editor
 
             try
             {
-                var newNetObjects = NetScene.GetAllNetObjects();
+                var newNetObjects = NetManager.GetAllNetObjects();
                 if (newNetObjects != null && newNetObjects.Count > 0)
                 {
                     lastKnownNetObjects = new List<NetObject>();
@@ -340,7 +340,7 @@ namespace NetPackage.Editor
                 showNetObjects = EditorGUILayout.Foldout(showNetObjects, "Network Objects List", true);
                 if (showNetObjects)
                 {
-                    var netObjects = Application.isPlaying ? NetScene.GetAllNetObjects() : lastKnownNetObjects;
+                    var netObjects = Application.isPlaying ? NetManager.GetAllNetObjects() : lastKnownNetObjects;
                     if (netObjects != null && netObjects.Count > 0)
                     {
                         foreach (var netObj in netObjects)

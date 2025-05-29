@@ -1,12 +1,12 @@
 using UnityEngine;
+using SimpleNet.Synchronization;
 using UnityEditor;
-using NetPackage.Synchronization;
 
-namespace NetPackage.Editor
+namespace SimpleNet.Editor
 {
     public class NetTransformEditor
     {
-        [MenuItem("GameObject/NetPackage/NetTransform", false, 0)]
+        [MenuItem("GameObject/SimpleNet/NetTransform", false, 0)]
         public static void CreateNetTransform()
         {
             GameObject go = new GameObject("NetTransform");
@@ -15,7 +15,7 @@ namespace NetPackage.Editor
             Selection.activeGameObject = go;
             EditorGUIUtility.PingObject(go);
         }
-        [MenuItem("GameObject/NetPackage/NetRigidbody", false, 1)]
+        [MenuItem("GameObject/SimpleNet/NetRigidbody", false, 1)]
         public static void CreateNetRigidbody()
         {
             GameObject go = new GameObject("NetRigidbody");
@@ -24,7 +24,7 @@ namespace NetPackage.Editor
             Selection.activeGameObject = go;
             EditorGUIUtility.PingObject(go);
         }
-        [MenuItem("GameObject/NetPackage/NetRigidbody2D", false, 2)]
+        [MenuItem("GameObject/SimpleNet/NetRigidbody2D", false, 2)]
         public static void CreateNetRigidbody2D()
         {
             GameObject go = new GameObject("NetRigidbody2D");

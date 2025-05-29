@@ -1,6 +1,6 @@
 using System;
 
-namespace NetPackage.Serializer
+namespace SimpleNet.Serializer
 {
     /// <summary>
     /// Interface defining serialization and deserialization operations.

@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using NetPackage.Utilities;
-using static NetPackage.Transport.ITransport;
+using SimpleNet.Utilities;
+using static SimpleNet.Transport.ITransport;
 
-namespace NetPackage.Transport.UDP
+namespace SimpleNet.Transport.UDP
 {
     internal class UDPSolution : ITransport
     {

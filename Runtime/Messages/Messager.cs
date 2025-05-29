@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using MessagePack;
 using UnityEngine;
 
-namespace NetPackage.Messages
+namespace SimpleNet.Messages
 {
     /// <summary>
     /// A static utility class that manages message handling and routing for network messages.

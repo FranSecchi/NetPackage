@@ -1,11 +1,8 @@
-using NetPackage.Messages;
-using NetPackage.Synchronization;
-using NetPackage.Transport;
-using NetPackage.Utilities;
-using UnityEngine;
-using UnityEngine.SceneManagement;
+using SimpleNet.Messages;
+using SimpleNet.Synchronization;
+using SimpleNet.Utilities;
 
-namespace NetPackage.Network
+namespace SimpleNet.Network
 {
     internal static class NetClient
     {

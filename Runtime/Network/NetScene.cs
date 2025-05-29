@@ -1,13 +1,11 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using NetPackage.Messages;
-using NetPackage.Synchronization;
-using NetPackage.Utilities;
+using SimpleNet.Messages;
+using SimpleNet.Synchronization;
+using SimpleNet.Utilities;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace NetPackage.Network
+namespace SimpleNet.Network
 {
     internal static class NetScene
     { 

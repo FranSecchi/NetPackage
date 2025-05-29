@@ -3,7 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace NetPackage.Transport.Tests
+namespace SimpleNet.Transport.Tests
 {
     public class UDPClientTest : TransportTestBase
     {

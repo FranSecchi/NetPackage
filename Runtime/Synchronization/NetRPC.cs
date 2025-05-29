@@ -1,6 +1,6 @@
 using System;
 
-namespace NetPackage.Synchronization
+namespace SimpleNet.Synchronization
 {
     public enum Direction
     {

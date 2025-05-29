@@ -1,6 +1,6 @@
 {
-    "name": "NetPackage.Runtime",
-    "rootNamespace": "NetPackage.Runtime",
+    "name": "SimpleNet.Runtime",
+    "rootNamespace": "SimpleNet.Runtime",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

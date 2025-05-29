@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
-using NetPackage.Messages;
-using NetPackage.Network;
-using NetPackage.Utilities;
+using SimpleNet.Messages;
+using SimpleNet.Network;
+using SimpleNet.Utilities;
 using UnityEngine;
 
-namespace NetPackage.Synchronization
+namespace SimpleNet.Synchronization
 {
     public struct InputCommand
     {

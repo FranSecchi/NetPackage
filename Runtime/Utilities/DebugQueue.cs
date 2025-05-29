@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using NetPackage.Messages;
+using SimpleNet.Messages;
 
-namespace NetPackage.Utilities
+namespace SimpleNet.Utilities
 {
     public class DebugQueue
     {

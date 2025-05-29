@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using MessagePack;
 using System.Linq;
 
-namespace NetPackage.Messages
+namespace SimpleNet.Messages
 {
     /// <summary>
     /// Message for synchronizing object properties.

@@ -1,12 +1,12 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using NetPackage.Serializer;
-using NetPackage.Messages;
-using NetPackage.Transport;
-using NetPackage.Transport.UDP;
+using SimpleNet.Serializer;
+using SimpleNet.Messages;
+using SimpleNet.Transport;
+using SimpleNet.Transport.UDP;
 using UnityEngine;
 
-namespace NetPackage.Network.Tests
+namespace SimpleNet.Network.Tests
 {
     public class NetManagerTest : MonoBehaviour
     {

@@ -3,11 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using NetPackage.Network;
-using NetPackage.Utilities;
+using MessagePack;
+using SimpleNet.Messages;
+using SimpleNet.Network;
+using SimpleNet.Transport;
+using SimpleNet.Transport.UDP;
+using SimpleNet.Utilities;
 using UnityEngine;
 
-namespace NetPackage.Synchronization
+namespace SimpleNet.Synchronization
 {
     [AttributeUsage(AttributeTargets.Field)]
     public class Sync : Attribute { }
@@ -250,7 +254,9 @@ namespace NetPackage.Synchronization
         public bool HasComponent(int componentId)
         {
             return _objectIds.TryGetValue(componentId, out _);
-        }public bool HasComponent(object obj)
+        }
+
+        public bool HasComponent(object obj)
         {
             return _objectIds.ContainsValue(obj);
         }

@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using NetPackage.Network;
-using NetPackage.Serializer;
-using NetPackage.Messages;
-using NetPackage.Utilities;
+using SimpleNet.Network;
+using SimpleNet.Serializer;
+using SimpleNet.Messages;
+using SimpleNet.Utilities;
 
-namespace NetPackage.Synchronization
+namespace SimpleNet.Synchronization
 {
-    internal class RPCManager
+    public static class RPCManager
     {
         private static Dictionary<int, List<object>> _rpcTargets = new();
         private static Dictionary<int, Dictionary<string, List<MethodInfo>>> _rpcMethods = new();

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace NetPackage. Synchronization.Tests
+namespace SimpleNet. Synchronization.Tests
 {
     public class TestObj : NetBehaviour
     {

@@ -1,20 +1,19 @@
 using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Runtime.CompilerServices;
-using NetPackage.Synchronization;
-using NetPackage.Serializer;
-using NetPackage.Messages;
-using NetPackage.Transport;
-using NetPackage.Transport.UDP;
-using NetPackage.Utilities;
+using SimpleNet.Synchronization;
+using SimpleNet.Serializer;
+using SimpleNet.Messages;
+using SimpleNet.Transport;
+using SimpleNet.Transport.UDP;
+using SimpleNet.Utilities;
 using UnityEngine;
 
-[assembly: InternalsVisibleTo("NetPackage.Editor")]
-[assembly: InternalsVisibleTo("NetPackage.Tests")]
-[assembly: InternalsVisibleTo("NetPackage.Tests.Editor")]
+[assembly: InternalsVisibleTo("SimpleNet.Editor")]
+[assembly: InternalsVisibleTo("SimpleNet.Tests")]
+[assembly: InternalsVisibleTo("SimpleNet.Tests.Editor")]
 
-namespace NetPackage.Network
+namespace SimpleNet.Network
 {
     /// <summary>
     /// Main network manager class that handles network initialization, connection management, and message routing.
@@ -30,17 +29,13 @@ namespace NetPackage.Network
         private float _lastLanDiscovery;
         private bool _isHost = false;
         private bool _running = false;
-        
+        internal static ITransport Transport;
+
         /// <summary>
         /// Registry containing all network prefabs that can be spawned.
         /// </summary>
         public NetPrefabRegistry NetPrefabs;
-
-        /// <summary>
-        /// The transport layer implementation used for network communication.
-        /// </summary>
-        public static ITransport Transport;
-
+        
         /// <summary>
         /// The port number used for network communication.
         /// </summary>
@@ -488,6 +483,11 @@ namespace NetPackage.Network
             _manager._discoveredServers = new List<ServerInfo>(currentServers);
             DebugQueue.AddMessage($"Updated server list. Current servers: {string.Join(", ", _manager._discoveredServers)}");
 
+        }
+
+        public static List<NetObject> GetAllNetObjects()
+        {
+            return NetScene.GetAllNetObjects();
         }
     }
 }

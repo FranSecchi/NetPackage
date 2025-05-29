@@ -2,8 +2,13 @@ using System;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
+using SimpleNet.Messages;
+using SimpleNet.Network;
+using SimpleNet.Transport;
+using SimpleNet.Transport.UDP;
+using SimpleNet.Utilities;
 
-namespace NetPackage.Synchronization
+namespace SimpleNet.Synchronization
 {
     [ExecuteAlways]
     internal class SceneObjectId : MonoBehaviour

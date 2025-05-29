@@ -1,7 +1,7 @@
 using LiteNetLib;
-using NetPackage.Utilities;
+using SimpleNet.Utilities;
 
-namespace NetPackage.Transport.UDP
+namespace SimpleNet.Transport.UDP
 {
     internal class AClient : APeer
     {

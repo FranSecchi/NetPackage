@@ -1,8 +1,8 @@
 using UnityEngine.TestTools;
 using System.Collections;
-using NetPackage.Transport.UDP;
+using SimpleNet.Transport.UDP;
 
-namespace NetPackage.Transport.Tests
+namespace SimpleNet.Transport.Tests
 {
     public abstract class TransportTestBase
     {

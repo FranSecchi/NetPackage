@@ -1,6 +1,6 @@
-using NetPackage.Messages;
+using SimpleNet.Messages;
 
-namespace NetPackage.Serializer
+namespace SimpleNet.Serializer
 {
     /// <summary>
     /// Static utility class that provides serialization and deserialization functionality for network messages.

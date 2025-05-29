@@ -1,7 +1,8 @@
+using System;
 using System.Collections.Generic;
 using MessagePack;
 
-namespace NetPackage.Messages
+namespace SimpleNet.Messages
 {
     /// <summary>
     /// Base class for instantiating messages with specified target clients.

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using MessagePack;
 
-namespace NetPackage.Messages
+namespace SimpleNet.Messages
 {
     /// <summary>
     /// Message for invoking a remote procedure call.

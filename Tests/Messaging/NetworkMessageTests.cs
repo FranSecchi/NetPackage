@@ -2,15 +2,15 @@ using System.Collections;
 using System.Collections.Generic;
 using MessagePack;
 using NUnit.Framework;
-using NetPackage.Network;
-using NetPackage.Serializer;
-using NetPackage.Messages;
-using NetPackage.Transport;
-using NetPackage.Transport.UDP;
+using SimpleNet.Network;
+using SimpleNet.Serializer;
+using SimpleNet.Messages;
+using SimpleNet.Transport;
+using SimpleNet.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace NetPackage.Messaging.Tests
+namespace SimpleNet.Messaging.Tests
 {
     public class NetworkMessageTests
     {

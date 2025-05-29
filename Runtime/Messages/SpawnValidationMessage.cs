@@ -1,6 +1,6 @@
 using MessagePack;
 
-namespace NetPackage.Messages
+namespace SimpleNet.Messages
 {
     [MessagePackObject]
     public class SpawnValidationMessage : NetMessage

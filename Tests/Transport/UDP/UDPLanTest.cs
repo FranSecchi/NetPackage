@@ -1,11 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
-using NetPackage.Transport.UDP;
+using SimpleNet.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace NetPackage.Transport.Tests
+namespace SimpleNet.Transport.Tests
 {
     public class UDPLanTest : TransportTestBase
     {

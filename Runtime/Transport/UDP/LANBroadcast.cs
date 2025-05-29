@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 
-namespace NetPackage.Transport.UDP
+namespace SimpleNet.Transport.UDP
 {
     internal class LANBroadcast
     {

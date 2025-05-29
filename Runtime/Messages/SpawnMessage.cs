@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using MessagePack;
 using UnityEngine;
 
-namespace NetPackage.Messages
+namespace SimpleNet.Messages
 {
     /// <summary>
     /// Message for spawning a network object.

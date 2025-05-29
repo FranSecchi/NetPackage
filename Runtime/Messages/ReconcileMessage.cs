@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MessagePack;
 
-namespace NetPackage.Messages
+namespace SimpleNet.Messages
 {
     [MessagePackObject]
     public class ReconcileMessage : NetMessage

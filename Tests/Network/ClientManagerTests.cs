@@ -1,14 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
-using NetPackage.Messages;
+using SimpleNet.Messages;
 using NUnit.Framework;
-using NetPackage.Serializer;
-using NetPackage.Transport;
-using NetPackage.Transport.UDP;
+using SimpleNet.Serializer;
+using SimpleNet.Transport;
+using SimpleNet.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace NetPackage.Network.Tests
+namespace SimpleNet.Network.Tests
 {
     public class ClientManagerTests : NetworkTestBase
     {

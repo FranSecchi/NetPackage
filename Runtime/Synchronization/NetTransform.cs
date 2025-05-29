@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using NetPackage.Network;
+using SimpleNet.Network;
 using UnityEngine;
 
-namespace NetPackage.Synchronization
+namespace SimpleNet.Synchronization
 {
     public class NetTransform : NetBehaviour
     {

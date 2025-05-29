@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using MessagePack;
-using NetPackage.Transport;
+using SimpleNet.Transport;
 
-namespace NetPackage.Messages
+namespace SimpleNet.Messages
 {
     /// <summary>
     /// Message for connection status updates.

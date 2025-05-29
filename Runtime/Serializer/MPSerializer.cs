@@ -1,7 +1,7 @@
 using System;
 using MessagePack;
 
-namespace NetPackage.Serializer
+namespace SimpleNet.Serializer
 {
     public class MPSerializer : ISerialize
     {

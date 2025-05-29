@@ -4,11 +4,10 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
-using NetPackage.Utilities;
-using static NetPackage.Transport.ITransport;
-using NetManager = LiteNetLib.NetManager;
+using SimpleNet.Utilities;
+using static SimpleNet.Transport.ITransport;
 
-namespace NetPackage.Transport.UDP
+namespace SimpleNet.Transport.UDP
 {
     internal abstract class APeer : INetEventListener
     {

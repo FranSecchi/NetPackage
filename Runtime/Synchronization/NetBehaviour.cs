@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using NetPackage.Network;
-using NetPackage.Utilities;
+using SimpleNet.Network;
+using SimpleNet.Utilities;
 using UnityEngine;
 
-namespace NetPackage.Synchronization
+namespace SimpleNet.Synchronization
 {
     /// <summary>
     /// Base class for network-enabled behaviours that can be synchronized across the network.

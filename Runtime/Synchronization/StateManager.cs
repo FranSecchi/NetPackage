@@ -2,12 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
-using NetPackage.Network;
-using NetPackage.Messages;
-using NetPackage.Utilities;
+using MessagePack;
+using SimpleNet.Messages;
+using SimpleNet.Network;
+using SimpleNet.Transport;
+using SimpleNet.Transport.UDP;
+using SimpleNet.Utilities;
 using UnityEngine;
 
-namespace NetPackage.Synchronization
+namespace SimpleNet.Synchronization
 {
     internal class StateManager
     {

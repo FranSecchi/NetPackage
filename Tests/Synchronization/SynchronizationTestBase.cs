@@ -2,16 +2,16 @@ using System;
 using UnityEngine.TestTools;
 using System.Collections;
 using System.Collections.Generic;
-using NetPackage.Messages;
-using NetPackage.Network;
-using NetPackage.Serializer;
-using NetPackage.Transport;
-using NetPackage.Transport.UDP;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using SimpleNet.Messages;
+using SimpleNet.Network;
+using SimpleNet.Serializer;
+using SimpleNet.Transport;
+using SimpleNet.Transport.UDP;
 
-namespace NetPackage.Synchronization.Tests
+namespace SimpleNet.Synchronization.Tests
 {
     public abstract class SynchronizationTestBase
     {

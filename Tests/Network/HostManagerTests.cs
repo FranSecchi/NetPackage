@@ -1,12 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
-using NetPackage.Transport;
-using NetPackage.Transport.UDP;
+using SimpleNet.Transport;
+using SimpleNet.Transport.UDP;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace NetPackage.Network.Tests
+namespace SimpleNet.Network.Tests
 {
     public class HostManagerTests : NetworkTestBase
     {

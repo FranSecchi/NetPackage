@@ -1,12 +1,12 @@
 using System.Collections;
 using NUnit.Framework;
-using NetPackage.Network;
-using NetPackage.Serializer;
-using NetPackage.Messages;
 using UnityEngine;
 using UnityEngine.TestTools;
+using SimpleNet.Messages;
+using SimpleNet.Network;
+using SimpleNet.Serializer;
 
-namespace NetPackage.Synchronization.Tests
+namespace SimpleNet.Synchronization.Tests
 {
     public class SceneSyncTests : SynchronizationTestBase
     {

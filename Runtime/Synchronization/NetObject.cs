@@ -1,11 +1,16 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using NetPackage.Messages;
-using NetPackage.Network;
-using NetPackage.Utilities;
+using MessagePack;
+using SimpleNet.Messages;
+using SimpleNet.Network;
+using SimpleNet.Transport;
+using SimpleNet.Transport.UDP;
+using SimpleNet.Utilities;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-namespace NetPackage.Synchronization
+namespace SimpleNet.Synchronization
 {
     /// <summary>
     /// Represents a networked object that can be synchronized across the network.

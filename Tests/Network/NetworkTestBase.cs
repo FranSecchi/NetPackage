@@ -1,10 +1,10 @@
 using UnityEngine.TestTools;
 using System.Collections;
-using NetPackage.Transport;
-using NetPackage.Transport.UDP;
+using SimpleNet.Transport;
+using SimpleNet.Transport.UDP;
 using UnityEngine;
 
-namespace NetPackage.Network.Tests
+namespace SimpleNet.Network.Tests
 {
     public abstract class NetworkTestBase
     {

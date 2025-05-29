@@ -1,19 +1,16 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using NetPackage.Messages;
-using NetPackage.Synchronization;
-using NetPackage.Transport;
-using NetPackage.Utilities;
-using UnityEngine;
-using UnityEngine.SceneManagement;
+using SimpleNet.Messages;
+using SimpleNet.Synchronization;
+using SimpleNet.Transport;
+using SimpleNet.Utilities;
 
-namespace NetPackage.Network
+namespace SimpleNet.Network
 {
     internal static class NetHost
     {
         internal static ConcurrentDictionary<int, NetConn> Clients = new();
-        private static readonly object Lock = new object();
         internal static void StartHost()
         {
             NetManager.Transport.Start();

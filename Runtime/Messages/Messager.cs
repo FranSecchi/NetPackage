@@ -32,6 +32,23 @@ namespace SimpleNet.Messages
         }
 
         /// <summary>
+        /// Unregisters a previously registered handler for a specific type of network message.
+        /// </summary>
+        /// <typeparam name="T">The type of network message to unregister the handler for.</typeparam>
+        /// <param name="handler">The action to remove from the handlers list.</param>
+        public static void UnregisterHandler<T>(Action<T> handler) where T : NetMessage
+        {
+            if (messageHandlers.TryGetValue(typeof(T), out var handlers))
+            {
+                handlers.RemoveAll(h => h.Target == handler.Target && h.Method == handler.Method);
+                if (handlers.Count == 0)
+                {
+                    messageHandlers.Remove(typeof(T));
+                }
+            }
+        }
+
+        /// <summary>
         /// Processes an incoming network message by invoking all registered handlers for its type.
         /// </summary>
         /// <param name="msg">The network message to process.</param>

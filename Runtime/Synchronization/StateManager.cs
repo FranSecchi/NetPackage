@@ -31,7 +31,6 @@ namespace SimpleNet.Synchronization
             {
                 state.Register(netId, obj);
                 
-                // Cache component reference
                 if (!_componentCache.TryGetValue(netId, out var components))
                 {
                     components = new HashSet<object>();

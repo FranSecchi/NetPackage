@@ -1,12 +1,6 @@
 using System;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Serialization;
-using SimpleNet.Messages;
-using SimpleNet.Network;
-using SimpleNet.Transport;
-using SimpleNet.Transport.UDP;
-using SimpleNet.Utilities;
 
 namespace SimpleNet.Synchronization
 {
@@ -20,10 +14,8 @@ namespace SimpleNet.Synchronization
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            // Run in edit mode only
             if (!Application.isPlaying)
             {
-                // If no ID yet or it's a duplicate in the scene, generate a new one
                 if (string.IsNullOrEmpty(sceneId) || HasDuplicateIdInScene())
                 {
                     sceneId = Guid.NewGuid().ToString();

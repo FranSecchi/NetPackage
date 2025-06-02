@@ -64,13 +64,25 @@ namespace SimpleNet.Network
         [SerializeField] public int maxPlayers = 10;
 
         /// <summary>
+        /// Whether to use Rollback for synchronizing.
+        /// </summary>
+        [Tooltip("Enable Rollback")]
+        [SerializeField] public bool useRollback = false;
+        /// <summary>
+        /// Maximum time in seconds to save states
+        /// </summary>
+        [Tooltip("Maximum time in seconds to save states")]
+        [SerializeField] public float rollbackWindow = 0.1f;
+        /// <summary>
+        /// Maximum GameObject states to save at the same time
+        /// </summary>
+        [Tooltip("Maximum GameObject states to save at the same time")]
+        [SerializeField] public int maxStates = 20;
+        /// <summary>
         /// Whether to use LAN discovery for server finding.
         /// </summary>
         [Tooltip("Enable LAN server discovery")]
         [SerializeField] public bool useLAN = false;
-        [SerializeField] public bool useRollback = false;
-        [SerializeField] public float rollbackWindow = 0.1f;
-        [SerializeField] public int maxStates = 20;
 
         /// <summary>
         /// Interval between LAN server discovery broadcasts in seconds.

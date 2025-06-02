@@ -5,6 +5,9 @@ using MessagePack;
 
 namespace SimpleNet.Messages
 {
+    /// <summary>
+    /// Message for reconciling object state.
+    /// </summary>
     [MessagePackObject]
     public class ReconcileMessage : NetMessage
     {
@@ -14,6 +17,11 @@ namespace SimpleNet.Messages
         [Key(4)] public Dictionary<string, object> Values;
 
         public ReconcileMessage(){}
+        /// <param name="objectId">The ID of the network object.</param>
+        /// <param name="componentId">The ID of the component.</param>
+        /// <param name="timestamp">The timestamp in which the true state is situated.</param>
+        /// <param name="values">The updated changes to be reconciled.</param>
+        /// <param name="target">The player Id who should reconcile the state.</param>
         public ReconcileMessage(int objectId, int componentId, DateTime timestamp, Dictionary<string, object> values, int target) : base(new List<int>{target})
         {
             this.ObjectId = objectId;

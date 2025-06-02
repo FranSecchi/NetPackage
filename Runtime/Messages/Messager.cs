@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using MessagePack;
-using UnityEngine;
+using SimpleNet.Utilities;
 
 namespace SimpleNet.Messages
 {
@@ -13,7 +10,7 @@ namespace SimpleNet.Messages
     /// </summary>
     public static class Messager
     {
-        private static readonly Dictionary<Type, List<Action<NetMessage>>> messageHandlers = new();
+        private static readonly Dictionary<Type, List<Action<NetMessage>>> MessageHandlers = new();
 
         /// <summary>
         /// Registers a handler for a specific type of network message.
@@ -22,10 +19,10 @@ namespace SimpleNet.Messages
         /// <param name="handler">The action to execute when a message of type T is received.</param>
         public static void RegisterHandler<T>(Action<T> handler) where T : NetMessage
         {
-            if (!messageHandlers.TryGetValue(typeof(T), out var handlers))
+            if (!MessageHandlers.TryGetValue(typeof(T), out var handlers))
             {
                 handlers = new List<Action<NetMessage>>();
-                messageHandlers[typeof(T)] = handlers;
+                MessageHandlers[typeof(T)] = handlers;
             }
 
             handlers.Add(msg => handler((T)msg));
@@ -38,12 +35,12 @@ namespace SimpleNet.Messages
         /// <param name="handler">The action to remove from the handlers list.</param>
         public static void UnregisterHandler<T>(Action<T> handler) where T : NetMessage
         {
-            if (messageHandlers.TryGetValue(typeof(T), out var handlers))
+            if (MessageHandlers.TryGetValue(typeof(T), out var handlers))
             {
                 handlers.RemoveAll(h => h.Target == handler.Target && h.Method == handler.Method);
                 if (handlers.Count == 0)
                 {
-                    messageHandlers.Remove(typeof(T));
+                    MessageHandlers.Remove(typeof(T));
                 }
             }
         }
@@ -54,7 +51,7 @@ namespace SimpleNet.Messages
         /// <param name="msg">The network message to process.</param>
         public static void HandleMessage(NetMessage msg)
         {
-            if (messageHandlers.TryGetValue(msg.GetType(), out var handlers))
+            if (MessageHandlers.TryGetValue(msg.GetType(), out var handlers))
             {
                 foreach (var handler in handlers)
                 {
@@ -63,7 +60,7 @@ namespace SimpleNet.Messages
             }
             else
             {
-                Debug.LogError($"No handler found for message type: {msg.GetType()}");
+                DebugQueue.AddMessage($"No handler found for message type: {msg.GetType()}", DebugQueue.MessageType.Error);
             }
         }
 
@@ -72,7 +69,7 @@ namespace SimpleNet.Messages
         /// </summary>
         public static void ClearHandlers()
         {
-            messageHandlers.Clear();
+            MessageHandlers.Clear();
         }
     }
 }

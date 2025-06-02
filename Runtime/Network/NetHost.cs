@@ -22,7 +22,6 @@ namespace SimpleNet.Network
             Messager.RegisterHandler<SyncMessage>(OnSyncMessage);
             Messager.RegisterHandler<ConnMessage>(OnConnMessage);
         }
-
         private static void OnConnMessage(ConnMessage obj)
         {
             if(!obj.AllConnected.Count.Equals(NetManager.AllPlayers.Count))

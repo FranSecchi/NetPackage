@@ -133,8 +133,8 @@ namespace SimpleNet.Synchronization
                             }
                             else
                             {
-                                var bytes = NetSerializer._Serializer.Serialize(p);
-                                convertedParams[i] = NetSerializer._Serializer.Deserialize(bytes, paramTypes[i].ParameterType);
+                                var bytes = NetSerializer.Serializer.Serialize(p);
+                                convertedParams[i] = NetSerializer.Serializer.Deserialize(bytes, paramTypes[i].ParameterType);
                             }
                         }
                         DebugQueue.AddRPC(methodName, netId, NetManager.ConnectionId());

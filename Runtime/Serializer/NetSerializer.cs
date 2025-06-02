@@ -11,7 +11,7 @@ namespace SimpleNet.Serializer
         /// <summary>
         /// The underlying serializer implementation used for serialization operations. Set up here your own serialization strategy.
         /// </summary>
-        public static ISerialize _Serializer = new MPSerializer();
+        public static ISerialize Serializer = new MPSerializer();
 
         /// <summary>
         /// Serializes a network message into a byte array.
@@ -21,7 +21,7 @@ namespace SimpleNet.Serializer
         /// <returns>A byte array containing the serialized network message.</returns>
         public static byte[] Serialize<T>(T data) where T : NetMessage
         {
-            return _Serializer.Serialize(data);
+            return Serializer.Serialize(data);
         }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace SimpleNet.Serializer
         /// <returns>The deserialized network message of type T.</returns>
         public static T Deserialize<T>(byte[] data) where T : NetMessage
         {
-            return _Serializer.Deserialize<T>(data);
+            return Serializer.Deserialize<T>(data);
         }
     }
 }

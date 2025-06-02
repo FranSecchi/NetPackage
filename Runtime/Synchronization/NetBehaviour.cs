@@ -131,7 +131,6 @@ namespace SimpleNet.Synchronization
         {
             if (NetObject != null)
             {
-                // Record the RPC for rollback if we're predicting
                 if (_isPredicting)
                 {
                     RollbackManager.RecordInput(NetID, methodName, parameters);
@@ -155,7 +154,7 @@ namespace SimpleNet.Synchronization
                 var childs = GetComponentsInChildren<NetBehaviour>();
                 foreach (var child in childs)
                 {
-                    if (child == this) continue; // Skip self to prevent any potential circular references
+                    if (child == this) continue;
                     child.NetObject.GiveOwner(ownerId);
                 }
             }
@@ -189,7 +188,6 @@ namespace SimpleNet.Synchronization
         }
         
         
-        // Prediction methods
         private void StartPrediction()
         {
             if (!IsOwned) return;
@@ -240,7 +238,6 @@ namespace SimpleNet.Synchronization
             OnResumePrediction();
         }
 
-        // Called by StateManager when state changes are received
         internal void OnReconciliation(int id, Dictionary<string, object> changes, DateTime timestamp)
         {
             if (changes == null || changes.Count == 0) return;
@@ -264,7 +261,6 @@ namespace SimpleNet.Synchronization
         
         protected virtual void OnStateReconcile(Dictionary<string, object> changes) { }
         
-        // New virtual methods for prediction and desync detection
         protected virtual void Predict(float deltaTime, ObjectState lastState, List<InputCommand> lastInputs){ }
 
         protected virtual bool IsDesynchronized(Dictionary<string, object> changes){ return false; }

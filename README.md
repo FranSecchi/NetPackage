@@ -73,6 +73,9 @@ var serverInfo = new ServerInfo
     Port = 7777
 };
 NetManager.StartHost(serverInfo);
+
+//Optional: start LAN broadcast for local game sessions
+NetManager.StartBroadcast();
 ```
 
 ### Connecting as a Client
@@ -82,7 +85,7 @@ NetManager.StartHost(serverInfo);
 Netmanager.StartClient();
 // Connect to a server
 NetManager.ConnectTo("localhost"); // or specific IP address
-// Or find and connect to LAN game sessions
+// Optional: find and connect to LAN game sessions
 NetManager.StartDiscovery();
 List<ServerInfo> servers = NetManager.GetDiscoveredServers();
 NetManager.ConnectTo(servers[0].Adress)

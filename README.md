@@ -127,11 +127,10 @@ SimpleNet implements a distributed authority architecture where:
 
 ```csharp
 // Request ownership of an object
-NetObject.GiveOwner(NetManager.ConnectionId());
-
+Own(Netmanager.ConnectionId(), ownChildren);
 
 // Check if local client owns the object
-if (NetObject.IsOwned)
+if (IsOwned)
 {
     // Perform owner-specific logic
 }

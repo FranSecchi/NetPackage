@@ -4,6 +4,7 @@
   "displayName": "SimpleNet",
   "description": "This is an user-friendly solution for video game network and synchronization",
   "unity": "2023.1",
+  "testable": true,
   "dependencies": {
     "com.unity.test-framework": "1.1.33"
   },

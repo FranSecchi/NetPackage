@@ -1,21 +1,30 @@
-MIT License
+SimpleNet - Free Version License Agreement  
+Copyright (c) 2025 Fran Secchi
 
-Copyright (c) 2025 Francisco Secchi Tarrés
+This license governs the use of the SimpleNet software ("Software"), provided in its free version. By downloading, accessing, or using the Software, you agree to the following terms:
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. Grant of Use  
+You are granted a non-exclusive, non-transferable, revocable license to use the Software **solely for personal, educational, or evaluation purposes**.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+2. Restrictions  
+You may **not**, under any circumstance:
+- Use the Software for commercial purposes, including in the development, testing, or distribution of commercial products or services.
+- Modify, translate, reverse engineer, decompile, disassemble, or create derivative works based on the Software.
+- Redistribute, sublicense, or publicly share the Software, in whole or in part.
+- Use the Software to compete directly or indirectly with future versions of SimpleNet or its subscription-based offerings.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+3. Intellectual Property  
+All intellectual property rights in and to the Software, including source code, design, and documentation, remain the sole property of Fran Secchi. This license does not grant you any ownership or interest in the Software.
+
+4. Termination  
+This license is effective until terminated. It will terminate automatically without notice if you fail to comply with any term. Upon termination, you must cease all use and destroy all copies of the Software.
+
+5. No Warranty  
+The Software is provided “as is,” without warranty of any kind. Fran Secchi shall not be liable for any damages arising from the use or inability to use the Software.
+
+6. Commercial Use and Licensing  
+To use SimpleNet in commercial projects or gain access to the latest features, updates, and support, a commercial subscription is required. Contact fransecchifst@gmail.com for licensing options.
+
+---
+
+All rights not expressly granted in this agreement are reserved by Fran Secchi.
